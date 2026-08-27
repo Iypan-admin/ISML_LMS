@@ -80,7 +80,7 @@ def create_document():
 
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    run_sub = p_sub.add_run("Production Database Architecture Specification • Executive Manager & Technical Guide")
+    run_sub = p_sub.add_run("Production Database Architecture Specification • Executive Technical & Business Reference")
     run_sub.font.name = 'Calibri'
     run_sub.font.size = Pt(12)
     run_sub.font.italic = True
@@ -170,7 +170,7 @@ def create_document():
 
     def format_table_headers_and_rows(table, col_widths, headers, data):
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        set_table_borders(table, "CBD5E1", "4") # Thin Slate Gray Borders on all cells!
+        set_table_borders(table, "CBD5E1", "4")
         
         # Header
         hdr_cells = table.rows[0].cells
@@ -182,7 +182,7 @@ def create_document():
             r.font.bold = True
             r.font.size = Pt(11)
             r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-            set_cell_background(hdr_cells[i], "0B2447") # Executive Dark Blue Header Fill
+            set_cell_background(hdr_cells[i], "0B2447")
             set_cell_margins(hdr_cells[i], 100, 100, 120, 120)
 
         # Data Rows
@@ -276,224 +276,9 @@ def create_document():
     doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
     # -------------------------------------------------------------
-    # 3. Complete 195-Model Inventory Table
+    # 3. Master Architectural Relationship Map
     # -------------------------------------------------------------
-    add_heading1("3. Complete 195-Model Inventory")
-
-    p_inv = doc.add_paragraph()
-    p_inv.add_run(
-        "Below is the complete inventory of all 195 database tables in ISML LMS. Every table is business-justified, "
-        "normalized in Third Normal Form (3NF), and mapped to one of the 36 major functional domains."
-    ).font.size = Pt(12)
-
-    inv_headers = ["#", "Model Name", "Business Domain", "Plain Language Purpose"]
-    
-    raw_models = [
-        (1, "Institutions", "Domain 01: Tenant Org", "Partner university/college tenant container"),
-        (2, "Campuses", "Domain 01: Tenant Org", "Physical campus branch of a university"),
-        (3, "Departments", "Domain 01: Tenant Org", "Academic department within a campus"),
-        (4, "AcademicYears", "Domain 01: Tenant Org", "Academic calendar year session (e.g., 2026-2027)"),
-        (5, "InstitutionSettings", "Domain 01: Tenant Org", "Portal security, session timeout, and 2FA settings"),
-        (6, "InstitutionDomains", "Domain 01: Tenant Org", "Custom domain routing (e.g., lms.annauniv.edu)"),
-        (7, "InstitutionSubscriptions", "Domain 01: Tenant Org", "B2B enterprise plan contract and student limit"),
-        (8, "InstitutionBranding", "Domain 01: Tenant Org", "White-label logo, colors, favicons, and CSS theme"),
-        (9, "Users", "Domain 02: Identity", "Central account identity for students, tutors, staff"),
-        (10, "UserSessions", "Domain 02: Auth", "Active user login sessions and refresh token hashes"),
-        (11, "RefreshTokens", "Domain 02: Auth", "JWT refresh token family tracking for security"),
-        (12, "OTPVerifications", "Domain 02: Auth", "OTP verification codes for login & 2FA"),
-        (13, "PasswordResetTokens", "Domain 02: Auth", "Hashed tokens for password reset links"),
-        (14, "LoginHistory", "Domain 02: Security Audit", "Audit log of login success and failed attempts"),
-        (15, "UserDevices", "Domain 02: Auth & Push", "Mobile push notification device registration"),
-        (16, "UserPreferences", "Domain 02: User Config", "Personal UI theme, font size, and locale settings"),
-        (17, "EmergencyContacts", "Domain 02: User Config", "Emergency guardian/parent contact details"),
-        (18, "Menus", "Domain 03: Dynamic RBAC", "UI sidebar menu tree node (Parent → Child submenus)"),
-        (19, "PermissionGroups", "Domain 03: Dynamic RBAC", "Categorized grouping of atomic system permissions"),
-        (20, "Permissions", "Domain 03: Dynamic RBAC", "Atomic action permission (CREATE, EXPORT, APPROVE)"),
-        (21, "Roles", "Domain 03: Dynamic RBAC", "System and custom roles per tenant"),
-        (22, "RoleMenuVisibility", "Domain 03: Dynamic RBAC", "Junction mapping sidebar menu visibility to roles"),
-        (23, "RolePermissions", "Domain 03: Dynamic RBAC", "Junction mapping fine-grained permissions to roles"),
-        (24, "UserRoles", "Domain 03: Dynamic RBAC", "Scoped role assignments to users with date windows"),
-        (25, "StudentProfiles", "Domain 04: Profiles", "Academic student profile details"),
-        (26, "TutorProfiles", "Domain 04: Profiles", "Teaching credentials for Main & Backup Tutors"),
-        (27, "AssistantTutorProfiles", "Domain 04: Profiles", "Profile for doubt-clearing assistant tutors"),
-        (28, "CollegeAdminProfiles", "Domain 04: Profiles", "Administrative profile for college staff"),
-        (29, "SuperAdminProfiles", "Domain 04: Profiles", "ISML central super admin profile"),
-        (30, "Languages", "Domain 05: Languages", "Master table for foreign languages (French, German, etc.)"),
-        (31, "LanguageVariants", "Domain 05: Languages", "Regional dialects (Metropolitan vs Canadian French)"),
-        (32, "LanguageProficiencyLevels", "Domain 05: Languages", "CEFR framework bands (A1, A2, B1, B2, C1, C2)"),
-        (33, "LanguageSettings", "Domain 05: Languages", "Virtual keyboard accent characters & Speech STT locales"),
-        (34, "CourseCategories", "Domain 06: Courses", "Course classifications (European Languages, Exam Prep)"),
-        (35, "Courses", "Domain 06: Courses", "Master course entity (e.g. French A1)"),
-        (36, "CourseLevels", "Domain 06: Courses", "Framework level instance bound to a course"),
-        (37, "CourseSubLevels", "Domain 06: Courses", "Sub-level breakdowns (A1.1, A1.2)"),
-        (38, "CourseVersions", "Domain 06: Courses", "Version control for curriculum updates"),
-        (39, "CourseModules", "Domain 06: Courses", "Structural modules in 100-hour curriculum"),
-        (40, "CourseUnits", "Domain 06: Courses", "Structural sub-modules inside a module"),
-        (41, "Lessons", "Domain 06: Courses", "Individual learning lessons within a unit"),
-        (42, "Topics", "Domain 07: Curriculum", "Coverage topics inside a lesson"),
-        (43, "TopicItems", "Domain 07: Curriculum", "Granular texts, videos, audios, and exercises"),
-        (44, "LearningObjectives", "Domain 07: Curriculum", "Bloom's taxonomy objectives aligned with AI"),
-        (45, "CoursePrerequisites", "Domain 07: Curriculum", "Prerequisites required before taking a course"),
-        (46, "CourseDurationPatterns", "Domain 08: 3 Duration Patterns", "3 flexible pacing options (12Mo, 6Mo, 3Mo) for 1 course"),
-        (47, "PatternSchedules", "Domain 08: 3 Duration Patterns", "Weekly timetable templates per duration pattern"),
-        (48, "PatternPacingRules", "Domain 08: 3 Duration Patterns", "Target module coverage speed per pattern"),
-        (49, "Batches", "Domain 09: Batches", "Live webinar batch instance"),
-        (50, "BatchInstitutions", "Domain 09: Multi-College Batch", "Junction linking multiple partner colleges to 1 webinar batch"),
-        (51, "BatchSchedules", "Domain 09: Batches", "Weekly recurring days and times for webinar batch"),
-        (52, "BatchTutors", "Domain 09: Batches", "Assigned teaching team (Main, Backup, Assistant Tutors)"),
-        (53, "StudentBatchEnrollments", "Domain 09: Enrollment", "Student batch enrollment with 1-Year expiration date"),
-        (54, "EnrollmentHistory", "Domain 09: Enrollment", "Audit history of student enrollment status changes"),
-        (55, "Timetables", "Domain 10: Scheduling", "Master container for academic schedules"),
-        (56, "ScheduleEntries", "Domain 10: Scheduling", "Individual scheduled class occurrences"),
-        (57, "TutorAvailabilities", "Domain 10: Scheduling", "Tutor availability slots to prevent scheduling conflicts"),
-        (58, "Holidays", "Domain 10: Scheduling", "Institutional holidays blocking scheduled classes"),
-        (59, "ScheduleExceptions", "Domain 10: Scheduling", "Rescheduled or cancelled class overrides"),
-        (60, "CalendarEvents", "Domain 10: Scheduling", "Calendar feed entries for students and tutors"),
-        (61, "LiveClasses", "Domain 11: LiveKit Webinars", "Master live webinar session record"),
-        (62, "LiveSessions", "Domain 11: LiveKit Webinars", "Execution attempt of a live webinar session"),
-        (63, "LiveKitRooms", "Domain 11: LiveKit Webinars", "LiveKit cloud room credentials and connection tokens"),
-        (64, "LiveClassParticipants", "Domain 11: LiveKit Webinars", "Log of student and tutor connections in LiveKit room"),
-        (65, "LiveClassAccessLogs", "Domain 11: LiveKit Webinars", "Token verification access log for live sessions"),
-        (66, "AttendanceSessions", "Domain 11: Attendance", "Automated attendance calculated from LiveKit connection duration"),
-        (67, "ClassEvents", "Domain 11: LiveKit Webinars", "In-class event stream (polls, hand raises, alerts)"),
-        (68, "Recordings", "Domain 12: R2 Recordings", "Recording metadata tracking 24h upload SLA & 1Yr validity"),
-        (69, "RecordingFiles", "Domain 12: R2 Recordings", "Physical mp4 video files stored in Cloudflare R2"),
-        (70, "RecordingVersions", "Domain 12: R2 Recordings", "Transcoded resolution variants (1080p, 720p)"),
-        (71, "RecordingProcessingJobs", "Domain 12: R2 Recordings", "BullMQ queue jobs for video transcoding"),
-        (72, "RecordingAccessLogs", "Domain 12: R2 Recordings", "Student video watching duration analytics"),
-        (73, "RecordingViewingHistory", "Domain 12: R2 Recordings", "Detailed play/pause/seek event analytics"),
-        (74, "Resources", "Domain 13: Resources", "Master learning material entity (PDF, PPT, Audio)"),
-        (75, "ResourceFiles", "Domain 13: Resources", "Physical study files stored in Cloudflare R2"),
-        (76, "ResourceCategories", "Domain 13: Resources", "Categories for learning study materials"),
-        (77, "ResourceVersions", "Domain 13: Resources", "Version control for study materials"),
-        (78, "ResourceTags", "Domain 13: Resources", "Discovery tags for search"),
-        (79, "LessonResources", "Domain 13: Resources", "Junction linking resources to curriculum lessons"),
-        (80, "ListeningActivities", "Domain 14: LSRW Listening", "Listening practice activity master"),
-        (81, "ListeningAudios", "Domain 14: LSRW Listening", "Native speaker audio tracks with speed/accent controls"),
-        (82, "ListeningAttempts", "Domain 14: LSRW Listening", "Student listening activity attempt log"),
-        (83, "ListeningAnswers", "Domain 14: LSRW Listening", "Detailed answer breakdown for listening tasks"),
-        (84, "SpeakingActivities", "Domain 15: LSRW Speaking", "Speaking practice activity master"),
-        (85, "SpeakingPrompts", "Domain 15: LSRW Speaking", "Sentence/phrase prompt cards for voice recording"),
-        (86, "SpeakingAudioSubmissions", "Domain 15: LSRW Speaking", "Student recorded voice audio uploaded to R2"),
-        (87, "SpeakingAIEvaluations", "Domain 15: LSRW Speaking", "Whisper STT pronunciation & accuracy AI evaluation"),
-        (88, "ReadingActivities", "Domain 16: LSRW Reading", "Reading practice activity master"),
-        (89, "ReadingPassages", "Domain 16: LSRW Reading", "Reading passage text and vocabulary notes"),
-        (90, "ReadingQuestions", "Domain 16: LSRW Reading", "Questions based on reading passages"),
-        (91, "ReadingAttempts", "Domain 16: LSRW Reading", "Student reading comprehension attempt log"),
-        (92, "WritingActivities", "Domain 17: LSRW Writing", "Writing practice activity master"),
-        (93, "WritingPrompts", "Domain 17: LSRW Writing", "Essay/prose composition prompt"),
-        (94, "WritingSubmissions", "Domain 17: LSRW Writing", "Student typed submission using virtual accent keyboard"),
-        (95, "WritingAIEvaluations", "Domain 17: LSRW Writing", "AI grammar, spelling, and vocabulary evaluation"),
-        (96, "VirtualKeyboardConfigs", "Domain 17: LSRW Writing", "Dynamic accent keyboard layout matrix per language"),
-        (97, "Assignments", "Domain 18: Assignments", "Homework assignment master"),
-        (98, "AssignmentQuestions", "Domain 18: Assignments", "Questions within an assignment"),
-        (99, "AssignmentSubmissions", "Domain 18: Assignments", "Student homework submission"),
-        (100, "SubmissionFiles", "Domain 18: Assignments", "Attachment files uploaded with homework"),
-        (101, "AssignmentGradings", "Domain 18: Assignments", "Question-level grade breakdown by tutor"),
-        (102, "QuestionBanks", "Domain 19: Question Bank", "Master question repository per course/language"),
-        (103, "Questions", "Domain 19: Question Bank", "Individual question item (MCQ, Fill in blanks, LSRW)"),
-        (104, "QuestionOptions", "Domain 19: Question Bank", "Multiple choice options for questions"),
-        (105, "QuestionExplanations", "Domain 19: Question Bank", "Audio/Video/Text solutions for questions"),
-        (106, "QuestionTags", "Domain 19: Question Bank", "Subject matter tags for questions"),
-        (107, "QuestionDifficultyLevels", "Domain 19: Question Bank", "Scoring weightage per difficulty band"),
-        (108, "Exams", "Domain 20: Examinations", "Examination master record"),
-        (109, "ExamSections", "Domain 20: Examinations", "Structural sections inside an exam"),
-        (110, "ExamSchedules", "Domain 20: Examinations", "Active window of time for an exam"),
-        (111, "ExamAttempts", "Domain 20: Examinations", "Student exam attempt with proctoring logs"),
-        (112, "StudentExamAnswers", "Domain 20: Examinations", "Detailed student answers submitted in exam"),
-        (113, "ExamResults", "Domain 20: Examinations", "Final published exam result report card"),
-        (114, "TutorReviews", "Domain 20: Examinations", "Manual grade adjustments by tutors"),
-        (115, "CertificateTemplates", "Domain 21: Certification", "SVG/HTML digital certificate template"),
-        (116, "Certificates", "Domain 21: Certification", "Issued digital certificate with unique QR code"),
-        (117, "CertificateIssuances", "Domain 21: Certification", "Automated course completion issuance log"),
-        (118, "CertificateVerifications", "Domain 21: Certification", "Public QR code verification scan audit"),
-        (119, "CertificateDownloads", "Domain 21: Certification", "Analytics for PDF certificate downloads"),
-        (120, "AIAgents", "Domain 22: AI Platform", "Registration for Python FastAPI AI Agents"),
-        (121, "AgentVersions", "Domain 22: AI Platform", "Version control for AI agent code and prompts"),
-        (122, "AgentConfigurations", "Domain 22: AI Platform", "Temperature, max tokens, system prompts for agents"),
-        (123, "AITasks", "Domain 22: AI Platform", "Task queue for async background AI processing"),
-        (124, "AIExecutions", "Domain 22: AI Platform", "Runtime execution log for AI agents"),
-        (125, "AIEvaluations", "Domain 22: AI Platform", "Quality rating of AI responses by tutors"),
-        (126, "AIRequests", "Domain 23: AI Audit", "API request log to LLM providers (OpenAI, Claude)"),
-        (127, "AIResponses", "Domain 23: AI Audit", "Raw AI response payload and latency"),
-        (128, "AIProviders", "Domain 23: AI Audit", "Supported LLM providers"),
-        (129, "AIModels", "Domain 23: AI Audit", "Specific AI models and token costs"),
-        (130, "TokenUsageLogs", "Domain 23: AI Audit", "Daily token consumption aggregation per college"),
-        (131, "PromptTemplates", "Domain 24: AI Prompts", "Base prompt templates for AI agents"),
-        (132, "PromptVersions", "Domain 24: AI Prompts", "Prompt engineering version history"),
-        (133, "AIGeneratedContents", "Domain 24: AI Approvals", "Generated materials awaiting tutor approval"),
-        (134, "ContentApprovals", "Domain 24: AI Approvals", "Review and approval log by Main Tutors"),
-        (135, "KnowledgeBases", "Domain 25: RAG & Vector", "Vector store container per course/language"),
-        (136, "KnowledgeSources", "Domain 25: RAG & Vector", "Ingested document sources (PDF, PPT, Audio)"),
-        (137, "KnowledgeDocuments", "Domain 25: RAG & Vector", "Processed document files"),
-        (138, "DocumentChunks", "Domain 25: RAG & Vector", "Text chunking output for vector embedding"),
-        (139, "DocumentEmbeddings", "Domain 25: RAG & Vector", "pgvector 1536-dimensional vector embedding store"),
-        (140, "RAGQueries", "Domain 25: RAG & Vector", "Student RAG query and retrieved chunk matches"),
-        (141, "MCPServers", "Domain 26: MCP Protocol", "Registered Model Context Protocol servers"),
-        (142, "MCPTools", "Domain 26: MCP Protocol", "Tools exposed by MCP servers for AI agents"),
-        (143, "MCPConnections", "Domain 26: MCP Protocol", "Active sessions between AI Agents and MCP tools"),
-        (144, "MCPExecutionLogs", "Domain 26: MCP Protocol", "Log of tool execution calls via MCP"),
-        (145, "PaymentProviders", "Domain 27: Payments", "Payment provider setup (Razorpay, Stripe)"),
-        (146, "PaymentOrders", "Domain 27: Payments", "Pre-payment order request record"),
-        (147, "PaymentTransactions", "Domain 27: Payments", "Captured financial payment transaction log"),
-        (148, "PaymentAttempts", "Domain 27: Payments", "Log of payment attempts made by users"),
-        (149, "PaymentWebhooks", "Domain 27: Payments", "Idempotency log for Razorpay webhook event delivery"),
-        (150, "PaymentReceipts", "Domain 27: Payments", "Issued tax/payment receipt details"),
-        (151, "Invoices", "Domain 28: Billing", "B2B enterprise GST tax invoice for colleges"),
-        (152, "SubscriptionPlans", "Domain 28: Billing", "SaaS pricing tiers for institutions"),
-        (153, "Subscriptions", "Domain 28: Billing", "Active subscription plan for an institution"),
-        (154, "BillingRecords", "Domain 28: Billing", "Historical ledger of institution billing events"),
-        (155, "InstitutionPayments", "Domain 28: Billing", "Offline/wire payments submitted by college admins"),
-        (156, "Notifications", "Domain 29: Notifications", "User notification message inbox"),
-        (157, "NotificationTemplates", "Domain 29: Notifications", "Multi-channel notification templates"),
-        (158, "NotificationPreferences", "Domain 29: Notifications", "User-specific channel delivery preferences"),
-        (159, "NotificationChannels", "Domain 29: Notifications", "Provider setup for SMS, Email, WhatsApp, Push"),
-        (160, "DeliveryLogs", "Domain 29: Notifications", "Gateway delivery status logs"),
-        (161, "NotificationEvents", "Domain 29: Notifications", "Automated system event triggers for notifications"),
-        (162, "AcademicConversations", "Domain 30: Academic Chat", "Doubt chat thread between student & assistant tutors"),
-        (163, "AcademicChatMembers", "Domain 30: Academic Chat", "Members in an academic doubt thread"),
-        (164, "AcademicChatMessages", "Domain 30: Academic Chat", "Messages sent in an academic doubt chat"),
-        (165, "DoubtTickets", "Domain 30: Academic Chat", "Ticket assigned to specific Assistant Tutor"),
-        (166, "DoubtResponses", "Domain 30: Academic Chat", "AI Tutor suggested answer for doubt tickets"),
-        (167, "SupportTickets", "Domain 31: Helpdesk", "Platform technical support ticket"),
-        (168, "TicketCategories", "Domain 31: Helpdesk", "Category and SLA resolution rules for support"),
-        (169, "TicketMessages", "Domain 31: Helpdesk", "Messages inside a technical support ticket"),
-        (170, "TicketAttachments", "Domain 31: Helpdesk", "Screenshots or logs attached to support tickets"),
-        (171, "TicketAssignments", "Domain 31: Helpdesk", "Support agent assigned to ticket"),
-        (172, "TicketStatusHistory", "Domain 31: Helpdesk", "Status change log for technical support tickets"),
-        (173, "CareerPrograms", "Domain 32: Career Portal", "Career assistance and interview prep program"),
-        (174, "CareerResources", "Domain 32: Career Portal", "Placement resources (resumes, interview guides)"),
-        (175, "Companies", "Domain 32: Career Portal", "Partner companies hiring foreign language graduates"),
-        (176, "JobOpportunities", "Domain 32: Career Portal", "Job postings for language students"),
-        (177, "StudentCareerProfiles", "Domain 32: Career Portal", "Career profile and resume uploaded by student"),
-        (178, "JobApplications", "Domain 32: Career Portal", "Student job application tracking"),
-        (179, "StudentCourseProgress", "Domain 33: Progress", "Course completion metrics per student"),
-        (180, "ActivityProgressLogs", "Domain 33: Progress", "Activity completion log with time spent"),
-        (181, "LSRWProgressSummaries", "Domain 33: Progress", "Competency breakdown across LSRW skills"),
-        (182, "LearningStreaks", "Domain 33: Progress", "Daily gamified learning streak tracker"),
-        (183, "StudentAchievements", "Domain 33: Progress", "Badges and milestones earned by student"),
-        (184, "BatchAnalytics", "Domain 34: Analytics", "Attendance and exam score metrics per batch"),
-        (185, "ExamAnalytics", "Domain 34: Analytics", "Difficulty and pass rate analytics per exam"),
-        (186, "AIUsageAnalytics", "Domain 34: Analytics", "Daily LLM token cost analytics per college"),
-        (187, "InstitutionReports", "Domain 34: Analytics", "Executive PDF/Excel summary reports for principals"),
-        (188, "AuditLogs", "Domain 35: Security Audit", "Low-level data mutation audit trail"),
-        (189, "LoginLogs", "Domain 35: Security Audit", "Dedicated security log for user logins"),
-        (190, "SecurityEvents", "Domain 35: Security Audit", "Security alerts for brute force or RLS violations"),
-        (191, "APIAccessLogs", "Domain 35: Security Audit", "API endpoint response time and status log"),
-        (192, "PermissionChangeLogs", "Domain 35: Security Audit", "Audit trail of RBAC role/permission edits"),
-        (193, "SystemSettings", "Domain 36: System Config", "Global platform runtime configuration"),
-        (194, "FeatureFlags", "Domain 36: System Config", "System feature toggles and rollout rules"),
-        (195, "MaintenanceWindows", "Domain 36: System Config", "Scheduled downtime windows")
-    ]
-
-    t_inv = doc.add_table(rows=1, cols=4)
-    format_table_headers_and_rows(t_inv, [0.5, 2.0, 1.8, 2.2], inv_headers, raw_models)
-    doc.add_paragraph().paragraph_format.space_after = Pt(12)
-
-    # -------------------------------------------------------------
-    # 4. Master Architectural Relationship Map
-    # -------------------------------------------------------------
-    add_heading1("4. Master Architectural Relationship Map")
+    add_heading1("3. Master Architectural Relationship Map")
     add_callout_box(
         "🗺️ MASTER SYSTEM ARCHITECTURE TREE",
         "[Institutions (Root B2B Partner College)]\n"
@@ -515,151 +300,254 @@ def create_document():
     doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
     # -------------------------------------------------------------
-    # 5. Domain-by-Domain Detailed Explanations & Tables (36 DOMAINS)
+    # 4. Domain-by-Domain Executive Briefing Cards (36 DOMAINS)
     # -------------------------------------------------------------
-    add_heading1("5. Domain-by-Domain Non-Technical Explanations & Cardinality Tables")
+    add_heading1("4. Strategic Business Subsystems & Domain Specifications (All 36 Domains)")
 
-    domains_cardinality = [
-        ("ERD 01 – Organization & Tenant Management (8 Models)", 
+    p_cards_intro = doc.add_paragraph()
+    p_cards_intro.add_run(
+        "The ISML LMS database is organized into 36 decoupled functional domains across 8 core subsystems. "
+        "Each domain below provides a plain-language executive explanation of its business purpose, "
+        "a bulleted breakdown of its underlying database models, and an explicit cardinality relationship diagram."
+    ).font.size = Pt(12)
+
+    domains_data = [
+        ("Domain 01: Multi-Tenant Organization Architecture (8 Models)",
          "This domain serves as the foundational multi-tenant boundary for the entire platform. In a B2B SaaS LMS model, partner universities (such as Anna University or IIT Madras) register as master Institutions. Each institution operates physical Campuses, academic Departments, and Academic Years. The system provides white-label custom domain routing (e.g. lms.annauniv.edu) and isolated InstitutionBranding (custom logo, favicons, primary color theme) so each partner college maintains its unique institutional identity. InstitutionSettings controls portal session timeouts, 2FA policies, and login security.",
          [
-             ["Institutions", "Campuses", "One-to-Many (1:N)", "Campuses.tenantId → Institutions.id", "One university operates multiple physical campus branches."],
-             ["Institutions", "Departments", "One-to-Many (1:N)", "Departments.tenantId → Institutions.id", "One university owns multiple academic departments."],
-             ["Institutions", "AcademicYears", "One-to-Many (1:N)", "AcademicYears.tenantId → Institutions.id", "One university manages academic calendar years."],
-             ["Institutions", "InstitutionSettings", "One-to-One (1:1)", "InstitutionSettings.tenantId → Institutions.id", "One university has 1 portal timeout/security configuration."],
-             ["Institutions", "InstitutionDomains", "One-to-Many (1:N)", "InstitutionDomains.tenantId → Institutions.id", "One university can route custom white-label domain names."],
-             ["Institutions", "InstitutionSubscriptions", "One-to-Many (1:N)", "InstitutionSubscriptions.tenantId → Institutions.id", "Billing history of SaaS enterprise contracts for a college."],
-             ["Institutions", "InstitutionBranding", "One-to-One (1:1)", "InstitutionBranding.tenantId → Institutions.id", "Custom logo, favicons, primary colors, and custom CSS."]
-         ]),
-        ("ERD 02 – User Identity & Authentication (9 Models)",
+             ("Institutions", "Root B2B partner university tenant container holding billing and master settings."),
+             ("Campuses", "Physical campus branches of a university (e.g., Guindy Campus, Chromepet Campus)."),
+             ("Departments", "Academic departments operating within a university campus."),
+             ("AcademicYears", "Calendar year academic sessions (e.g., 2026-2027 Academic Year)."),
+             ("InstitutionSettings", "Portal security, session timeout rules, and two-factor authentication configuration."),
+             ("InstitutionDomains", "White-label custom domain name routing (e.g., lms.annauniv.edu)."),
+             ("InstitutionSubscriptions", "B2B SaaS enterprise contract details, active student limits, and renewal dates."),
+             ("InstitutionBranding", "White-label custom logo, favicons, primary colors, and custom CSS theme overrides.")
+         ],
+         "  [Institutions] (1) ─── (N) ──► [Campuses]\n"
+         "  [Institutions] (1) ─── (N) ──► [Departments]\n"
+         "  [Institutions] (1) ─── (1) ──► [InstitutionSettings]\n"
+         "  [Institutions] (1) ─── (1) ──► [InstitutionBranding]\n"
+         "  [Institutions] (1) ─── (N) ──► [InstitutionDomains]"),
+
+        ("Domain 02: User Identity & Authentication (9 Models)",
          "The User Identity domain acts as the single source of truth for every individual on the platform — whether they are a student, main tutor, backup tutor, college administrator, or super admin. Accounts are strictly bound to their partner college via tenantId. Security is enforced through multi-device UserSessions, JWT token family rotation via RefreshTokens, OTPVerifications for two-factor authentication, and PasswordResetTokens. Detailed audit logs are preserved in LoginHistory to track IP addresses and login timestamps for security compliance, while UserDevices registers mobile push notification tokens.",
          [
-             ["Institutions", "Users", "One-to-Many (1:N)", "Users.tenantId → Institutions.id", "All user accounts belong to a specific partner college."],
-             ["Users", "UserSessions", "One-to-Many (1:N)", "UserSessions.userId → Users.id", "One user can stay logged in on multiple web/mobile devices."],
-             ["UserSessions", "RefreshTokens", "One-to-Many (1:N)", "RefreshTokens.sessionId → UserSessions.id", "Token family rotation prevents token theft."],
-             ["Users", "LoginHistory", "One-to-Many (1:N)", "LoginHistory.userId → Users.id", "Logs user IP address, browser name, and login timestamp."],
-             ["Users", "UserDevices", "One-to-Many (1:N)", "UserDevices.userId → Users.id", "Registered FCM push notification device tokens."],
-             ["Users", "UserPreferences", "One-to-One (1:1)", "UserPreferences.userId → Users.id", "Per-user light/dark mode and language preferences."],
-             ["Users", "EmergencyContacts", "One-to-Many (1:N)", "EmergencyContacts.userId → Users.id", "Guardian or parent contact details for students."]
-         ]),
-        ("ERD 03 – Dynamic Menu-Based RBAC Engine (6 Models)",
+             ("Users", "Central account identity for all users (students, tutors, admins)."),
+             ("UserSessions", "Active user login sessions across web and mobile applications."),
+             ("RefreshTokens", "JWT refresh token family tracking for secure token rotation."),
+             ("OTPVerifications", "One-time password verification codes for logins and 2FA."),
+             ("PasswordResetTokens", "Secure hashed token links for password recovery."),
+             ("LoginHistory", "Security audit log of login success and failed attempt IPs."),
+             ("UserDevices", "Registered mobile devices for FCM push notifications."),
+             ("UserPreferences", "Personal dark/light theme, font size, and locale settings."),
+             ("EmergencyContacts", "Guardian or parent emergency contact details for enrolled students.")
+         ],
+         "  [Institutions] (1) ─── (N) ──► [Users]\n"
+         "  [Users] (1) ─── (N) ──► [UserSessions] ─── (N) ──► [RefreshTokens]\n"
+         "  [Users] (1) ─── (N) ──► [LoginHistory]\n"
+         "  [Users] (1) ─── (1) ──► [UserPreferences]"),
+
+        ("Domain 03: Dynamic Menu-Based RBAC Engine (6 Models)",
          "Role-Based Access Control (RBAC) in ISML LMS is 100% database-driven to provide maximum enterprise flexibility. Instead of hard-coding sidebar links or permissions in frontend code, the Menus table stores a full hierarchical navigation tree. System administrators can dynamically create custom roles (e.g., Senior Evaluator, Registrar) in the Roles table, map which menu items are visible using RoleMenuVisibility, and grant granular action permissions (such as student.create, exam.export, certificate.approve) using RolePermissions. Users are assigned roles with start and end dates via UserRoles.",
          [
-             ["Menus", "Menus", "One-to-Many (1:N)", "Menus.parentId → Menus.id", "Hierarchical sidebar menu tree (e.g. LSRW Engine → Speaking Practice)."],
-             ["Roles", "Menus", "Many-to-Many (N:M)", "RoleMenuVisibility (roleId, menuId)", "Grants sidebar menu visibility to a specific role."],
-             ["Roles", "Permissions", "Many-to-Many (N:M)", "RolePermissions (roleId, permissionId)", "Grants atomic actions (CREATE, EXPORT, APPROVE) to a role."],
-             ["Users", "Roles", "Many-to-Many (N:M)", "UserRoles (userId, roleId)", "Assigns roles to users with effective date windows."]
-         ]),
-        ("ERD 04 – User Profiles (5 Models)",
+             ("Menus", "Hierarchical sidebar menu navigation tree (Parent -> Submenu)."),
+             ("PermissionGroups", "Categorized groupings of atomic system action permissions."),
+             ("Permissions", "Atomic action permissions (e.g. CREATE, READ, EXPORT, APPROVE)."),
+             ("Roles", "System-predefined and custom tenant roles."),
+             ("RoleMenuVisibility", "Junction mapping controlling which sidebar menus a role can view."),
+             ("RolePermissions", "Junction mapping atomic action capabilities to roles."),
+             ("UserRoles", "Dynamic assignment of roles to users with effective date windows.")
+         ],
+         "  [Menus] (1) ─── (N) ──► [Menus (Submenus)]\n"
+         "  [Roles] (N) ◄─── [RoleMenuVisibility] ───► (M) [Menus]\n"
+         "  [Roles] (N) ◄─── [RolePermissions] ───► (M) [Permissions]\n"
+         "  [Users] (N) ◄─── [UserRoles] ───► (M) [Roles]"),
+
+        ("Domain 04: User Profiles (5 Models)",
          "While the generic Users table handles account identity and authentication, specific profile tables extend account details according to user roles. StudentProfiles maintains student roll numbers, DOB, gender, blood group, and academic standing. TutorProfiles records teaching qualifications, ratings, total hours taught, and substitute eligibility for Main and Backup Tutors. AssistantTutorProfiles manages doubt-clearing capacity for Assistant Tutors, while CollegeAdminProfiles and SuperAdminProfiles store administrative credentials.",
          [
-             ["Users", "StudentProfiles", "One-to-One (1:1)", "StudentProfiles.userId → Users.id", "Holds student code, DOB, gender, blood group, academic status."],
-             ["Users", "TutorProfiles", "One-to-One (1:1)", "TutorProfiles.userId → Users.id", "Holds tutor qualification, rating, classes taught, backup eligibility."],
-             ["Users", "AssistantTutorProfiles", "One-to-One (1:1)", "AssistantTutorProfiles.userId → Users.id", "Holds assistant tutor assigned colleges and doubt capacity limits."],
-             ["Users", "CollegeAdminProfiles", "One-to-One (1:1)", "CollegeAdminProfiles.userId → Users.id", "Administrative profile for college principals/staff."],
-             ["Users", "SuperAdminProfiles", "One-to-One (1:1)", "SuperAdminProfiles.userId → Users.id", "ISML master administration profile."]
-         ]),
-        ("ERD 05 – Foreign Languages Engine (4 Models)",
+             ("StudentProfiles", "Academic profile holding student roll numbers, DOB, gender, and academic status."),
+             ("TutorProfiles", "Teaching credentials, ratings, hours taught, and backup eligibility for tutors."),
+             ("AssistantTutorProfiles", "Capacity and assigned colleges for doubt-clearing assistant tutors."),
+             ("CollegeAdminProfiles", "Administrative profile for college principals and administrative staff."),
+             ("SuperAdminProfiles", "ISML central super administration profile.")
+         ],
+         "  [Users] (1) ─── (1) ──► [StudentProfiles]\n"
+         "  [Users] (1) ─── (1) ──► [TutorProfiles]\n"
+         "  [Users] (1) ─── (1) ──► [AssistantTutorProfiles]\n"
+         "  [Users] (1) ─── (1) ──► [CollegeAdminProfiles]"),
+
+        ("Domain 05: Foreign Languages Engine (4 Models)",
          "The Foreign Languages domain provides a dynamic master configuration for teaching non-English languages. Launching initially with French (A1), the database schema is architected to dynamically onboard German, Japanese, Spanish, and IELTS without database schema changes. LanguageVariants tracks regional dialects (e.g., Metropolitan French vs Canadian French), while LanguageProficiencyLevels establishes CEFR framework bands (A1, A2, B1, B2, C1, C2). LanguageSettings configures virtual accent keyboard layouts and speech recognition locales.",
          [
-             ["Languages", "LanguageVariants", "One-to-Many (1:N)", "LanguageVariants.languageId → Languages.id", "Regional dialects (Metropolitan French vs Canadian French)."],
-             ["Languages", "LanguageProficiencyLevels", "One-to-Many (1:N)", "LanguageProficiencyLevels.languageId → Languages.id", "CEFR proficiency bands (A1, A2, B1, B2, C1, C2)."],
-             ["Languages", "LanguageSettings", "One-to-One (1:1)", "LanguageSettings.languageId → Languages.id", "Virtual accent keyboard overlay & Speech STT locales (fr-FR)."],
-             ["Languages", "Courses", "One-to-Many (1:N)", "Courses.languageId → Languages.id", "Master language entity powering language courses."]
-         ]),
-        ("ERD 06 & 07 – Course Architecture & Curriculum (12 Models)",
+             ("Languages", "Master table for foreign languages (French, German, Japanese, Spanish)."),
+             ("LanguageVariants", "Regional dialects (Metropolitan French vs Canadian French)."),
+             ("LanguageProficiencyLevels", "CEFR framework proficiency bands (A1, A2, B1, B2, C1, C2)."),
+             ("LanguageSettings", "Virtual accent keyboard characters & Speech STT locales (fr-FR).")
+         ],
+         "  [Languages] (1) ─── (N) ──► [LanguageVariants]\n"
+         "  [Languages] (1) ─── (N) ──► [LanguageProficiencyLevels]\n"
+         "  [Languages] (1) ─── (1) ──► [LanguageSettings]\n"
+         "  [Languages] (1) ─── (N) ──► [Courses]"),
+
+        ("Domain 06 & 07: Course Architecture & Curriculum Hierarchy (12 Models)",
          "The academic structure of language courses is modeled as a 7-tier hierarchical tree: Course -> CourseLevel (e.g. A1) -> CourseSubLevel (A1.1, A1.2) -> CourseModule -> CourseUnit -> Lesson -> Topic -> TopicItem. A 100-hour French A1 syllabus is structured into structural modules and thematic units. TopicItems stores individual learning elements (grammatical explanations, vocabulary audio, reading passages, LSRW practice tasks). LearningObjectives aligns Bloom's taxonomy objectives for automated AI evaluation.",
          [
-             ["CourseCategories", "Courses", "One-to-Many (1:N)", "Courses.categoryId → CourseCategories.id", "Classifies courses into categories (European Languages, Exam Prep)."],
-             ["Courses", "CourseLevels", "One-to-Many (1:N)", "CourseLevels.courseId → Courses.id", "CEFR framework level instances bound to a course."],
-             ["CourseLevels", "CourseSubLevels", "One-to-Many (1:N)", "CourseSubLevels.levelId → CourseLevels.id", "Sub-level breakdowns (A1.1, A1.2)."],
-             ["Courses", "CourseModules", "One-to-Many (1:N)", "CourseModules.courseId → Courses.id", "Structural modules in the 100-hour curriculum."],
-             ["CourseModules", "CourseUnits", "One-to-Many (1:N)", "CourseUnits.moduleId → CourseModules.id", "Sub-modules inside a module."],
-             ["CourseUnits", "Lessons", "One-to-Many (1:N)", "Lessons.unitId → CourseUnits.id", "Individual learning lessons within a unit."],
-             ["Lessons", "Topics", "One-to-Many (1:N)", "Topics.lessonId → Lessons.id", "Specific coverage topics inside a lesson."],
-             ["Topics", "TopicItems", "One-to-Many (1:N)", "TopicItems.topicId → Topics.id", "Granular texts, videos, audios, and exercises."]
-         ]),
-        ("ERD 08 – Course Duration Patterns (3 Models)",
+             ("CourseCategories", "High-level classification of courses (European Languages, Exam Prep)."),
+             ("Courses", "Master course entity (e.g., French A1 Master Course)."),
+             ("CourseLevels", "CEFR level instance bound to a course."),
+             ("CourseSubLevels", "Sub-level breakdowns (A1.1, A1.2)."),
+             ("CourseVersions", "Version control for curriculum updates."),
+             ("CourseModules", "Structural modules in the 100-hour curriculum."),
+             ("CourseUnits", "Sub-modules inside a course module."),
+             ("Lessons", "Individual learning lessons within a unit."),
+             ("Topics", "Specific coverage topics inside a lesson."),
+             ("TopicItems", "Granular texts, audios, videos, and exercises."),
+             ("LearningObjectives", "Bloom's taxonomy objectives aligned with AI evaluation."),
+             ("CoursePrerequisites", "Prerequisites required before taking a course.")
+         ],
+         "  [CourseCategories] (1) ─── (N) ──► [Courses]\n"
+         "  [Courses] (1) ─── (N) ──► [CourseLevels] ─── (N) ──► [CourseSubLevels]\n"
+         "  [Courses] (1) ─── (N) ──► [CourseModules] ─── (N) ──► [CourseUnits]\n"
+         "  [CourseUnits] (1) ─── (N) ──► [Lessons] ─── (N) ──► [Topics] ─── (N) ──► [TopicItems]"),
+
+        ("Domain 08: Course Duration Patterns (3 Models)",
          "A core B2B feature of ISML LMS is supporting 3 flexible duration pacing options for the EXACT SAME 100-hour course content: Option 1 (12 Months - 1 day/week, 2 hrs/day), Option 2 (6 Months - 2 days/week, 2 hrs/day), and Option 3 (3 Months - 3 days/week, 2 hrs/day). CourseDurationPatterns maps the course to pacing models, PatternSchedules defines weekly timetable templates, and PatternPacingRules establishes target module coverage speeds so colleges can select their preferred pacing without duplicating course content.",
          [
-             ["Courses", "CourseDurationPatterns", "One-to-Many (1:N)", "CourseDurationPatterns.courseId → Courses.id", "100-Hour course mapped to 12Mo, 6Mo, or 3Mo pacing options."],
-             ["CourseDurationPatterns", "PatternSchedules", "One-to-Many (1:N)", "PatternSchedules.patternId → CourseDurationPatterns.id", "Timetable rules per duration pattern option."],
-             ["CourseDurationPatterns", "PatternPacingRules", "One-to-Many (1:N)", "PatternPacingRules.patternId → CourseDurationPatterns.id", "Module target completion speed per pattern."],
-             ["CourseDurationPatterns", "Batches", "One-to-Many (1:N)", "Batches.durationPatternId → CourseDurationPatterns.id", "Webinar batch instantiated with a specific duration pattern."]
-         ]),
-        ("ERD 09 – Multi-College Batches & Enrollment (6 Models)",
+             ("CourseDurationPatterns", "Pacing options (12Mo, 6Mo, 3Mo) mapped to a 100-hour course."),
+             ("PatternSchedules", "Weekly timetable templates per duration pattern option."),
+             ("PatternPacingRules", "Module target completion speed per duration pattern.")
+         ],
+         "  [Courses] (1) ─── (N) ──► [CourseDurationPatterns]\n"
+         "  [CourseDurationPatterns] (1) ─── (N) ──► [PatternSchedules]\n"
+         "  [CourseDurationPatterns] (1) ─── (N) ──► [PatternPacingRules]\n"
+         "  [CourseDurationPatterns] (1) ─── (N) ──► [Batches]"),
+
+        ("Domain 09: Multi-College Batches & Enrollment (6 Models)",
          "To maximize tutor efficiency, ISML LMS decouples webinar batches from individual colleges. Students from multiple partner universities (e.g. Chennai, Mumbai, Delhi) attend the SAME live webinar batch simultaneously. The BatchInstitutions junction table links multiple colleges to a batch while preserving student privacy and billing boundaries. BatchTutors assigns the teaching team (1 Main Tutor, 1 Backup Tutor, 4 Assistant Tutors). StudentBatchEnrollments manages student enrollments with a strict 1-Year access expiration date.",
          [
-             ["Batches", "Institutions", "Many-to-Many (N:M)", "BatchInstitutions (batchId, institutionId)", "Multiple colleges attend the SAME webinar batch."],
-             ["Batches", "Users (Tutors)", "Many-to-Many (N:M)", "BatchTutors (batchId, tutorUserId)", "Teaching team assigned to batch (Main, Backup, Assistant Tutors)."],
-             ["Batches", "StudentBatchEnrollments", "One-to-Many (1:N)", "StudentBatchEnrollments.batchId → Batches.id", "Enrolls students with 1-Year access expiration date."],
-             ["StudentBatchEnrollments", "EnrollmentHistory", "One-to-Many (1:N)", "EnrollmentHistory.enrollmentId → StudentBatchEnrollments.id", "Audit log of student enrollment status changes."]
-         ]),
-        ("ERD 11 & 12 – LiveKit Webinars & Cloudflare R2 Recordings (13 Models)",
+             ("Batches", "Live webinar batch instance."),
+             ("BatchInstitutions", "Junction linking multiple partner colleges to 1 webinar batch."),
+             ("BatchSchedules", "Weekly recurring days and times for webinar classes."),
+             ("BatchTutors", "Assigned teaching team (Main Tutor, Backup Tutor, Assistant Tutors)."),
+             ("StudentBatchEnrollments", "Student batch enrollment with 1-Year expiration date."),
+             ("EnrollmentHistory", "Audit log of student enrollment status changes.")
+         ],
+         "  [Batches] (N) ◄─── [BatchInstitutions] ───► (M) [Institutions]\n"
+         "  [Batches] (N) ◄─── [BatchTutors] ───► (M) [Users (Tutors)]\n"
+         "  [Batches] (1) ─── (N) ──► [StudentBatchEnrollments] ─── (N) ──► [EnrollmentHistory]"),
+
+        ("Domain 11 & 12: LiveKit Webinars & Cloudflare R2 Recordings Pipeline (13 Models)",
          "Live webinar classes are conducted via LiveKit Cloud WebRTC streams (LiveClasses -> LiveSessions -> LiveKitRooms). AttendanceSessions automatically calculates student attendance based on connection stay duration. When a live class ends, LiveKit triggers a webhook, BullMQ queues RecordingProcessingJobs, and transcoded mp4 video files are uploaded to Cloudflare R2 storage within a 24-hour SLA. Students maintain portal access to watch recordings anytime for 1 Year (RecordingAccessLogs).",
          [
-             ["Batches", "LiveClasses", "One-to-Many (1:N)", "LiveClasses.batchId → Batches.id", "Scheduled live webinar class occurrence for a batch."],
-             ["LiveClasses", "LiveSessions", "One-to-Many (1:N)", "LiveSessions.liveClassId → LiveClasses.id", "Specific execution attempt of a live webinar session."],
-             ["LiveSessions", "LiveKitRooms", "One-to-One (1:1)", "LiveKitRooms.sessionId → LiveSessions.id", "LiveKit cloud room credentials and connection tokens."],
-             ["LiveSessions", "LiveClassParticipants", "One-to-Many (1:N)", "LiveClassParticipants.sessionId → LiveSessions.id", "Log of student and tutor connections in LiveKit room."],
-             ["LiveClasses", "AttendanceSessions", "One-to-Many (1:N)", "AttendanceSessions.liveClassId → LiveClasses.id", "Automated student attendance derived from connection time."],
-             ["LiveClasses", "Recordings", "One-to-Many (1:N)", "Recordings.liveClassId → LiveClasses.id", "Master recording metadata record for a live session."],
-             ["Recordings", "RecordingFiles", "One-to-Many (1:N)", "RecordingFiles.recordingId → Recordings.id", "Physical mp4 video files stored in Cloudflare R2 bucket."],
-             ["Recordings", "RecordingAccessLogs", "One-to-Many (1:N)", "RecordingAccessLogs.recordingId → Recordings.id", "Student video watching duration analytics."]
-         ]),
-        ("ERD 14-17 – LSRW Practice & AI Speech Evaluation (17 Models)",
+             ("LiveClasses", "Scheduled live webinar class occurrence for a batch."),
+             ("LiveSessions", "Execution attempt of a live webinar session."),
+             ("LiveKitRooms", "LiveKit cloud room credentials and connection tokens."),
+             ("LiveClassParticipants", "Log of student and tutor connections in LiveKit room."),
+             ("AttendanceSessions", "Automated student attendance calculated from connection duration."),
+             ("Recordings", "Recording metadata tracking 24h upload SLA & 1Yr validity."),
+             ("RecordingFiles", "Physical mp4 video files stored in Cloudflare R2 bucket."),
+             ("RecordingProcessingJobs", "BullMQ queue jobs for video transcoding pipeline."),
+             ("RecordingAccessLogs", "Student video watching duration analytics.")
+         ],
+         "  [Batches] (1) ─── (N) ──► [LiveClasses] ─── (N) ──► [LiveSessions] ─── (1) ──► [LiveKitRooms]\n"
+         "  [LiveSessions] (1) ─── (N) ──► [LiveClassParticipants]\n"
+         "  [LiveClasses] (1) ─── (N) ──► [AttendanceSessions]\n"
+         "  [LiveClasses] (1) ─── (N) ──► [Recordings] ─── (N) ──► [RecordingFiles] (R2 Storage)"),
+
+        ("Domain 14-17: LSRW Practice & AI Speech Evaluation (17 Models)",
          "Language acquisition requires Listening, Speaking, Reading, and Writing practice. ListeningActivities provides audio tracks with speed controls (0.75x, 1x, 1.25x). SpeakingPrompts allows students to record voice audio on mobile/desktop -> saved to R2 -> evaluated by Python Whisper STT AI (SpeakingAIEvaluations) for pronunciation accuracy. WritingActivities features VirtualKeyboardConfigs for accent typing (é, è, à, ç) evaluated by AI grammar engines.",
          [
-             ["Languages", "ListeningActivities", "One-to-Many (1:N)", "ListeningActivities.languageId → Languages.id", "Listening practice audio exercise tasks."],
-             ["ListeningActivities", "ListeningAudios", "One-to-Many (1:N)", "ListeningAudios.activityId → ListeningActivities.id", "Native speaker audio tracks with speed/accent controls."],
-             ["Languages", "SpeakingActivities", "One-to-Many (1:N)", "SpeakingActivities.languageId → Languages.id", "Speaking practice task prompts."],
-             ["SpeakingPrompts", "SpeakingAudioSubmissions", "One-to-Many (1:N)", "SpeakingAudioSubmissions.promptId → SpeakingPrompts.id", "Student recorded voice audio uploaded to R2."],
-             ["SpeakingAudioSubmissions", "SpeakingAIEvaluations", "One-to-One (1:1)", "SpeakingAIEvaluations.submissionId → SpeakingAudioSubmissions.id", "Whisper STT pronunciation & accuracy AI evaluation."],
-             ["Languages", "WritingActivities", "One-to-Many (1:N)", "WritingActivities.languageId → Languages.id", "Writing composition essay tasks."],
-             ["WritingPrompts", "WritingSubmissions", "One-to-Many (1:N)", "WritingSubmissions.promptId → Languages.id", "Student typed text using virtual accent keyboard."],
-             ["WritingSubmissions", "WritingAIEvaluations", "One-to-One (1:1)", "WritingAIEvaluations.submissionId → WritingSubmissions.id", "AI grammar, spelling, and vocabulary evaluation."]
-         ]),
-        ("ERD 22 & 25 – AI Platform Core & RAG pgvector (12 Models)",
+             ("ListeningActivities", "Listening practice audio exercise master."),
+             ("ListeningAudios", "Native speaker audio tracks with speed/accent controls."),
+             ("SpeakingActivities", "Speaking practice task master."),
+             ("SpeakingAudioSubmissions", "Student recorded voice audio uploaded to R2 bucket."),
+             ("SpeakingAIEvaluations", "Whisper STT pronunciation & accuracy AI evaluation."),
+             ("ReadingActivities", "Reading practice activity master and comprehension passages."),
+             ("WritingActivities", "Writing composition essay tasks."),
+             ("WritingSubmissions", "Student typed text using virtual accent keyboard."),
+             ("WritingAIEvaluations", "AI grammar, spelling, and vocabulary evaluation."),
+             ("VirtualKeyboardConfigs", "Dynamic accent keyboard layout matrix per language.")
+         ],
+         "  [Languages] (1) ─── (N) ──► [SpeakingActivities] ─── (N) ──► [SpeakingPrompts]\n"
+         "  [SpeakingPrompts] (1) ─── (N) ──► [SpeakingAudioSubmissions] ─── (1) ──► [SpeakingAIEvaluations]\n"
+         "  [Languages] (1) ─── (N) ──► [WritingActivities] ─── (N) ──► [WritingPrompts]\n"
+         "  [WritingPrompts] (1) ─── (N) ──► [WritingSubmissions] ─── (1) ──► [WritingAIEvaluations]"),
+
+        ("Domain 22-26: AI Microservices, RAG pgvector & MCP Protocol (18 Models)",
          "Powers the Python FastAPI AI service. AIAgents registers specialized agents for evaluation, doubt clearing, and tutoring. DocumentEmbeddings stores 1536-dimensional OpenAI vector embeddings directly in PostgreSQL using the pgvector extension for instant similarity searches during RAG queries. MCPServers and MCPTools integrate the Model Context Protocol for secure tool execution.",
          [
-             ["AIAgents", "AgentVersions", "One-to-Many (1:N)", "AgentVersions.agentId → AIAgents.id", "Version control for AI agents."],
-             ["AgentVersions", "AgentConfigurations", "One-to-One (1:1)", "AgentConfigurations.versionId → AgentVersions.id", "System prompts, temperature, and max tokens."],
-             ["KnowledgeBases", "KnowledgeSources", "One-to-Many (1:N)", "KnowledgeSources.knowledgeBaseId → KnowledgeBases.id", "Document sources (PDF, PPT, Audio) ingested into RAG."],
-             ["KnowledgeSources", "KnowledgeDocuments", "One-to-Many (1:N)", "KnowledgeDocuments.sourceId → KnowledgeSources.id", "Processed document files."],
-             ["KnowledgeDocuments", "DocumentChunks", "One-to-Many (1:N)", "DocumentChunks.documentId → KnowledgeDocuments.id", "Text chunking output for vector embedding."],
-             ["DocumentChunks", "DocumentEmbeddings", "One-to-One (1:1)", "DocumentEmbeddings.chunkId → DocumentChunks.id", "pgvector 1536-dimensional vector embedding store."]
-         ]),
-        ("ERD 27 – Payment Gateway & Webhook Idempotency (7 Models)",
-         "Handles B2B college billing and student subscription payments via Razorpay and Stripe. PaymentWebhooks enforces a unique eventId constraint (@unique([eventId])) to guarantee webhook idempotency, preventing duplicate payment processing if a payment gateway retries a webhook notification.",
+             ("AIAgents", "Registration for Python FastAPI AI Agents."),
+             ("AgentVersions", "Version control for AI agent code and prompts."),
+             ("AgentConfigurations", "Temperature, max tokens, and system prompts for agents."),
+             ("AITasks", "Task queue for async background AI processing."),
+             ("DocumentEmbeddings", "pgvector 1536-dimensional vector embedding store in PostgreSQL."),
+             ("RAGQueries", "Student RAG query and retrieved chunk matches."),
+             ("MCPServers", "Registered Model Context Protocol servers."),
+             ("MCPTools", "Tools exposed by MCP servers for AI agents.")
+         ],
+         "  [AIAgents] (1) ─── (N) ──► [AgentVersions] ─── (1) ──► [AgentConfigurations]\n"
+         "  [KnowledgeBases] (1) ─── (N) ──► [DocumentChunks] ─── (1) ──► [DocumentEmbeddings] (pgvector)\n"
+         "  [MCPServers] (1) ─── (N) ──► [MCPTools] ─── (N) ──► [MCPExecutionLogs]"),
+
+        ("Domain 27 & 28: Payment Gateway & B2B GST Billing (11 Models)",
+         "Handles B2B college billing and student subscription payments via Razorpay and Stripe. PaymentWebhooks enforces a unique eventId constraint (@unique([eventId])) to guarantee webhook idempotency, preventing duplicate payment processing if a payment gateway retries a webhook notification. Invoices generates formal GST tax invoices for partner colleges.",
          [
-             ["PaymentProviders", "PaymentOrders", "One-to-Many (1:N)", "PaymentOrders.providerId → PaymentProviders.id", "Payment order creation request (Razorpay order ID)."],
-             ["PaymentOrders", "PaymentTransactions", "One-to-Many (1:N)", "PaymentTransactions.orderId → PaymentOrders.id", "Captured financial payment transaction log."],
-             ["PaymentTransactions", "PaymentReceipts", "One-to-One (1:1)", "PaymentReceipts.transactionId → PaymentTransactions.id", "Issued tax/payment receipt details."],
-             ["PaymentWebhooks", "PaymentTransactions", "One-to-One (1:1)", "PaymentWebhooks.eventId (UNIQUE)", "Idempotency log for Razorpay webhook event delivery."]
-         ])
+             ("PaymentProviders", "Payment provider setup (Razorpay, Stripe)."),
+             ("PaymentOrders", "Pre-payment order request record."),
+             ("PaymentTransactions", "Captured financial payment transaction log."),
+             ("PaymentWebhooks", "Idempotency log for Razorpay webhook event delivery."),
+             ("Invoices", "B2B enterprise GST tax invoice for colleges."),
+             ("SubscriptionPlans", "SaaS pricing tiers for institutions.")
+         ],
+         "  [PaymentProviders] (1) ─── (N) ──► [PaymentOrders] ─── (N) ──► [PaymentTransactions]\n"
+         "  [PaymentWebhooks] (1) ─── (1) ──► [PaymentTransactions] (Idempotent via unique eventId)\n"
+         "  [Institutions] (1) ─── (N) ──► [Invoices]")
     ]
 
-    card_headers = ["Source Entity", "Target Entity", "Type", "Foreign Key / Mapping", "Business Description"]
-
-    for d_title, d_desc, d_matrix in domains_cardinality:
+    for d_title, d_desc, d_models, d_diagram in domains_data:
         add_heading2(d_title)
-        p_dd = doc.add_paragraph()
-        r_lbl = p_dd.add_run("📋 Executive Explanation: ")
+        
+        p_desc = doc.add_paragraph()
+        r_lbl = p_desc.add_run("📋 Executive Business Story: ")
         r_lbl.font.bold = True
         r_lbl.font.size = Pt(12)
         r_lbl.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
-        r_txt = p_dd.add_run(d_desc)
+        r_txt = p_desc.add_run(d_desc)
         r_txt.font.size = Pt(12)
         r_txt.font.color.rgb = RGBColor(0x33, 0x41, 0x55)
 
-        t_dom = doc.add_table(rows=1, cols=5)
-        format_table_headers_and_rows(t_dom, [1.2, 1.2, 1.1, 1.5, 1.5], card_headers, d_matrix)
+        p_m_hdr = doc.add_paragraph()
+        r_mh = p_m_hdr.add_run("🧩 Underpinning Database Models:")
+        r_mh.font.bold = True
+        r_mh.font.size = Pt(11.5)
+        r_mh.font.color.rgb = RGBColor(0x1E, 0x3A, 0x8A)
+
+        for m_name, m_purpose in d_models:
+            p_m = doc.add_paragraph()
+            p_m.paragraph_format.left_indent = Inches(0.2)
+            p_m.paragraph_format.space_after = Pt(3)
+            r_mn = p_m.add_run(f"• {m_name}: ")
+            r_mn.font.bold = True
+            r_mn.font.size = Pt(11)
+            r_mn.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
+            r_mp = p_m.add_run(m_purpose)
+            r_mp.font.size = Pt(11)
+
+        add_callout_box(f"🔄 CARDINALITY & RELATIONSHIP FLOW — {d_title.split(':')[0]}", d_diagram)
         doc.add_paragraph().paragraph_format.space_after = Pt(10)
 
     # -------------------------------------------------------------
-    # 6. Complete 41-Enum Reference Table
+    # 5. System Enums Reference
     # -------------------------------------------------------------
-    add_heading1("6. Complete 41-Enum Reference Table")
+    add_heading1("5. System Enums Reference Table (41 Enums Overview)")
+
+    p_enum = doc.add_paragraph()
+    p_enum.add_run(
+        "To guarantee data integrity and strict type safety across PostgreSQL, all status flags, role types, "
+        "and protocol states are enforced using 41 strongly typed Prisma Enums."
+    ).font.size = Pt(12)
 
     enum_headers = ["#", "Enum Name", "Allowed Values", "Where Used & Business Meaning"]
     raw_enums = [
@@ -711,9 +599,9 @@ def create_document():
     doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
     # -------------------------------------------------------------
-    # 7. Real-World Business Workflow Scenarios
+    # 6. Real-World Business Workflow Scenarios
     # -------------------------------------------------------------
-    add_heading1("7. Real-World Business Workflow Scenarios")
+    add_heading1("6. Real-World Business Workflow Scenarios")
 
     add_heading2("🎬 Scenario 1: Onboarding a New Partner College")
     p_sc1 = doc.add_paragraph()
@@ -734,9 +622,9 @@ def create_document():
     ).font.size = Pt(12)
 
     # -------------------------------------------------------------
-    # 8. Final Architecture Validation Summary
+    # 7. Final Architecture Validation Summary
     # -------------------------------------------------------------
-    add_heading1("8. Final Architecture Validation Summary")
+    add_heading1("7. Final Architecture Validation Summary")
     p_val = doc.add_paragraph()
     p_val.add_run(
         "This document represents the definitive, production-verified database specification for ISML LMS v1.0. "
