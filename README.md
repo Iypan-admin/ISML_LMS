@@ -23,30 +23,22 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is fully des
 <table>
   <thead>
     <tr>
-      <th align="center">Icon</th>
       <th>Deliverable Document</th>
       <th>Architectural Summary</th>
-      <th>Direct Repository Link</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td align="center">📄</td>
       <td><a href="./prisma/schema.prisma"><b>Master Prisma Schema</b></a></td>
       <td>Production schema powering PostgreSQL & Supabase <code>pgvector</code> (195 Models, 41 Enums).</td>
-      <td><a href="./prisma/schema.prisma"><b><code>prisma/schema.prisma</code></b></a></td>
     </tr>
     <tr>
-      <td align="center">📘</td>
       <td><a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><b>Master ERD Documentation</b></a></td>
       <td>Complete ERD reference featuring 36 visual Mermaid diagrams & explicit 1:1, 1:N, N:M tables.</td>
-      <td><a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><b><code>ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md</code></b></a></td>
     </tr>
     <tr>
-      <td align="center">📋</td>
       <td><a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><b>Cross-Validation Audit Report</b></a></td>
       <td>Architectural audit report (Score 10/10, ZERO critical bugs, ready for DB freeze).</td>
-      <td><a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><b><code>ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md</code></b></a></td>
     </tr>
   </tbody>
 </table>
