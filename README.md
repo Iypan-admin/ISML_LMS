@@ -2,7 +2,7 @@
 
 # 🌍 ISML LMS v1.0 — Enterprise Foreign Language SaaS
 
-### *Mobile-First • Multi-Tenant B2B • AI-Powered LSRW • Real-Time LiveKit Webinars*
+### *Multi-Tenant B2B • AI-Powered LSRW • Real-Time LiveKit Webinars*
 
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.2-blue?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Prisma ORM](https://img.shields.io/badge/Prisma-v5%2Fv6-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
@@ -11,7 +11,6 @@
 [![Python AI](https://img.shields.io/badge/FastAPI-Python%20AI-3776AB?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![LiveKit Cloud](https://img.shields.io/badge/LiveKit-CloudStream-0052CC?style=for-the-badge&logo=livekit&logoColor=white)](https://livekit.io/)
 [![Cloudflare R2](https://img.shields.io/badge/Cloudflare-R2%20Storage-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://www.cloudflare.com/)
-[![Mobile First](https://img.shields.io/badge/Mobile--First-100%25%20Responsive-7C3AED?style=for-the-badge&logo=pwa&logoColor=white)](#-mobile-first-responsive-experience)
 
 ---
 
@@ -51,30 +50,6 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is fully des
     </tr>
   </tbody>
 </table>
-
----
-
-## 📱 Mobile-First Responsive Experience
-
-ISML LMS is architected **strictly from a Mobile-First perspective**. Over 85% of college students access foreign language webinars, practice LSRW exercises, and take exams directly on smartphones.
-
-```
-+-------------------------------------------------------------------------------+
-|                       SMARTPHONE / TABLET RESPONSIVE PWA                      |
-|                                                                               |
-|  [📱 1-Tap LiveKit Stream]  [🎙️ Mobile Speech STT]  [⌨️ Accent Keyboard]      |
-|  Auto 720p/1080p WebRTC      Whisper Pronunciation    French Accent Overlay   |
-|                                                                               |
-|  [💬 Realtime Doubt Q&A]    [📜 QR Certificates]    [🔔 Push Notifications]   |
-|  Assistant Tutor Chat        Instant PDF Download    FCM Mobile Alerts        |
-+-------------------------------------------------------------------------------+
-```
-
-### 📱 Key Mobile UX Capabilities:
-- ⚡ **Touch-Optimized Accent Keyboards**: Dynamic soft-keyboard overlays for French/German accents (`é`, `è`, `à`, `ç`, `ä`, `ö`, `ü`).
-- 🎙️ **Low-Latency Voice Recording**: Native WebAudio API integration for recording student voice submissions directly on Android/iOS browsers.
-- 📡 **Adaptive WebRTC Webinar Streams**: LiveKit Cloud automatically scales down stream resolution to 360p/720p on 3G/4G mobile networks without dropping audio.
-- 📲 **PWA & Mobile Push Alerts**: Real-time push notifications for live class start alerts, homework due dates, and doubt resolution replies.
 
 ---
 
