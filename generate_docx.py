@@ -22,7 +22,21 @@ def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
         tcMar.append(node)
     tcPr.append(tcMar)
 
-def set_cell_left_border(cell, color_hex="1E293B", sz="24"):
+def set_table_borders(table, color="CBD5E1", sz="4", val="single"):
+    tblPr = table._tbl.tblPr
+    borders = parse_xml(
+        f'<w:tblBorders {nsdecls("w")}>'
+        f'  <w:top w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>'
+        f'  <w:bottom w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>'
+        f'  <w:left w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>'
+        f'  <w:right w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>'
+        f'  <w:insideH w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>'
+        f'  <w:insideV w:val="{val}" w:sz="{sz}" w:space="0" w:color="{color}"/>'
+        f'</w:tblBorders>'
+    )
+    tblPr.append(borders)
+
+def set_callout_border(cell, color_hex="0B2447", sz="24"):
     tcPr = cell._tc.get_or_add_tcPr()
     tcBorders = parse_xml(
         f'<w:tcBorders {nsdecls("w")}>'
@@ -48,12 +62,12 @@ def create_document():
     normal_style = doc.styles['Normal']
     normal_style.font.name = 'Calibri'
     normal_style.font.size = Pt(12)
-    normal_style.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A) # Dark Charcoal
+    normal_style.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B) # Slate Charcoal
     normal_style.paragraph_format.line_spacing = 1.15
     normal_style.paragraph_format.space_after = Pt(6)
 
     # -------------------------------------------------------------
-    # Document Header Banner (Enterprise Slate Navy Palette)
+    # Document Header Banner (Dark Blue #0B2447 Palette)
     # -------------------------------------------------------------
     p_title = doc.add_paragraph()
     p_title.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -61,22 +75,22 @@ def create_document():
     run_title.font.name = 'Calibri'
     run_title.font.size = Pt(20)
     run_title.font.bold = True
-    run_title.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B) # Corporate Slate Navy
+    run_title.font.color.rgb = RGBColor(0x0B, 0x24, 0x47) # Executive Dark Blue
     p_title.paragraph_format.space_after = Pt(2)
 
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    run_sub = p_sub.add_run("Production Database Architecture Specification • Executive Technical Reference")
+    run_sub = p_sub.add_run("Production Database Architecture Specification • Executive Manager & Technical Guide")
     run_sub.font.name = 'Calibri'
     run_sub.font.size = Pt(12)
     run_sub.font.italic = True
-    run_sub.font.color.rgb = RGBColor(0x47, 0x55, 0x69) # Slate Gray
+    run_sub.font.color.rgb = RGBColor(0x47, 0x55, 0x69)
     p_sub.paragraph_format.space_after = Pt(14)
 
-    # Metadata Box (Executive Summary Card)
+    # Metadata Box Table
     meta_table = doc.add_table(rows=4, cols=2)
     meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    meta_table.autofit = False
+    set_table_borders(meta_table, "CBD5E1", "4")
 
     meta_data = [
         ("System Architecture:", "B2B Multi-Tenant Foreign Language SaaS Platform"),
@@ -95,7 +109,7 @@ def create_document():
         r0 = p0.add_run(label)
         r0.font.bold = True
         r0.font.size = Pt(11)
-        r0.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
+        r0.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
 
         p1 = c1.paragraphs[0]
         r1 = p1.add_run(val)
@@ -109,14 +123,14 @@ def create_document():
 
     doc.add_paragraph().paragraph_format.space_after = Pt(10)
 
-    # Helper functions for headings & tables
+    # Helper functions for Dark Blue headings & styled tables
     def add_heading1(text):
         h = doc.add_paragraph()
         run = h.add_run(text)
         run.font.name = 'Calibri'
         run.font.size = Pt(16)
         run.font.bold = True
-        run.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B) # Unified Slate Navy
+        run.font.color.rgb = RGBColor(0x0B, 0x24, 0x47) # Dark Blue
         h.paragraph_format.space_before = Pt(16)
         h.paragraph_format.space_after = Pt(6)
         return h
@@ -127,18 +141,19 @@ def create_document():
         run.font.name = 'Calibri'
         run.font.size = Pt(14)
         run.font.bold = True
-        run.font.color.rgb = RGBColor(0x33, 0x41, 0x55) # Slate Blue
-        h.paragraph_format.space_before = Pt(12)
+        run.font.color.rgb = RGBColor(0x1E, 0x3A, 0x8A) # Deep Royal Blue
+        h.paragraph_format.space_before = Pt(14)
         h.paragraph_format.space_after = Pt(4)
         return h
 
     def add_callout_box(title, text):
         tbl = doc.add_table(rows=1, cols=1)
         tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+        set_table_borders(tbl, "CBD5E1", "4")
         cell = tbl.rows[0].cells[0]
         cell.width = Inches(6.5)
         set_cell_background(cell, "F8FAFC")
-        set_cell_left_border(cell, "1E293B", "36")
+        set_callout_border(cell, "0B2447", "24")
         set_cell_margins(cell, 120, 120, 160, 160)
         
         p = cell.paragraphs[0]
@@ -146,7 +161,7 @@ def create_document():
         r_t = p.add_run(title + "\n")
         r_t.font.bold = True
         r_t.font.size = Pt(11.5)
-        r_t.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
+        r_t.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
 
         r_txt = p.add_run(text)
         r_txt.font.size = Pt(11)
@@ -155,6 +170,8 @@ def create_document():
 
     def format_table_headers_and_rows(table, col_widths, headers, data):
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        set_table_borders(table, "CBD5E1", "4") # Thin Slate Gray Borders on all cells!
+        
         # Header
         hdr_cells = table.rows[0].cells
         for i, header_text in enumerate(headers):
@@ -165,7 +182,7 @@ def create_document():
             r.font.bold = True
             r.font.size = Pt(11)
             r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-            set_cell_background(hdr_cells[i], "1E293B") # Unified Professional Slate Navy
+            set_cell_background(hdr_cells[i], "0B2447") # Executive Dark Blue Header Fill
             set_cell_margins(hdr_cells[i], 100, 100, 120, 120)
 
         # Data Rows
@@ -177,25 +194,33 @@ def create_document():
                 p = row_cells[c_idx].paragraphs[0]
                 r = p.add_run(str(cell_value))
                 r.font.size = Pt(11)
-                r.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
+                r.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
                 set_cell_background(row_cells[c_idx], bg_color)
                 set_cell_margins(row_cells[c_idx], 80, 80, 120, 120)
 
     # -------------------------------------------------------------
-    # 1. Executive Summary & Plain Language Guide
+    # 1. Executive Summary & Non-Technical Guide
     # -------------------------------------------------------------
-    add_heading1("1. Executive Summary & Plain Language Guide (For Stakeholders)")
+    add_heading1("1. Executive Summary & Business Guide (For Management)")
     
-    p = doc.add_paragraph()
-    p.add_run("Welcome to the official ").font.size = Pt(12)
-    r_bold = p.add_run("ISML LMS Database Architecture Master Guide")
-    r_bold.font.bold = True
-    r_bold.font.size = Pt(12)
-    p.add_run(". This document is designed to be understood by everyone — software engineers, database administrators, frontend developers, product managers, and executive leadership.").font.size = Pt(12)
+    p_intro = doc.add_paragraph()
+    p_intro.add_run(
+        "This master architectural document provides the complete, production-verified database specification "
+        "for the ISML LMS v1.0 enterprise SaaS platform. It has been structured specifically to bridge technical "
+        "database implementation details with executive business goals, providing non-technical stakeholders, "
+        "project managers, and software architects with a transparent, clear, and comprehensive reference."
+    ).font.size = Pt(12)
 
     add_heading2("💡 What is ISML LMS?")
     p_lms = doc.add_paragraph()
-    p_lms.add_run("ISML LMS (Indian School for Modern Languages Learning Management System) is an enterprise B2B SaaS platform designed to teach foreign languages (starting with French A1, expanding dynamically to German, Japanese, Spanish, IELTS) to bulk student batches from partner colleges and universities.").font.size = Pt(12)
+    p_lms.add_run(
+        "ISML LMS (Indian School for Modern Languages Learning Management System) is a multi-tenant B2B enterprise SaaS "
+        "platform designed to deliver foreign language training (starting with French A1, expanding dynamically to German, "
+        "Japanese, Spanish, and IELTS) to thousands of enrolled students across partner universities and colleges. "
+        "Unlike traditional LMS software built for single schools, ISML LMS operates at enterprise scale, allowing "
+        "multiple university campuses to share centralized live webinar teaching infrastructure while maintaining strict "
+        "data isolation, security boundaries, and custom white-label branding."
+    ).font.size = Pt(12)
 
     # Visual Diagram Container Box
     add_callout_box(
@@ -206,14 +231,19 @@ def create_document():
         "  Teaching Staff: 1 Main Tutor + 1 Backup Tutor + 4 Assistant Doubt Tutors"
     )
 
-    add_heading2("🔑 The 5 Core Architectural Principles:")
+    add_heading2("🔑 The 5 Core Principles Every Manager Must Know:")
 
     principles = [
-        ("1. Batch != College (Multi-Tenant B2B Isolation): ", "In traditional college software, 1 batch = 1 college class. In ISML LMS, students from 10 different colleges (Chennai, Mumbai, Delhi) attend the SAME live webinar batch simultaneously. The database uses BatchInstitutions to link multiple colleges to a single live teaching session while keeping student records and billing isolated per college."),
-        ("2. 1 Course — 3 Flexible Duration Patterns: ", "The curriculum for French A1 requires 100 hours of teaching. Different colleges want different academic schedules (Option 1: 12 Months, Option 2: 6 Months, Option 3: 3 Months). The database models this via CourseDurationPatterns so the exact same course content is automatically paced differently without duplicating courses."),
-        ("3. Dynamic DB-Driven Menu & Action RBAC: ", "The Admin can create custom roles directly from the UI. Which sidebar menus a user sees (Menus), and what actions they can perform (Permissions: CREATE, READ, EXPORT, APPROVE), are stored 100% in database tables (RoleMenuVisibility, RolePermissions). Zero hard-coded permissions!"),
-        ("4. LSRW Skill Practice Engine with AI: ", "Language learning requires Listening (L), Speaking (S), Reading (R), and Writing (W) practice. Speaking voice recordings are saved to Cloudflare R2 and evaluated by Python Whisper STT AI. Writing compositions use virtual accent keyboards and AI grammar evaluation."),
-        ("5. 24-Hour Recording SLA & 1-Year Access Rule: ", "Live webinars streamed via LiveKit Cloud are automatically processed by BullMQ and stored in Cloudflare R2 within 24 hours. Enrolled students maintain portal access to watch recordings for 1 Year (StudentBatchEnrollments.expiresAt).")
+        ("1. Batch != College (Multi-Tenant B2B Isolation): ", 
+         "In traditional college software, 1 batch = 1 college class. In ISML LMS, students from 10 different colleges (e.g., Chennai, Mumbai, Delhi) attend the SAME live webinar batch simultaneously. The database uses BatchInstitutions to link multiple colleges to a single live teaching session while keeping student academic records, progress metrics, and billing strictly isolated per college."),
+        ("2. 1 Course — 3 Flexible Duration Patterns (100 Hours Fixed Content): ", 
+         "The curriculum for French A1 requires exactly 100 hours of instruction. Different partner colleges require different academic calendar schedules (Option 1: 12 Months - 1 day/week, 2 hrs/day; Option 2: 6 Months - 2 days/week, 2 hrs/day; Option 3: 3 Months - 3 days/week, 2 hrs/day). The database models this via CourseDurationPatterns so the exact same course content is automatically paced differently without duplicating courses or maintenance overhead."),
+        ("3. Dynamic DB-Driven Menu & Action RBAC: ", 
+         "The Admin panel allows creating custom roles directly from the UI without touching code. Which sidebar menus a user sees (Menus), and what actions they can perform (Permissions: CREATE, READ, EXPORT, APPROVE), are stored 100% in database tables (RoleMenuVisibility, RolePermissions). Zero hard-coded roles or permissions!"),
+        ("4. LSRW Skill Practice Engine with AI: ", 
+         "Language learning requires Listening (L), Speaking (S), Reading (R), and Writing (W) practice. Student voice recordings are saved to Cloudflare R2 and evaluated by a Python Whisper STT AI service for pronunciation accuracy. Writing compositions utilize virtual accent keyboards (é, è, à, ç) evaluated by AI grammar engines."),
+        ("5. 24-Hour Recording SLA & 1-Year Access Rule: ", 
+         "Live webinars streamed via LiveKit Cloud are automatically processed by background workers (BullMQ) and stored in Cloudflare R2 within a 24-hour SLA. Enrolled students maintain portal access to watch recordings for 1 Year (StudentBatchEnrollments.expiresAt).")
     ]
 
     for title, desc in principles:
@@ -221,14 +251,14 @@ def create_document():
         r_t = p_pr.add_run(title)
         r_t.font.bold = True
         r_t.font.size = Pt(12)
-        r_t.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
+        r_t.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
         r_d = p_pr.add_run(desc)
         r_d.font.size = Pt(12)
 
     # -------------------------------------------------------------
     # 2. Database High-Level Statistics
     # -------------------------------------------------------------
-    add_heading1("2. Database High-Level Statistics")
+    add_heading1("2. Database High-Level Statistics & Standards")
 
     stats_headers = ["Metric", "Count / Standard", "Architectural Guarantee"]
     stats_data = [
@@ -249,6 +279,12 @@ def create_document():
     # 3. Complete 195-Model Inventory Table
     # -------------------------------------------------------------
     add_heading1("3. Complete 195-Model Inventory")
+
+    p_inv = doc.add_paragraph()
+    p_inv.add_run(
+        "Below is the complete inventory of all 195 database tables in ISML LMS. Every table is business-justified, "
+        "normalized in Third Normal Form (3NF), and mapped to one of the 36 major functional domains."
+    ).font.size = Pt(12)
 
     inv_headers = ["#", "Model Name", "Business Domain", "Plain Language Purpose"]
     
@@ -479,13 +515,13 @@ def create_document():
     doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
     # -------------------------------------------------------------
-    # 5. Domain-by-Domain Specification (36 DOMAINS)
+    # 5. Domain-by-Domain Detailed Explanations & Tables (36 DOMAINS)
     # -------------------------------------------------------------
-    add_heading1("5. Domain-by-Domain Cardinality & Relationship Specification")
+    add_heading1("5. Domain-by-Domain Non-Technical Explanations & Cardinality Tables")
 
     domains_cardinality = [
         ("ERD 01 – Organization & Tenant Management (8 Models)", 
-         "Partner universities (e.g. Anna University, IIT Madras) register as Institutions. Each institution can have multiple campuses, departments, branding logos, subdomains, and security settings.",
+         "This domain serves as the foundational multi-tenant boundary for the entire platform. In a B2B SaaS LMS model, partner universities (such as Anna University or IIT Madras) register as master Institutions. Each institution operates physical Campuses, academic Departments, and Academic Years. The system provides white-label custom domain routing (e.g. lms.annauniv.edu) and isolated InstitutionBranding (custom logo, favicons, primary color theme) so each partner college maintains its unique institutional identity. InstitutionSettings controls portal session timeouts, 2FA policies, and login security.",
          [
              ["Institutions", "Campuses", "One-to-Many (1:N)", "Campuses.tenantId → Institutions.id", "One university operates multiple physical campus branches."],
              ["Institutions", "Departments", "One-to-Many (1:N)", "Departments.tenantId → Institutions.id", "One university owns multiple academic departments."],
@@ -496,7 +532,7 @@ def create_document():
              ["Institutions", "InstitutionBranding", "One-to-One (1:1)", "InstitutionBranding.tenantId → Institutions.id", "Custom logo, favicons, primary colors, and custom CSS."]
          ]),
         ("ERD 02 – User Identity & Authentication (9 Models)",
-         "Central identity engine. Every user exists in Users. Login sessions, refresh token rotation, OTP codes, and registered push devices keep accounts secure.",
+         "The User Identity domain acts as the single source of truth for every individual on the platform — whether they are a student, main tutor, backup tutor, college administrator, or super admin. Accounts are strictly bound to their partner college via tenantId. Security is enforced through multi-device UserSessions, JWT token family rotation via RefreshTokens, OTPVerifications for two-factor authentication, and PasswordResetTokens. Detailed audit logs are preserved in LoginHistory to track IP addresses and login timestamps for security compliance, while UserDevices registers mobile push notification tokens.",
          [
              ["Institutions", "Users", "One-to-Many (1:N)", "Users.tenantId → Institutions.id", "All user accounts belong to a specific partner college."],
              ["Users", "UserSessions", "One-to-Many (1:N)", "UserSessions.userId → Users.id", "One user can stay logged in on multiple web/mobile devices."],
@@ -507,7 +543,7 @@ def create_document():
              ["Users", "EmergencyContacts", "One-to-Many (1:N)", "EmergencyContacts.userId → Users.id", "Guardian or parent contact details for students."]
          ]),
         ("ERD 03 – Dynamic Menu-Based RBAC Engine (6 Models)",
-         "Admins can dynamically create roles and map sidebar menus and granular action permissions without modifying frontend code!",
+         "Role-Based Access Control (RBAC) in ISML LMS is 100% database-driven to provide maximum enterprise flexibility. Instead of hard-coding sidebar links or permissions in frontend code, the Menus table stores a full hierarchical navigation tree. System administrators can dynamically create custom roles (e.g., Senior Evaluator, Registrar) in the Roles table, map which menu items are visible using RoleMenuVisibility, and grant granular action permissions (such as student.create, exam.export, certificate.approve) using RolePermissions. Users are assigned roles with start and end dates via UserRoles.",
          [
              ["Menus", "Menus", "One-to-Many (1:N)", "Menus.parentId → Menus.id", "Hierarchical sidebar menu tree (e.g. LSRW Engine → Speaking Practice)."],
              ["Roles", "Menus", "Many-to-Many (N:M)", "RoleMenuVisibility (roleId, menuId)", "Grants sidebar menu visibility to a specific role."],
@@ -515,7 +551,7 @@ def create_document():
              ["Users", "Roles", "Many-to-Many (N:M)", "UserRoles (userId, roleId)", "Assigns roles to users with effective date windows."]
          ]),
         ("ERD 04 – User Profiles (5 Models)",
-         "Extends generic Users account table with role-specific profile fields for Students, Main Tutors, Assistant Tutors, and Admins.",
+         "While the generic Users table handles account identity and authentication, specific profile tables extend account details according to user roles. StudentProfiles maintains student roll numbers, DOB, gender, blood group, and academic standing. TutorProfiles records teaching qualifications, ratings, total hours taught, and substitute eligibility for Main and Backup Tutors. AssistantTutorProfiles manages doubt-clearing capacity for Assistant Tutors, while CollegeAdminProfiles and SuperAdminProfiles store administrative credentials.",
          [
              ["Users", "StudentProfiles", "One-to-One (1:1)", "StudentProfiles.userId → Users.id", "Holds student code, DOB, gender, blood group, academic status."],
              ["Users", "TutorProfiles", "One-to-One (1:1)", "TutorProfiles.userId → Users.id", "Holds tutor qualification, rating, classes taught, backup eligibility."],
@@ -524,7 +560,7 @@ def create_document():
              ["Users", "SuperAdminProfiles", "One-to-One (1:1)", "SuperAdminProfiles.userId → Users.id", "ISML master administration profile."]
          ]),
         ("ERD 05 – Foreign Languages Engine (4 Models)",
-         "Dynamic language master table. Launching with French (A1), architected so German, Japanese, Spanish can be added dynamically.",
+         "The Foreign Languages domain provides a dynamic master configuration for teaching non-English languages. Launching initially with French (A1), the database schema is architected to dynamically onboard German, Japanese, Spanish, and IELTS without database schema changes. LanguageVariants tracks regional dialects (e.g., Metropolitan French vs Canadian French), while LanguageProficiencyLevels establishes CEFR framework bands (A1, A2, B1, B2, C1, C2). LanguageSettings configures virtual accent keyboard layouts and speech recognition locales.",
          [
              ["Languages", "LanguageVariants", "One-to-Many (1:N)", "LanguageVariants.languageId → Languages.id", "Regional dialects (Metropolitan French vs Canadian French)."],
              ["Languages", "LanguageProficiencyLevels", "One-to-Many (1:N)", "LanguageProficiencyLevels.languageId → Languages.id", "CEFR proficiency bands (A1, A2, B1, B2, C1, C2)."],
@@ -532,7 +568,7 @@ def create_document():
              ["Languages", "Courses", "One-to-Many (1:N)", "Courses.languageId → Languages.id", "Master language entity powering language courses."]
          ]),
         ("ERD 06 & 07 – Course Architecture & Curriculum (12 Models)",
-         "Models the academic hierarchy of a language course: Course → CourseLevel (A1) → CourseSubLevel (A1.1) → CourseModule → CourseUnit → Lesson → Topic → TopicItem.",
+         "The academic structure of language courses is modeled as a 7-tier hierarchical tree: Course -> CourseLevel (e.g. A1) -> CourseSubLevel (A1.1, A1.2) -> CourseModule -> CourseUnit -> Lesson -> Topic -> TopicItem. A 100-hour French A1 syllabus is structured into structural modules and thematic units. TopicItems stores individual learning elements (grammatical explanations, vocabulary audio, reading passages, LSRW practice tasks). LearningObjectives aligns Bloom's taxonomy objectives for automated AI evaluation.",
          [
              ["CourseCategories", "Courses", "One-to-Many (1:N)", "Courses.categoryId → CourseCategories.id", "Classifies courses into categories (European Languages, Exam Prep)."],
              ["Courses", "CourseLevels", "One-to-Many (1:N)", "CourseLevels.courseId → Courses.id", "CEFR framework level instances bound to a course."],
@@ -544,7 +580,7 @@ def create_document():
              ["Topics", "TopicItems", "One-to-Many (1:N)", "TopicItems.topicId → Topics.id", "Granular texts, videos, audios, and exercises."]
          ]),
         ("ERD 08 – Course Duration Patterns (3 Models)",
-         "Allows the SAME 100-hour French A1 course content to be taught across 3 flexible duration options (12Mo, 6Mo, 3Mo).",
+         "A core B2B feature of ISML LMS is supporting 3 flexible duration pacing options for the EXACT SAME 100-hour course content: Option 1 (12 Months - 1 day/week, 2 hrs/day), Option 2 (6 Months - 2 days/week, 2 hrs/day), and Option 3 (3 Months - 3 days/week, 2 hrs/day). CourseDurationPatterns maps the course to pacing models, PatternSchedules defines weekly timetable templates, and PatternPacingRules establishes target module coverage speeds so colleges can select their preferred pacing without duplicating course content.",
          [
              ["Courses", "CourseDurationPatterns", "One-to-Many (1:N)", "CourseDurationPatterns.courseId → Courses.id", "100-Hour course mapped to 12Mo, 6Mo, or 3Mo pacing options."],
              ["CourseDurationPatterns", "PatternSchedules", "One-to-Many (1:N)", "PatternSchedules.patternId → CourseDurationPatterns.id", "Timetable rules per duration pattern option."],
@@ -552,7 +588,7 @@ def create_document():
              ["CourseDurationPatterns", "Batches", "One-to-Many (1:N)", "Batches.durationPatternId → CourseDurationPatterns.id", "Webinar batch instantiated with a specific duration pattern."]
          ]),
         ("ERD 09 – Multi-College Batches & Enrollment (6 Models)",
-         "Solves the enterprise requirement where students from multiple partner colleges (Chennai, Mumbai, Delhi) attend the SAME live webinar batch.",
+         "To maximize tutor efficiency, ISML LMS decouples webinar batches from individual colleges. Students from multiple partner universities (e.g. Chennai, Mumbai, Delhi) attend the SAME live webinar batch simultaneously. The BatchInstitutions junction table links multiple colleges to a batch while preserving student privacy and billing boundaries. BatchTutors assigns the teaching team (1 Main Tutor, 1 Backup Tutor, 4 Assistant Tutors). StudentBatchEnrollments manages student enrollments with a strict 1-Year access expiration date.",
          [
              ["Batches", "Institutions", "Many-to-Many (N:M)", "BatchInstitutions (batchId, institutionId)", "Multiple colleges attend the SAME webinar batch."],
              ["Batches", "Users (Tutors)", "Many-to-Many (N:M)", "BatchTutors (batchId, tutorUserId)", "Teaching team assigned to batch (Main, Backup, Assistant Tutors)."],
@@ -560,7 +596,7 @@ def create_document():
              ["StudentBatchEnrollments", "EnrollmentHistory", "One-to-Many (1:N)", "EnrollmentHistory.enrollmentId → StudentBatchEnrollments.id", "Audit log of student enrollment status changes."]
          ]),
         ("ERD 11 & 12 – LiveKit Webinars & Cloudflare R2 Recordings (13 Models)",
-         "Live Webinars streamed via LiveKit Cloud. Automated attendance derived from stay duration. Videos transcoded via BullMQ into Cloudflare R2 with 24h SLA & 1Yr access.",
+         "Live webinar classes are conducted via LiveKit Cloud WebRTC streams (LiveClasses -> LiveSessions -> LiveKitRooms). AttendanceSessions automatically calculates student attendance based on connection stay duration. When a live class ends, LiveKit triggers a webhook, BullMQ queues RecordingProcessingJobs, and transcoded mp4 video files are uploaded to Cloudflare R2 storage within a 24-hour SLA. Students maintain portal access to watch recordings anytime for 1 Year (RecordingAccessLogs).",
          [
              ["Batches", "LiveClasses", "One-to-Many (1:N)", "LiveClasses.batchId → Batches.id", "Scheduled live webinar class occurrence for a batch."],
              ["LiveClasses", "LiveSessions", "One-to-Many (1:N)", "LiveSessions.liveClassId → LiveClasses.id", "Specific execution attempt of a live webinar session."],
@@ -572,7 +608,7 @@ def create_document():
              ["Recordings", "RecordingAccessLogs", "One-to-Many (1:N)", "RecordingAccessLogs.recordingId → Recordings.id", "Student video watching duration analytics."]
          ]),
         ("ERD 14-17 – LSRW Practice & AI Speech Evaluation (17 Models)",
-         "Handles practice exercises across Listening, Speaking (Whisper STT voice evaluation), Reading, and Writing (Virtual accent keyboards + AI grammar).",
+         "Language acquisition requires Listening, Speaking, Reading, and Writing practice. ListeningActivities provides audio tracks with speed controls (0.75x, 1x, 1.25x). SpeakingPrompts allows students to record voice audio on mobile/desktop -> saved to R2 -> evaluated by Python Whisper STT AI (SpeakingAIEvaluations) for pronunciation accuracy. WritingActivities features VirtualKeyboardConfigs for accent typing (é, è, à, ç) evaluated by AI grammar engines.",
          [
              ["Languages", "ListeningActivities", "One-to-Many (1:N)", "ListeningActivities.languageId → Languages.id", "Listening practice audio exercise tasks."],
              ["ListeningActivities", "ListeningAudios", "One-to-Many (1:N)", "ListeningAudios.activityId → ListeningActivities.id", "Native speaker audio tracks with speed/accent controls."],
@@ -584,7 +620,7 @@ def create_document():
              ["WritingSubmissions", "WritingAIEvaluations", "One-to-One (1:1)", "WritingAIEvaluations.submissionId → WritingSubmissions.id", "AI grammar, spelling, and vocabulary evaluation."]
          ]),
         ("ERD 22 & 25 – AI Platform Core & RAG pgvector (12 Models)",
-         "Powers Python FastAPI AI microservice. DocumentEmbeddings stores 1536-dim vector embeddings directly in PostgreSQL using pgvector.",
+         "Powers the Python FastAPI AI service. AIAgents registers specialized agents for evaluation, doubt clearing, and tutoring. DocumentEmbeddings stores 1536-dimensional OpenAI vector embeddings directly in PostgreSQL using the pgvector extension for instant similarity searches during RAG queries. MCPServers and MCPTools integrate the Model Context Protocol for secure tool execution.",
          [
              ["AIAgents", "AgentVersions", "One-to-Many (1:N)", "AgentVersions.agentId → AIAgents.id", "Version control for AI agents."],
              ["AgentVersions", "AgentConfigurations", "One-to-One (1:1)", "AgentConfigurations.versionId → AgentVersions.id", "System prompts, temperature, and max tokens."],
@@ -594,7 +630,7 @@ def create_document():
              ["DocumentChunks", "DocumentEmbeddings", "One-to-One (1:1)", "DocumentEmbeddings.chunkId → DocumentChunks.id", "pgvector 1536-dimensional vector embedding store."]
          ]),
         ("ERD 27 – Payment Gateway & Webhook Idempotency (7 Models)",
-         "Handles student & college subscription payments via Razorpay / Stripe. PaymentWebhooks uses unique eventId to prevent duplicate webhook processing.",
+         "Handles B2B college billing and student subscription payments via Razorpay and Stripe. PaymentWebhooks enforces a unique eventId constraint (@unique([eventId])) to guarantee webhook idempotency, preventing duplicate payment processing if a payment gateway retries a webhook notification.",
          [
              ["PaymentProviders", "PaymentOrders", "One-to-Many (1:N)", "PaymentOrders.providerId → PaymentProviders.id", "Payment order creation request (Razorpay order ID)."],
              ["PaymentOrders", "PaymentTransactions", "One-to-Many (1:N)", "PaymentTransactions.orderId → PaymentOrders.id", "Captured financial payment transaction log."],
@@ -608,14 +644,17 @@ def create_document():
     for d_title, d_desc, d_matrix in domains_cardinality:
         add_heading2(d_title)
         p_dd = doc.add_paragraph()
-        r_dd = p_dd.add_run("💡 Business Concept: ")
-        r_dd.font.bold = True
-        r_dd.font.size = Pt(11.5)
-        p_dd.add_run(d_desc).font.size = Pt(11.5)
+        r_lbl = p_dd.add_run("📋 Executive Explanation: ")
+        r_lbl.font.bold = True
+        r_lbl.font.size = Pt(12)
+        r_lbl.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
+        r_txt = p_dd.add_run(d_desc)
+        r_txt.font.size = Pt(12)
+        r_txt.font.color.rgb = RGBColor(0x33, 0x41, 0x55)
 
         t_dom = doc.add_table(rows=1, cols=5)
         format_table_headers_and_rows(t_dom, [1.2, 1.2, 1.1, 1.5, 1.5], card_headers, d_matrix)
-        doc.add_paragraph().paragraph_format.space_after = Pt(8)
+        doc.add_paragraph().paragraph_format.space_after = Pt(10)
 
     # -------------------------------------------------------------
     # 6. Complete 41-Enum Reference Table
