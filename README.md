@@ -73,7 +73,7 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is fully des
 ## 🧩 Complete 36 Business Domains & 195 Models Inventory
 
 <details>
-<summary><b><font color="#2563EB">🔹 🟦 CLICK HERE TO EXPAND ALL 36 BUSINESS DOMAINS & 195 MODELS LIST (Domains 01 to 36) 🟦 🔹</font></b></summary>
+<summary><a href="#-complete-36-business-domains--195-models-inventory"><b>👉 Click Here to Expand All 36 Business Domains & 195 Models List (Domains 01 to 36)</b></a></summary>
 
 <br/>
 
