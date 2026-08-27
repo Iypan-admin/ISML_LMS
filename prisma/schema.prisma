@@ -1,0 +1,3377 @@
+// ============================================================================
+// ISML LMS v1.0 — Master Enterprise Prisma Schema
+// Enterprise Multi-Tenant Foreign Language Learning System
+// Target: 100+ Production Models (Actual: 195 Business-Justified Models)
+// 15+ Years Database Architecture Standards (PostgreSQL + Supabase + pgvector)
+// ============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// ============================================================================
+// MASTER ENUMS
+// ============================================================================
+
+enum InstitutionStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum UserTypeEnum {
+  STAFF
+  STUDENT
+  PARENT
+  TUTOR
+  SUPER_ADMIN
+}
+
+enum UserStatusType {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum SessionStatusType {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum MenuNodeType {
+  MODULE
+  GROUP
+  MENU
+  ACTION
+}
+
+enum PermissionAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  VIEW
+  EXPORT
+  APPROVE
+  MANAGE
+  EXECUTE
+}
+
+enum RoleType {
+  SYSTEM
+  CUSTOM
+}
+
+enum GenderType {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum BloodGroupType {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+}
+
+enum AcademicStatusEnum {
+  ACTIVE
+  SUSPENDED
+  PASSED_OUT
+  DROPPED
+  WITHDRAWN
+}
+
+enum CourseTypeEnum {
+  REGULAR
+  CRASH_COURSE
+  DIPLOMA
+  CERTIFICATION
+  WORKSHOP
+}
+
+enum CourseStatusEnum {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum DifficultyLevelEnum {
+  BEGINNER
+  EASY
+  MEDIUM
+  HARD
+  ADVANCED
+}
+
+enum TopicItemTypeEnum {
+  TEXT
+  PDF
+  AUDIO
+  VIDEO
+  LINK
+  LSRW_EXERCISE
+  ASSESSMENT
+  VIRTUAL_KEYBOARD_PRACTICE
+}
+
+enum CompletionRuleEnum {
+  NONE
+  OPEN
+  WATCH_80_PERCENT
+  WATCHED_FULL
+  PASS_QUIZ
+}
+
+enum DurationPatternTypeEnum {
+  TWELVE_MONTHS // Option 1: 1 day/wk, 2 hrs/day (~50 weeks)
+  SIX_MONTHS // Option 2: 2 days/wk, 2 hrs/day (~25 weeks)
+  THREE_MONTHS // Option 3: 3 days/wk, 2 hrs/day (~13 weeks)
+  CUSTOM
+}
+
+enum BatchStatusEnum {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum TutorBatchRoleEnum {
+  MAIN_TUTOR
+  SUBSTITUTE_TUTOR
+  ASSISTANT_TUTOR
+}
+
+enum StudentEnrollmentStatusEnum {
+  ACTIVE
+  SUSPENDED
+  COMPLETED
+  DROPPED
+  EXPIRED
+}
+
+enum DeliveryModeEnum {
+  ONLINE_WEBINAR
+  RECORDED_SESSION
+  HYBRID
+}
+
+enum LiveClassStatusEnum {
+  SCHEDULED
+  WAITING
+  LIVE
+  PAUSED
+  ENDED
+  CANCELLED
+}
+
+enum ParticipantRoleEnum {
+  HOST
+  CO_HOST
+  ASSISTANT
+  STUDENT
+  GUEST
+}
+
+enum AttendanceStatusEnum {
+  PRESENT
+  ABSENT
+  PARTIAL
+  EXCUSED
+}
+
+enum RecordingStatusEnum {
+  SCHEDULED
+  RECORDING
+  PROCESSING
+  READY
+  FAILED
+  ARCHIVED
+}
+
+enum JobStatusEnum {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+}
+
+enum ResourceTypeEnum {
+  PPT
+  PDF
+  AUDIO
+  VIDEO
+  WORKSHEET
+  VOCABULARY_LIST
+  GRAMMAR_DOC
+  EXTERNAL_LINK
+}
+
+enum LSRWTypeEnum {
+  LISTENING
+  SPEAKING
+  READING
+  WRITING
+}
+
+enum SpeakingSubmissionStatusEnum {
+  QUEUED
+  PROCESSING
+  EVALUATED
+  FAILED
+}
+
+enum ReadingActivityTypeEnum {
+  COMPREHENSION
+  JUMBLED_LETTERS
+  MISSING_LETTERS
+  VOCAB_MATCHING
+}
+
+enum WritingSubmissionStatusEnum {
+  SUBMITTED
+  EVALUATING
+  EVALUATED
+  NEEDS_REVISION
+}
+
+enum AssignmentStatusEnum {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum SubmissionStatusEnum {
+  SUBMITTED
+  GRADING_IN_PROGRESS
+  GRADED
+  REJECTED
+}
+
+enum QuestionTypeEnum {
+  MCQ
+  MULTI_CORRECT
+  FILL_IN_BLANKS
+  JUMBLED_LETTERS
+  READING_COMPREHENSION
+  SPEAKING_PRONUNCIATION
+  WRITING_ESSAY
+  DICTATION
+}
+
+enum ExamTypeEnum {
+  QUIZ
+  MID_TERM
+  FINAL_EXAM
+  LSRW_ASSESSMENT
+}
+
+enum ExamStatusEnum {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  EVALUATED
+  PUBLISHED
+}
+
+enum ExamAttemptStatusEnum {
+  IN_PROGRESS
+  SUBMITTED
+  EVALUATED
+  EXPIRED
+}
+
+enum ResultStatusEnum {
+  PASSED
+  FAILED
+  WITHHELD
+}
+
+enum CertificateStatusEnum {
+  ISSUED
+  REVOKED
+  EXPIRED
+}
+
+enum AIAgentTypeEnum {
+  RESOURCE_AGENT
+  EVALUATION_AGENT
+  SPEAKING_AGENT
+  WRITING_AGENT
+  READING_AGENT
+  LISTENING_AGENT
+  AI_TUTOR
+  DOUBT_AGENT
+  CAREER_AGENT
+}
+
+enum AITaskStatusEnum {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AIProviderEnum {
+  OPENAI
+  AZURE_SPEECH
+  ANTHROPIC
+  GOOGLE
+}
+
+enum AIApprovalStatusEnum {
+  PENDING
+  APPROVED
+  REJECTED
+  EDITS_REQUESTED
+}
+
+enum RAGProcessingStatusEnum {
+  PENDING
+  CHUNKED
+  EMBEDDED
+  FAILED
+}
+
+enum PaymentStatusEnum {
+  CREATED
+  ATTEMPTED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum NotificationChannelEnum {
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+  IN_APP
+}
+
+enum TicketCategoryEnum {
+  LOGIN_ISSUE
+  VIDEO_BUFFERING
+  AUDIO_ISSUE
+  LSRW_ERROR
+  CERTIFICATE_ISSUE
+  OTHER
+}
+
+enum TicketPriorityEnum {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatusEnum {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum JobApplicationStatusEnum {
+  APPLIED
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  HIRED
+  REJECTED
+}
+
+// ============================================================================
+// DOMAIN 1: MULTI-TENANT ORGANIZATION MANAGEMENT
+// ============================================================================
+
+model Institutions {
+  id          String            @id @default(uuid())
+  code        String            @unique
+  slug        String            @unique
+  name        String
+  displayName String
+  email       String            @unique
+  phone       String
+  website     String?
+  logoFileId  String?
+  status      InstitutionStatus @default(ACTIVE)
+  timezone    String            @default("Asia/Kolkata")
+  currency    String            @default("INR")
+  createdAt   DateTime          @default(now())
+  createdBy   String?
+  updatedAt   DateTime          @updatedAt
+  updatedBy   String?
+  deletedAt   DateTime?
+  deletedBy   String?
+  version     Int               @default(1)
+
+  campuses        Campuses[]
+  departments     Departments[]
+  academicYears   AcademicYears[]
+  settings        InstitutionSettings?
+  domains         InstitutionDomains[]
+  subscriptions   InstitutionSubscriptions[]
+  branding        InstitutionBranding?
+  users           Users[]
+  roles           Roles[]
+  studentProfiles StudentProfiles[]
+  tutorProfiles   TutorProfiles[]
+
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Campuses {
+  id           String    @id @default(uuid())
+  tenantId     String
+  code         String
+  name         String
+  address      String?
+  city         String
+  state        String
+  country      String    @default("India")
+  pincode      String
+  contactEmail String?
+  contactPhone String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  createdBy    String?
+  updatedAt    DateTime  @updatedAt
+  updatedBy    String?
+  deletedAt    DateTime?
+  deletedBy    String?
+
+  tenant      Institutions  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  departments Departments[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isActive])
+}
+
+model Departments {
+  id           String    @id @default(uuid())
+  tenantId     String
+  campusId     String?
+  code         String
+  name         String
+  description  String?
+  displayOrder Int       @default(1)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  createdBy    String?
+  updatedAt    DateTime  @updatedAt
+  updatedBy    String?
+  deletedAt    DateTime?
+
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campus Campuses?    @relation(fields: [campusId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, campusId])
+}
+
+model AcademicYears {
+  id        String   @id @default(uuid())
+  tenantId  String
+  code      String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isCurrent Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  createdBy String?
+  updatedAt DateTime @updatedAt
+
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId, isCurrent])
+}
+
+model InstitutionSettings {
+  id                    String   @id @default(uuid())
+  tenantId              String   @unique
+  themeConfig           Json?
+  authSettings          Json?
+  notificationSettings  Json?
+  maxSessionTimeoutMins Int      @default(60)
+  enable2FA             Boolean  @default(false)
+  updatedAt             DateTime @updatedAt
+  updatedBy             String?
+
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model InstitutionDomains {
+  id         String   @id @default(uuid())
+  tenantId   String
+  domain     String   @unique
+  isVerified Boolean  @default(false)
+  sslStatus  String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model InstitutionSubscriptions {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  planName           String
+  maxStudentsAllowed Int      @default(2000)
+  maxStorageGB       Int      @default(500)
+  startDate          DateTime
+  endDate            DateTime
+  status             String   @default("ACTIVE")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+}
+
+model InstitutionBranding {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique
+  logoUrl        String?
+  faviconUrl     String?
+  primaryColor   String   @default("#0F172A")
+  secondaryColor String   @default("#2563EB")
+  cssOverrides   String?
+  updatedAt      DateTime @updatedAt
+
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 2: USER IDENTITY, AUTHENTICATION & SESSIONS
+// ============================================================================
+
+model Users {
+  id                  String         @id @default(uuid())
+  tenantId            String
+  email               String
+  phone               String?
+  firstName           String
+  lastName            String
+  userType            UserTypeEnum
+  status              UserStatusType @default(PENDING)
+  isSuperAdmin        Boolean        @default(false)
+  passwordHash        String
+  forcePasswordChange Boolean        @default(false)
+  failedAttempts      Int            @default(0)
+  lockedUntil         DateTime?
+  passwordChangedAt   DateTime?
+  lastLoginAt         DateTime?
+  createdAt           DateTime       @default(now())
+  createdBy           String?
+  updatedAt           DateTime       @updatedAt
+  updatedBy           String?
+  deletedAt           DateTime?
+
+  tenant                Institutions            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userSessions          UserSessions[]
+  loginHistory          LoginHistory[]
+  userDevices           UserDevices[]
+  userPreferences       UserPreferences?
+  emergencyContacts     EmergencyContacts[]
+  userRoles             UserRoles[]
+  studentProfile        StudentProfiles?
+  tutorProfile          TutorProfiles?
+  assistantTutorProfile AssistantTutorProfiles?
+  collegeAdminProfile   CollegeAdminProfiles?
+  superAdminProfile     SuperAdminProfiles?
+
+  @@unique([tenantId, email])
+  @@index([tenantId, userType, status])
+  @@index([deletedAt])
+}
+
+model UserSessions {
+  id                String            @id @default(uuid())
+  tenantId          String
+  userId            String
+  deviceFingerprint String?
+  deviceName        String?
+  ipAddress         String
+  deviceType        String?
+  browserName       String?
+  osName            String?
+  status            SessionStatusType @default(ACTIVE)
+  refreshTokenHash  String
+  lastActiveAt      DateTime          @default(now())
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  revokedReason     String?
+  createdAt         DateTime          @default(now())
+
+  user          Users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshTokens[]
+
+  @@index([userId, status])
+  @@index([refreshTokenHash])
+}
+
+model RefreshTokens {
+  id        String   @id @default(uuid())
+  sessionId String
+  userId    String
+  tokenHash String   @unique
+  familyId  String
+  isUsed    Boolean  @default(false)
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  session UserSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([familyId])
+}
+
+model OTPVerifications {
+  id         String   @id @default(uuid())
+  tenantId   String
+  identifier String
+  otpHash    String
+  purpose    String   @default("LOGIN")
+  attempts   Int      @default(0)
+  isUsed     Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, identifier, purpose])
+}
+
+model PasswordResetTokens {
+  id          String    @id @default(uuid())
+  tenantId    String
+  userId      String
+  hashedToken String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([hashedToken])
+  @@index([userId, expiresAt])
+}
+
+model LoginHistory {
+  id            String   @id @default(uuid())
+  tenantId      String
+  userId        String
+  sessionId     String?
+  ipAddress     String
+  userAgent     String?
+  status        String   @default("SUCCESS")
+  failureReason String?
+  loginAt       DateTime @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, loginAt])
+}
+
+model UserDevices {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  deviceToken String
+  platform    String   @default("WEB")
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceToken])
+}
+
+model UserPreferences {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  locale               String   @default("en")
+  theme                String   @default("light")
+  notificationSettings Json?
+  updatedAt            DateTime @updatedAt
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmergencyContacts {
+  id           String   @id @default(uuid())
+  tenantId     String
+  userId       String
+  name         String
+  relationship String
+  phone        String
+  email        String?
+  address      String?
+  isPrimary    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId])
+}
+
+// ============================================================================
+// DOMAIN 3: DYNAMIC MENU-BASED RBAC ENGINE
+// ============================================================================
+
+model Menus {
+  id            String       @id @default(uuid())
+  parentId      String?
+  code          String       @unique
+  name          String
+  route         String?
+  iconKey       String?
+  pageTitle     String?
+  menuType      MenuNodeType @default(MENU)
+  displayOrder  Int          @default(1)
+  showInSidebar Boolean      @default(true)
+  isVisible     Boolean      @default(true)
+  isSystem      Boolean      @default(true)
+  isActive      Boolean      @default(true)
+  featureFlag   String?
+  createdAt     DateTime     @default(now())
+  createdBy     String?
+  updatedAt     DateTime     @updatedAt
+  updatedBy     String?
+
+  parentMenu       Menus?               @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  childMenus       Menus[]              @relation("MenuHierarchy")
+  roleVisibilities RoleMenuVisibility[]
+
+  @@index([parentId, displayOrder])
+}
+
+model PermissionGroups {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  description  String?
+  displayOrder Int      @default(1)
+  createdAt    DateTime @default(now())
+
+  permissions Permissions[]
+}
+
+model Permissions {
+  id                String           @id @default(uuid())
+  permissionGroupId String?
+  permissionKey     String           @unique
+  resource          String
+  action            PermissionAction
+  description       String?
+  scope             String           @default("TENANT")
+  createdAt         DateTime         @default(now())
+
+  permissionGroup PermissionGroups? @relation(fields: [permissionGroupId], references: [id], onDelete: SetNull)
+  rolePermissions RolePermissions[]
+
+  @@index([resource, action])
+}
+
+model Roles {
+  id          String   @id @default(uuid())
+  tenantId    String
+  code        String
+  name        String
+  roleType    RoleType @default(CUSTOM)
+  priority    Int      @default(1)
+  isDefault   Boolean  @default(false)
+  isEditable  Boolean  @default(true)
+  isDeletable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant           Institutions         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleVisibilities RoleMenuVisibility[]
+  rolePermissions  RolePermissions[]
+  userRoles        UserRoles[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, priority])
+}
+
+model RoleMenuVisibility {
+  id        String   @id @default(uuid())
+  tenantId  String
+  roleId    String
+  menuId    String
+  isGranted Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  role Roles @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menu Menus @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, menuId])
+  @@index([tenantId, roleId])
+}
+
+model RolePermissions {
+  id           String   @id @default(uuid())
+  tenantId     String
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Roles       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permissions @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([tenantId, roleId])
+}
+
+model UserRoles {
+  id               String    @id @default(uuid())
+  tenantId         String
+  userId           String
+  roleId           String
+  effectiveFrom    DateTime  @default(now())
+  effectiveTo      DateTime?
+  assignedBy       String?
+  assignmentReason String?
+  revokedBy        String?
+  revokedReason    String?
+  createdAt        DateTime  @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Roles @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([tenantId, userId, effectiveFrom])
+}
+
+// ============================================================================
+// DOMAIN 4: CORE USER PROFILES
+// ============================================================================
+
+model StudentProfiles {
+  userId               String             @id
+  tenantId             String
+  studentCode          String
+  admittedAt           DateTime           @default(now())
+  dateOfBirth          DateTime
+  gender               GenderType
+  bloodGroup           BloodGroupType?
+  academicStatus       AcademicStatusEnum @default(ACTIVE)
+  profileCompletionPct Decimal            @default(0.00) @db.Decimal(5, 2)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user   Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, studentCode])
+  @@index([tenantId, academicStatus])
+}
+
+model TutorProfiles {
+  userId               String   @id
+  tenantId             String
+  tutorCode            String
+  qualification        String
+  specialization       String
+  bio                  String?
+  rating               Decimal  @default(5.00) @db.Decimal(3, 2)
+  totalClassesTaught   Int      @default(0)
+  isMainTutor          Boolean  @default(true)
+  isSubstituteEligible Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user   Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Institutions @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, tutorCode])
+  @@index([tenantId, isMainTutor])
+}
+
+model AssistantTutorProfiles {
+  userId              String   @id
+  tenantId            String
+  assistantCode       String
+  assignedColleges    Json?
+  maxConcurrentDoubts Int      @default(10)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, assistantCode])
+}
+
+model CollegeAdminProfiles {
+  userId       String   @id
+  tenantId     String
+  departmentId String?
+  designation  String
+  officePhone  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SuperAdminProfiles {
+  userId      String   @id
+  accessLevel String   @default("FULL_SYSTEM")
+  createdAt   DateTime @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 5: FOREIGN LANGUAGES ENGINE
+// ============================================================================
+
+model Languages {
+  id              String   @id @default(uuid())
+  code            String   @unique
+  name            String
+  nativeName      String
+  flagUrl         String?
+  defaultAccents  Json?
+  sttLanguageCode String   @default("fr-FR")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  variants          LanguageVariants[]
+  proficiencyLevels LanguageProficiencyLevels[]
+  settings          LanguageSettings?
+  courses           Courses[]
+
+  @@index([code, isActive])
+}
+
+model LanguageVariants {
+  id          String   @id @default(uuid())
+  languageId  String
+  code        String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  language Languages @relation(fields: [languageId], references: [id], onDelete: Cascade)
+
+  @@unique([languageId, code])
+}
+
+model LanguageProficiencyLevels {
+  id           String   @id @default(uuid())
+  languageId   String
+  code         String
+  name         String
+  description  String?
+  displayOrder Int      @default(1)
+  createdAt    DateTime @default(now())
+
+  language Languages @relation(fields: [languageId], references: [id], onDelete: Cascade)
+
+  @@unique([languageId, code])
+}
+
+model LanguageSettings {
+  id                        String   @id @default(uuid())
+  languageId                String   @unique
+  virtualKeyboardLayout     Json?
+  audioSampleRate           Int      @default(16000)
+  pronunciationScoreWeights Json?
+  updatedAt                 DateTime @updatedAt
+
+  language Languages @relation(fields: [languageId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 6: COURSE ARCHITECTURE
+// ============================================================================
+
+model CourseCategories {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  description  String?
+  displayOrder Int      @default(1)
+  createdAt    DateTime @default(now())
+
+  courses Courses[]
+}
+
+model Courses {
+  id           String           @id @default(uuid())
+  tenantId     String?
+  languageId   String
+  categoryId   String?
+  code         String
+  name         String
+  displayName  String
+  description  String?
+  totalHours   Int              @default(100)
+  courseType   CourseTypeEnum   @default(REGULAR)
+  status       CourseStatusEnum @default(DRAFT)
+  displayOrder Int              @default(1)
+  isSystem     Boolean          @default(false)
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  language         Languages                @relation(fields: [languageId], references: [id], onDelete: Restrict)
+  category         CourseCategories?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  levels           CourseLevels[]
+  versions         CourseVersions[]
+  modules          CourseModules[]
+  durationPatterns CourseDurationPatterns[]
+  prerequisites    CoursePrerequisites[]    @relation("MainCourse")
+  prerequisiteOf   CoursePrerequisites[]    @relation("PrereqCourse")
+
+  @@unique([tenantId, code])
+  @@index([languageId, status])
+}
+
+model CourseLevels {
+  id         String   @id @default(uuid())
+  courseId   String
+  levelCode  String
+  name       String
+  totalHours Int      @default(100)
+  createdAt  DateTime @default(now())
+
+  course    Courses           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  subLevels CourseSubLevels[]
+
+  @@unique([courseId, levelCode])
+}
+
+model CourseSubLevels {
+  id             String   @id @default(uuid())
+  courseLevelId  String
+  subLevelCode   String
+  name           String
+  hoursAllocated Int      @default(50)
+  displayOrder   Int      @default(1)
+  createdAt      DateTime @default(now())
+
+  courseLevel CourseLevels @relation(fields: [courseLevelId], references: [id], onDelete: Cascade)
+
+  @@unique([courseLevelId, subLevelCode])
+}
+
+model CourseVersions {
+  id            String   @id @default(uuid())
+  courseId      String
+  versionNumber Int      @default(1)
+  changelog     String?
+  effectiveFrom DateTime @default(now())
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  course Courses @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, versionNumber])
+}
+
+model CourseModules {
+  id           String   @id @default(uuid())
+  courseId     String
+  code         String
+  name         String
+  description  String?
+  displayOrder Int      @default(1)
+  plannedHours Int      @default(20)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  course      Courses              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  units       CourseUnits[]
+  pacingRules PatternPacingRules[]
+
+  @@unique([courseId, code])
+  @@index([courseId, displayOrder])
+}
+
+model CourseUnits {
+  id           String   @id @default(uuid())
+  moduleId     String
+  code         String
+  name         String
+  description  String?
+  displayOrder Int      @default(1)
+  createdAt    DateTime @default(now())
+
+  module  CourseModules @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lessons Lessons[]
+
+  @@unique([moduleId, code])
+}
+
+model Lessons {
+  id                    String   @id @default(uuid())
+  unitId                String
+  code                  String
+  title                 String
+  summary               String?
+  displayOrder          Int      @default(1)
+  estimatedDurationMins Int      @default(120)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  unit   CourseUnits @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  topics Topics[]
+
+  @@unique([unitId, code])
+  @@index([unitId, displayOrder])
+}
+
+// ============================================================================
+// DOMAIN 7: CURRICULUM & TOPICS
+// ============================================================================
+
+model Topics {
+  id                 String              @id @default(uuid())
+  lessonId           String
+  code               String
+  name               String
+  description        String?
+  learningObjectives String?
+  difficultyLevel    DifficultyLevelEnum @default(MEDIUM)
+  displayOrder       Int                 @default(1)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  lesson     Lessons              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  topicItems TopicItems[]
+  objectives LearningObjectives[]
+
+  @@unique([lessonId, code])
+}
+
+model TopicItems {
+  id             String             @id @default(uuid())
+  topicId        String
+  itemType       TopicItemTypeEnum
+  title          String
+  description    String?
+  content        Json?
+  fileStorageUrl String?
+  externalUrl    String?
+  durationMins   Int?
+  displayOrder   Int                @default(1)
+  completionRule CompletionRuleEnum @default(NONE)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  topic Topics @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([topicId, displayOrder])
+}
+
+model LearningObjectives {
+  id             String   @id @default(uuid())
+  topicId        String
+  code           String
+  objectiveText  String
+  cognitiveLevel String   @default("UNDERSTAND")
+  createdAt      DateTime @default(now())
+
+  topic Topics @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([topicId, code])
+}
+
+model CoursePrerequisites {
+  id                   String   @id @default(uuid())
+  courseId             String
+  prerequisiteCourseId String
+  minGradeRequired     Decimal? @db.Decimal(5, 2)
+  createdAt            DateTime @default(now())
+
+  course             Courses @relation("MainCourse", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisiteCourse Courses @relation("PrereqCourse", fields: [prerequisiteCourseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, prerequisiteCourseId])
+}
+
+// ============================================================================
+// DOMAIN 8: THREE COURSE DURATION PATTERNS
+// ============================================================================
+
+model CourseDurationPatterns {
+  id             String                  @id @default(uuid())
+  courseId       String
+  patternCode    DurationPatternTypeEnum @default(TWELVE_MONTHS)
+  name           String
+  totalWeeks     Int                     @default(50)
+  classesPerWeek Int                     @default(1)
+  hoursPerClass  Int                     @default(2)
+  totalHours     Int                     @default(100)
+  isDefault      Boolean                 @default(false)
+  createdAt      DateTime                @default(now())
+
+  course      Courses              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  schedules   PatternSchedules[]
+  pacingRules PatternPacingRules[]
+
+  @@unique([courseId, patternCode])
+}
+
+model PatternSchedules {
+  id                 String   @id @default(uuid())
+  patternId          String
+  dayOfWeekNumber    Int
+  suggestedStartTime String
+  suggestedEndTime   String
+  createdAt          DateTime @default(now())
+
+  pattern CourseDurationPatterns @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  @@index([patternId, dayOfWeekNumber])
+}
+
+model PatternPacingRules {
+  id               String   @id @default(uuid())
+  patternId        String
+  moduleId         String
+  targetWeekNumber Int
+  lessonsPerWeek   Int      @default(1)
+  createdAt        DateTime @default(now())
+
+  pattern CourseDurationPatterns @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  module  CourseModules          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([patternId, moduleId])
+}
+
+// ============================================================================
+// DOMAIN 9: BATCHES & MULTI-COLLEGE ENROLLMENT ENGINE
+// ============================================================================
+
+model Batches {
+  id                String          @id @default(uuid())
+  tenantId          String?
+  courseId          String
+  durationPatternId String
+  code              String          @unique
+  name              String
+  maxStudents       Int             @default(500)
+  startDate         DateTime
+  endDate           DateTime
+  status            BatchStatusEnum @default(UPCOMING)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  batchInstitutions BatchInstitutions[]
+  batchSchedules    BatchSchedules[]
+  batchTutors       BatchTutors[]
+  enrollments       StudentBatchEnrollments[]
+  liveClasses       LiveClasses[]
+  recordings        Recordings[]
+
+  @@index([courseId, status])
+  @@index([startDate, endDate])
+}
+
+model BatchInstitutions {
+  id                String   @id @default(uuid())
+  batchId           String
+  institutionId     String
+  maxSeatsAllocated Int      @default(100)
+  assignedAt        DateTime @default(now())
+
+  batch Batches @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, institutionId])
+  @@index([institutionId])
+}
+
+model BatchSchedules {
+  id              String   @id @default(uuid())
+  batchId         String
+  dayOfWeekNumber Int
+  startTime       String
+  endTime         String
+  createdAt       DateTime @default(now())
+
+  batch Batches @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, dayOfWeekNumber])
+}
+
+model BatchTutors {
+  id            String             @id @default(uuid())
+  batchId       String
+  tutorUserId   String
+  tutorRole     TutorBatchRoleEnum @default(MAIN_TUTOR)
+  institutionId String?
+  createdAt     DateTime           @default(now())
+
+  batch Batches @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, tutorUserId, tutorRole])
+  @@index([batchId, tutorRole])
+}
+
+model StudentBatchEnrollments {
+  id                String                      @id @default(uuid())
+  tenantId          String
+  studentUserId     String
+  batchId           String
+  enrollmentNumber  String                      @unique
+  joinedAt          DateTime                    @default(now())
+  leftAt            DateTime?
+  status            StudentEnrollmentStatusEnum @default(ACTIVE)
+  validityExpiresAt DateTime
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  batch   Batches             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  history EnrollmentHistory[]
+
+  @@unique([studentUserId, batchId])
+  @@index([tenantId, studentUserId, status])
+  @@index([validityExpiresAt])
+}
+
+model EnrollmentHistory {
+  id              String                      @id @default(uuid())
+  enrollmentId    String
+  fromStatus      StudentEnrollmentStatusEnum
+  toStatus        StudentEnrollmentStatusEnum
+  reason          String?
+  changedByUserId String?
+  changedAt       DateTime                    @default(now())
+
+  enrollment StudentBatchEnrollments @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId])
+}
+
+// ============================================================================
+// DOMAIN 10: TIMETABLE & SCHEDULING
+// ============================================================================
+
+model Timetables {
+  id        String   @id @default(uuid())
+  tenantId  String
+  code      String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  scheduleEntries ScheduleEntries[]
+
+  @@unique([tenantId, code])
+}
+
+model ScheduleEntries {
+  id              String           @id @default(uuid())
+  tenantId        String
+  batchId         String
+  timetableId     String?
+  dayOfWeekNumber Int
+  startTime       String
+  endTime         String
+  deliveryMode    DeliveryModeEnum @default(ONLINE_WEBINAR)
+  createdAt       DateTime         @default(now())
+
+  timetable  Timetables?          @relation(fields: [timetableId], references: [id], onDelete: SetNull)
+  exceptions ScheduleExceptions[]
+
+  @@index([batchId, dayOfWeekNumber])
+}
+
+model TutorAvailabilities {
+  id              String   @id @default(uuid())
+  tutorUserId     String
+  dayOfWeekNumber Int
+  startTime       String
+  endTime         String
+  isAvailable     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([tutorUserId, dayOfWeekNumber])
+}
+
+model Holidays {
+  id                String   @id @default(uuid())
+  tenantId          String
+  title             String
+  holidayDate       DateTime
+  affectsAllBatches Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  @@unique([tenantId, holidayDate])
+}
+
+model ScheduleExceptions {
+  id                String    @id @default(uuid())
+  scheduleEntryId   String
+  originalDate      DateTime
+  overrideDate      DateTime?
+  overrideStartTime String?
+  overrideEndTime   String?
+  reason            String?
+  overrideType      String    @default("RESCHEDULED")
+  createdAt         DateTime  @default(now())
+
+  scheduleEntry ScheduleEntries @relation(fields: [scheduleEntryId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleEntryId, originalDate])
+}
+
+model CalendarEvents {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  eventTitle  String
+  eventDate   DateTime
+  startTime   String
+  endTime     String
+  eventType   String   @default("WEBINAR")
+  referenceId String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, eventDate])
+}
+
+// ============================================================================
+// DOMAIN 11: LIVEKIT WEBINAR CLASSROOM SYSTEM
+// ============================================================================
+
+model LiveClasses {
+  id                    String              @id @default(uuid())
+  tenantId              String?
+  batchId               String
+  title                 String
+  scheduledStartTime    DateTime
+  scheduledEndTime      DateTime
+  actualStartTime       DateTime?
+  actualEndTime         DateTime?
+  status                LiveClassStatusEnum @default(SCHEDULED)
+  mainTutorUserId       String
+  substituteTutorUserId String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  batch              Batches               @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  sessions           LiveSessions[]
+  accessLogs         LiveClassAccessLogs[]
+  attendanceSessions AttendanceSessions[]
+  recordings         Recordings[]
+
+  @@index([batchId, scheduledStartTime])
+  @@index([status])
+}
+
+model LiveSessions {
+  id               String    @id @default(uuid())
+  liveClassId      String
+  livekitRoomName  String    @unique
+  livekitRoomSid   String?
+  hostJoinedAt     DateTime?
+  hostLeftAt       DateTime?
+  sessionEndReason String?
+  createdAt        DateTime  @default(now())
+
+  liveClass    LiveClasses             @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  rooms        LiveKitRooms[]
+  participants LiveClassParticipants[]
+  classEvents  ClassEvents[]
+
+  @@index([liveClassId])
+}
+
+model LiveKitRooms {
+  id                String   @id @default(uuid())
+  liveSessionId     String
+  roomSid           String   @unique
+  maxParticipants   Int      @default(500)
+  isRecordingActive Boolean  @default(false)
+  chatMuted         Boolean  @default(true)
+  videoMuted        Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  liveSession LiveSessions @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+}
+
+model LiveClassParticipants {
+  id                  String              @id @default(uuid())
+  liveSessionId       String
+  userId              String
+  participantRole     ParticipantRoleEnum @default(STUDENT)
+  joinedAt            DateTime            @default(now())
+  leftAt              DateTime?
+  totalDurationSecs   Int                 @default(0)
+  networkQualityScore Decimal?            @db.Decimal(3, 2)
+  createdAt           DateTime            @default(now())
+
+  liveSession LiveSessions @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+
+  @@index([liveSessionId, userId])
+}
+
+model LiveClassAccessLogs {
+  id            String   @id @default(uuid())
+  liveClassId   String
+  userId        String
+  tokenIssuedAt DateTime @default(now())
+  clientIp      String
+  accessGranted Boolean  @default(true)
+
+  liveClass LiveClasses @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+
+  @@index([liveClassId, userId])
+}
+
+model AttendanceSessions {
+  id                   String               @id @default(uuid())
+  tenantId             String
+  liveClassId          String
+  studentUserId        String
+  batchId              String
+  attendanceStatus     AttendanceStatusEnum @default(ABSENT)
+  watchDurationMins    Int                  @default(0)
+  attendancePercentage Decimal              @default(0.00) @db.Decimal(5, 2)
+  createdAt            DateTime             @default(now())
+
+  liveClass LiveClasses @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+
+  @@unique([liveClassId, studentUserId])
+  @@index([tenantId, studentUserId, attendanceStatus])
+}
+
+model ClassEvents {
+  id                String   @id @default(uuid())
+  liveSessionId     String
+  eventType         String
+  triggeredByUserId String?
+  payload           Json?
+  createdAt         DateTime @default(now())
+
+  liveSession LiveSessions @relation(fields: [liveSessionId], references: [id], onDelete: Cascade)
+
+  @@index([liveSessionId, eventType])
+}
+
+// ============================================================================
+// DOMAIN 12: CLOUDFLARE R2 RECORDING PROCESSING PIPELINE
+// ============================================================================
+
+model Recordings {
+  id                String              @id @default(uuid())
+  tenantId          String?
+  liveClassId       String
+  batchId           String
+  title             String
+  recordingStatus   RecordingStatusEnum @default(SCHEDULED)
+  durationSecs      Int                 @default(0)
+  uploadSlaDeadline DateTime
+  validityExpiresAt DateTime
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  liveClass      LiveClasses               @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  batch          Batches                   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  recordingFiles RecordingFiles[]
+  versions       RecordingVersions[]
+  jobs           RecordingProcessingJobs[]
+  accessLogs     RecordingAccessLogs[]
+
+  @@index([liveClassId, recordingStatus])
+  @@index([validityExpiresAt])
+}
+
+model RecordingFiles {
+  id            String   @id @default(uuid())
+  recordingId   String
+  r2StorageKey  String   @unique
+  fileType      String   @default("MP4_VIDEO")
+  fileSizeBytes BigInt
+  signedUrl     String?
+  resolution    String   @default("720p")
+  createdAt     DateTime @default(now())
+
+  recording Recordings @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+
+  @@index([recordingId])
+}
+
+model RecordingVersions {
+  id          String   @id @default(uuid())
+  recordingId String
+  resolution  String   @default("720p")
+  bitrateKbps Int      @default(1500)
+  r2Url       String
+  createdAt   DateTime @default(now())
+
+  recording Recordings @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+}
+
+model RecordingProcessingJobs {
+  id          String        @id @default(uuid())
+  recordingId String
+  jobId       String        @unique
+  queueName   String        @default("recording-processing")
+  status      JobStatusEnum @default(QUEUED)
+  attempts    Int           @default(0)
+  errorReason String?
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  recording Recordings @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+}
+
+model RecordingAccessLogs {
+  id                  String   @id @default(uuid())
+  tenantId            String
+  recordingId         String
+  studentUserId       String
+  watchDurationSecs   Int      @default(0)
+  maxSeekPositionSecs Int      @default(0)
+  completedPct        Decimal  @default(0.00) @db.Decimal(5, 2)
+  lastWatchedAt       DateTime @default(now())
+
+  recording Recordings                @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+  history   RecordingViewingHistory[]
+
+  @@unique([recordingId, studentUserId])
+  @@index([tenantId, studentUserId])
+}
+
+model RecordingViewingHistory {
+  id                   String   @id @default(uuid())
+  recordingAccessLogId String
+  timestampSecs        Int
+  eventType            String   @default("PLAY")
+  recordedAt           DateTime @default(now())
+
+  accessLog RecordingAccessLogs @relation(fields: [recordingAccessLogId], references: [id], onDelete: Cascade)
+
+  @@index([recordingAccessLogId, recordedAt])
+}
+
+// ============================================================================
+// DOMAIN 13: LEARNING RESOURCE BANK & FILES
+// ============================================================================
+
+model Resources {
+  id           String           @id @default(uuid())
+  tenantId     String?
+  languageId   String
+  courseId     String?
+  code         String           @unique
+  title        String
+  description  String?
+  resourceType ResourceTypeEnum @default(PDF)
+  isPublic     Boolean          @default(false)
+  status       String           @default("PUBLISHED")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  files           ResourceFiles[]
+  versions        ResourceVersions[]
+  lessonResources LessonResources[]
+
+  @@index([languageId, resourceType])
+}
+
+model ResourceFiles {
+  id            String   @id @default(uuid())
+  resourceId    String
+  r2Key         String   @unique
+  fileName      String
+  fileSizeBytes BigInt
+  mimeType      String
+  signedUrl     String?
+  createdAt     DateTime @default(now())
+
+  resource Resources @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+}
+
+model ResourceCategories {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model ResourceVersions {
+  id            String   @id @default(uuid())
+  resourceId    String
+  versionNumber Int      @default(1)
+  changelog     String?
+  r2Key         String
+  createdAt     DateTime @default(now())
+
+  resource Resources @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+}
+
+model ResourceTags {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model LessonResources {
+  id           String   @id @default(uuid())
+  lessonId     String
+  resourceId   String
+  displayOrder Int      @default(1)
+  createdAt    DateTime @default(now())
+
+  resource Resources @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, resourceId])
+}
+
+// ============================================================================
+// DOMAIN 14: LSRW — LISTENING ENGINE
+// ============================================================================
+
+model ListeningActivities {
+  id                String   @id @default(uuid())
+  languageId        String
+  courseLevelId     String?
+  title             String
+  description       String?
+  audioFileUrl      String
+  audioDurationSecs Int      @default(60)
+  transcriptText    String?
+  speedOptions      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  audios   ListeningAudios[]
+  attempts ListeningAttempts[]
+
+  @@index([languageId])
+}
+
+model ListeningAudios {
+  id                String   @id @default(uuid())
+  activityId        String
+  speakerGender     String   @default("FEMALE")
+  accentType        String   @default("METROPOLITAN")
+  r2StorageKey      String
+  audioDurationSecs Int      @default(60)
+  createdAt         DateTime @default(now())
+
+  activity ListeningActivities @relation(fields: [activityId], references: [id], onDelete: Cascade)
+}
+
+model ListeningAttempts {
+  id                String   @id @default(uuid())
+  tenantId          String
+  activityId        String
+  studentUserId     String
+  scorePct          Decimal  @default(0.00) @db.Decimal(5, 2)
+  audioRepeatsCount Int      @default(1)
+  completedAt       DateTime @default(now())
+
+  activity ListeningActivities @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  answers  ListeningAnswers[]
+
+  @@index([tenantId, studentUserId])
+}
+
+model ListeningAnswers {
+  id            String  @id @default(uuid())
+  attemptId     String
+  questionId    String
+  userAnswer    String
+  isCorrect     Boolean @default(false)
+  timeTakenSecs Int     @default(0)
+
+  attempt ListeningAttempts @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 15: LSRW — SPEAKING ENGINE & WHISPER STT
+// ============================================================================
+
+model SpeakingActivities {
+  id                       String   @id @default(uuid())
+  languageId               String
+  courseLevelId            String?
+  title                    String
+  promptText               String
+  expectedPhonetics        String?
+  referenceAudioUrl        String?
+  maxRecordingDurationSecs Int      @default(30)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  prompts     SpeakingPrompts[]
+  submissions SpeakingAudioSubmissions[]
+
+  @@index([languageId])
+}
+
+model SpeakingPrompts {
+  id                String  @id @default(uuid())
+  activityId        String
+  promptText        String
+  targetAudioUrl    String?
+  phoneticBreakdown Json?
+  displayOrder      Int     @default(1)
+
+  activity    SpeakingActivities         @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  submissions SpeakingAudioSubmissions[]
+}
+
+model SpeakingAudioSubmissions {
+  id                String                       @id @default(uuid())
+  tenantId          String
+  activityId        String
+  promptId          String?
+  studentUserId     String
+  r2AudioStorageKey String
+  audioDurationSecs Int                          @default(0)
+  submissionStatus  SpeakingSubmissionStatusEnum @default(QUEUED)
+  createdAt         DateTime                     @default(now())
+
+  activity     SpeakingActivities     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  prompt       SpeakingPrompts?       @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  aiEvaluation SpeakingAIEvaluations?
+
+  @@index([tenantId, studentUserId])
+  @@index([submissionStatus])
+}
+
+model SpeakingAIEvaluations {
+  id                    String   @id @default(uuid())
+  submissionId          String   @unique
+  sttTranscribedText    String
+  pronunciationScorePct Decimal  @default(0.00) @db.Decimal(5, 2)
+  fluencyScorePct       Decimal  @default(0.00) @db.Decimal(5, 2)
+  accuracyScorePct      Decimal  @default(0.00) @db.Decimal(5, 2)
+  phoneticErrors        Json?
+  aiFeedbackText        String?
+  evaluatedAt           DateTime @default(now())
+
+  submission SpeakingAudioSubmissions @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 16: LSRW — READING ENGINE
+// ============================================================================
+
+model ReadingActivities {
+  id            String                  @id @default(uuid())
+  languageId    String
+  courseLevelId String?
+  title         String
+  activityType  ReadingActivityTypeEnum @default(COMPREHENSION)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  passages  ReadingPassages[]
+  questions ReadingQuestions[]
+  attempts  ReadingAttempts[]
+
+  @@index([languageId])
+}
+
+model ReadingPassages {
+  id             String   @id @default(uuid())
+  activityId     String
+  passageTitle   String
+  passageText    String
+  vocabularyList Json?
+  createdAt      DateTime @default(now())
+
+  activity  ReadingActivities  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  questions ReadingQuestions[]
+}
+
+model ReadingQuestions {
+  id            String  @id @default(uuid())
+  activityId    String
+  passageId     String?
+  questionText  String
+  questionType  String  @default("MCQ")
+  options       Json?
+  correctAnswer String
+  explanation   String?
+  displayOrder  Int     @default(1)
+
+  activity ReadingActivities @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  passage  ReadingPassages?  @relation(fields: [passageId], references: [id], onDelete: SetNull)
+}
+
+model ReadingAttempts {
+  id            String   @id @default(uuid())
+  tenantId      String
+  activityId    String
+  studentUserId String
+  scorePct      Decimal  @default(0.00) @db.Decimal(5, 2)
+  timeTakenSecs Int      @default(0)
+  completedAt   DateTime @default(now())
+
+  activity ReadingActivities @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, studentUserId])
+}
+
+// ============================================================================
+// DOMAIN 17: LSRW — WRITING ENGINE & VIRTUAL KEYBOARD
+// ============================================================================
+
+model WritingActivities {
+  id            String   @id @default(uuid())
+  languageId    String
+  courseLevelId String?
+  title         String
+  promptText    String
+  minWordCount  Int      @default(30)
+  maxWordCount  Int      @default(200)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  prompts     WritingPrompts[]
+  submissions WritingSubmissions[]
+
+  @@index([languageId])
+}
+
+model WritingPrompts {
+  id                 String   @id @default(uuid())
+  activityId         String
+  promptTitle        String
+  promptInstructions String
+  sampleAnswer       String?
+  createdAt          DateTime @default(now())
+
+  activity    WritingActivities    @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  submissions WritingSubmissions[]
+}
+
+model WritingSubmissions {
+  id                      String                      @id @default(uuid())
+  tenantId                String
+  activityId              String
+  promptId                String?
+  studentUserId           String
+  submittedText           String
+  wordCount               Int                         @default(0)
+  specialAccentsUsedCount Int                         @default(0)
+  submissionStatus        WritingSubmissionStatusEnum @default(SUBMITTED)
+  createdAt               DateTime                    @default(now())
+
+  activity     WritingActivities     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  prompt       WritingPrompts?       @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  aiEvaluation WritingAIEvaluations?
+
+  @@index([tenantId, studentUserId])
+}
+
+model WritingAIEvaluations {
+  id                 String   @id @default(uuid())
+  submissionId       String   @unique
+  grammarScorePct    Decimal  @default(0.00) @db.Decimal(5, 2)
+  spellingScorePct   Decimal  @default(0.00) @db.Decimal(5, 2)
+  vocabularyScorePct Decimal  @default(0.00) @db.Decimal(5, 2)
+  overallScorePct    Decimal  @default(0.00) @db.Decimal(5, 2)
+  grammarErrors      Json?
+  aiFeedbackText     String?
+  correctedText      String?
+  evaluatedAt        DateTime @default(now())
+
+  submission WritingSubmissions @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model VirtualKeyboardConfigs {
+  id                String   @id @default(uuid())
+  languageId        String   @unique
+  specialCharacters Json
+  layoutMatrix      Json?
+  updatedAt         DateTime @updatedAt
+}
+
+// ============================================================================
+// DOMAIN 18: ASSIGNMENTS & MANUAL/AUTO GRADING
+// ============================================================================
+
+model Assignments {
+  id                   String               @id @default(uuid())
+  tenantId             String?
+  batchId              String
+  title                String
+  description          String?
+  totalMarks           Int                  @default(100)
+  passingMarks         Int                  @default(40)
+  dueDate              DateTime
+  allowLateSubmissions Boolean              @default(false)
+  status               AssignmentStatusEnum @default(DRAFT)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  questions   AssignmentQuestions[]
+  submissions AssignmentSubmissions[]
+
+  @@index([batchId, dueDate])
+}
+
+model AssignmentQuestions {
+  id             String           @id @default(uuid())
+  assignmentId   String
+  questionText   String
+  questionType   QuestionTypeEnum @default(WRITING_ESSAY)
+  marksAllocated Int              @default(10)
+  displayOrder   Int              @default(1)
+
+  assignment Assignments          @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  gradings   AssignmentGradings[]
+}
+
+model AssignmentSubmissions {
+  id               String               @id @default(uuid())
+  tenantId         String
+  assignmentId     String
+  studentUserId    String
+  submittedText    String?
+  submissionStatus SubmissionStatusEnum @default(SUBMITTED)
+  obtainedMarks    Decimal              @default(0.00) @db.Decimal(5, 2)
+  gradedByUserId   String?
+  gradedAt         DateTime?
+  tutorFeedback    String?
+  createdAt        DateTime             @default(now())
+
+  assignment Assignments          @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  files      SubmissionFiles[]
+  gradings   AssignmentGradings[]
+
+  @@unique([assignmentId, studentUserId])
+  @@index([tenantId, studentUserId])
+}
+
+model SubmissionFiles {
+  id            String   @id @default(uuid())
+  submissionId  String
+  r2Key         String   @unique
+  fileName      String
+  fileSizeBytes BigInt
+  mimeType      String
+  createdAt     DateTime @default(now())
+
+  submission AssignmentSubmissions @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model AssignmentGradings {
+  id             String   @id @default(uuid())
+  submissionId   String
+  questionId     String
+  marksObtained  Decimal  @default(0.00) @db.Decimal(5, 2)
+  feedbackText   String?
+  gradedByUserId String?
+  gradedAt       DateTime @default(now())
+
+  submission AssignmentSubmissions @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   AssignmentQuestions   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 19: QUESTION BANK & TAGGING ENGINE
+// ============================================================================
+
+model QuestionBanks {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  courseId    String?
+  languageId  String
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  questions Questions[]
+}
+
+model Questions {
+  id              String              @id @default(uuid())
+  questionBankId  String
+  code            String
+  questionText    String
+  questionType    QuestionTypeEnum    @default(MCQ)
+  difficultyLevel DifficultyLevelEnum @default(MEDIUM)
+  defaultMarks    Decimal             @default(1.00) @db.Decimal(4, 2)
+  explanation     String?
+  status          String              @default("APPROVED")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  questionBank      QuestionBanks         @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
+  options           QuestionOptions[]
+  explanationDetail QuestionExplanations?
+  examAnswers       StudentExamAnswers[]
+
+  @@unique([questionBankId, code])
+  @@index([questionBankId, questionType])
+}
+
+model QuestionOptions {
+  id             String  @id @default(uuid())
+  questionId     String
+  optionText     String
+  optionAudioUrl String?
+  isCorrect      Boolean @default(false)
+  displayOrder   Int     @default(1)
+
+  question Questions @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model QuestionExplanations {
+  id               String   @id @default(uuid())
+  questionId       String   @unique
+  explanationText  String
+  solutionVideoUrl String?
+  solutionAudioUrl String?
+  updatedAt        DateTime @updatedAt
+
+  question Questions @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model QuestionTags {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model QuestionDifficultyLevels {
+  id              String  @id @default(uuid())
+  code            String  @unique
+  name            String
+  scoreMultiplier Decimal @default(1.00) @db.Decimal(3, 2)
+}
+
+// ============================================================================
+// DOMAIN 20: EXAMINATION & PROCTORING ENGINE
+// ============================================================================
+
+model Exams {
+  id           String         @id @default(uuid())
+  tenantId     String?
+  batchId      String
+  courseId     String
+  title        String
+  examType     ExamTypeEnum   @default(QUIZ)
+  totalMarks   Decimal        @default(100.00) @db.Decimal(5, 2)
+  passingMarks Decimal        @default(40.00) @db.Decimal(5, 2)
+  durationMins Int            @default(60)
+  examStatus   ExamStatusEnum @default(DRAFT)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  sections  ExamSections[]
+  schedules ExamSchedules[]
+  attempts  ExamAttempts[]
+  results   ExamResults[]
+
+  @@index([batchId, examStatus])
+}
+
+model ExamSections {
+  id           String  @id @default(uuid())
+  examId       String
+  title        String
+  instructions String?
+  totalMarks   Decimal @default(20.00) @db.Decimal(5, 2)
+  displayOrder Int     @default(1)
+
+  exam Exams @relation(fields: [examId], references: [id], onDelete: Cascade)
+}
+
+model ExamSchedules {
+  id            String   @id @default(uuid())
+  examId        String
+  windowStart   DateTime
+  windowEnd     DateTime
+  timeLimitMins Int      @default(60)
+  maxAttempts   Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  exam Exams @relation(fields: [examId], references: [id], onDelete: Cascade)
+}
+
+model ExamAttempts {
+  id             String                @id @default(uuid())
+  tenantId       String
+  examId         String
+  studentUserId  String
+  attemptNumber  Int                   @default(1)
+  startedAt      DateTime              @default(now())
+  submittedAt    DateTime?
+  obtainedMarks  Decimal               @default(0.00) @db.Decimal(5, 2)
+  percentage     Decimal               @default(0.00) @db.Decimal(5, 2)
+  grade          String?
+  attemptStatus  ExamAttemptStatusEnum @default(IN_PROGRESS)
+  tabSwitchCount Int                   @default(0)
+
+  exam    Exams                @relation(fields: [examId], references: [id], onDelete: Cascade)
+  answers StudentExamAnswers[]
+
+  @@unique([examId, studentUserId, attemptNumber])
+  @@index([tenantId, studentUserId])
+}
+
+model StudentExamAnswers {
+  id                 String    @id @default(uuid())
+  attemptId          String
+  questionId         String
+  selectedOptionId   String?
+  answerText         String?
+  audioSubmissionKey String?
+  isCorrect          Boolean?
+  marksObtained      Decimal   @default(0.00) @db.Decimal(4, 2)
+  evaluatedByUserId  String?
+  evaluatedAt        DateTime?
+
+  attempt  ExamAttempts @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Questions    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+}
+
+model ExamResults {
+  id            String           @id @default(uuid())
+  tenantId      String
+  examId        String
+  studentUserId String
+  totalMarks    Decimal          @db.Decimal(5, 2)
+  obtainedMarks Decimal          @db.Decimal(5, 2)
+  percentage    Decimal          @db.Decimal(5, 2)
+  grade         String
+  rank          Int?
+  percentile    Decimal?         @db.Decimal(5, 2)
+  resultStatus  ResultStatusEnum @default(PASSED)
+  isPublished   Boolean          @default(false)
+  publishedAt   DateTime?
+
+  exam         Exams          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  tutorReviews TutorReviews[]
+
+  @@unique([examId, studentUserId])
+  @@index([tenantId, studentUserId])
+}
+
+model TutorReviews {
+  id             String   @id @default(uuid())
+  examResultId   String
+  reviewerUserId String
+  tutorComments  String?
+  scoreAdjusted  Decimal  @default(0.00) @db.Decimal(4, 2)
+  reviewedAt     DateTime @default(now())
+
+  examResult ExamResults @relation(fields: [examResultId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 21: CERTIFICATION ENGINE
+// ============================================================================
+
+model CertificateTemplates {
+  id                String   @id @default(uuid())
+  tenantId          String?
+  languageId        String
+  code              String   @unique
+  name              String
+  svgTemplateUrl    String
+  signatoryName     String
+  signatoryTitle    String
+  signatureImageUrl String?
+  createdAt         DateTime @default(now())
+
+  certificates Certificates[]
+}
+
+model Certificates {
+  id                 String                @id @default(uuid())
+  tenantId           String
+  studentUserId      String
+  courseId           String
+  batchId            String
+  templateId         String
+  certificateNumber  String                @unique
+  verificationQrCode String                @unique
+  issuedDate         DateTime              @default(now())
+  expiryDate         DateTime?
+  pdfUrl             String
+  status             CertificateStatusEnum @default(ISSUED)
+  createdAt          DateTime              @default(now())
+
+  template  CertificateTemplates   @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  issuance  CertificateIssuances?
+  downloads CertificateDownloads[]
+
+  @@index([certificateNumber])
+  @@index([tenantId, studentUserId])
+}
+
+model CertificateIssuances {
+  id                  String   @id @default(uuid())
+  certificateId       String   @unique
+  studentUserId       String
+  courseCompletionPct Decimal  @default(100.00) @db.Decimal(5, 2)
+  finalGrade          String
+  issuedBySystem      Boolean  @default(true)
+  issuedAt            DateTime @default(now())
+
+  certificate Certificates @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+}
+
+model CertificateVerifications {
+  id                String   @id @default(uuid())
+  certificateNumber String
+  verifierIp        String
+  verifierUserAgent String?
+  verifiedAt        DateTime @default(now())
+
+  @@index([certificateNumber])
+}
+
+model CertificateDownloads {
+  id            String   @id @default(uuid())
+  certificateId String
+  downloadedAt  DateTime @default(now())
+  clientIp      String
+
+  certificate Certificates @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 22: AI PLATFORM CORE AGENTS
+// ============================================================================
+
+model AIAgents {
+  id          String          @id @default(uuid())
+  agentCode   String          @unique
+  name        String
+  description String?
+  agentType   AIAgentTypeEnum @default(RESOURCE_AGENT)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  versions AgentVersions[]
+  tasks    AITasks[]
+
+  @@index([agentType, isActive])
+}
+
+model AgentVersions {
+  id            String   @id @default(uuid())
+  agentId       String
+  versionNumber Int      @default(1)
+  gitCommitHash String?
+  changelog     String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  agent         AIAgents             @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  configuration AgentConfigurations?
+  executions    AIExecutions[]
+
+  @@unique([agentId, versionNumber])
+}
+
+model AgentConfigurations {
+  id             String   @id @default(uuid())
+  agentVersionId String   @unique
+  temperature    Decimal  @default(0.70) @db.Decimal(3, 2)
+  maxTokens      Int      @default(2048)
+  systemPrompt   String
+  toolsEnabled   Json?
+  updatedAt      DateTime @updatedAt
+
+  agentVersion AgentVersions @relation(fields: [agentVersionId], references: [id], onDelete: Cascade)
+}
+
+model AITasks {
+  id           String           @id @default(uuid())
+  agentId      String
+  tenantId     String?
+  taskType     String
+  inputPayload Json
+  status       AITaskStatusEnum @default(QUEUED)
+  attempts     Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  agent      AIAgents       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  executions AIExecutions[]
+
+  @@index([status, createdAt])
+}
+
+model AIExecutions {
+  id              String   @id @default(uuid())
+  taskId          String
+  agentVersionId  String
+  executionTimeMs Int      @default(0)
+  tokenCount      Int      @default(0)
+  status          String   @default("SUCCESS")
+  errorDetails    String?
+  executedAt      DateTime @default(now())
+
+  task         AITasks         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  agentVersion AgentVersions   @relation(fields: [agentVersionId], references: [id], onDelete: Cascade)
+  evaluations  AIEvaluations[]
+
+  @@index([taskId])
+}
+
+model AIEvaluations {
+  id                String   @id @default(uuid())
+  executionId       String
+  ratingScore       Int      @default(5)
+  feedbackComments  String?
+  evaluatedByUserId String
+  evaluatedAt       DateTime @default(now())
+
+  execution AIExecutions @relation(fields: [executionId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 23: AI REQUEST, MODEL & TOKEN AUDIT
+// ============================================================================
+
+model AIRequests {
+  id               String         @id @default(uuid())
+  tenantId         String?
+  userId           String?
+  agentCode        String
+  provider         AIProviderEnum @default(OPENAI)
+  modelName        String         @default("gpt-4o")
+  promptTokens     Int            @default(0)
+  completionTokens Int            @default(0)
+  totalCostUSD     Decimal        @default(0.0000) @db.Decimal(8, 4)
+  requestedAt      DateTime       @default(now())
+
+  response AIResponses?
+
+  @@index([tenantId, provider, requestedAt])
+}
+
+model AIResponses {
+  id              String   @id @default(uuid())
+  requestId       String   @unique
+  responsePayload Json
+  finishReason    String?
+  latencyMs       Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  request AIRequests @relation(fields: [requestId], references: [id], onDelete: Cascade)
+}
+
+model AIProviders {
+  id          String         @id @default(uuid())
+  code        AIProviderEnum @unique
+  name        String
+  apiEndpoint String?
+  isActive    Boolean        @default(true)
+
+  models AIModels[]
+}
+
+model AIModels {
+  id                        String  @id @default(uuid())
+  providerId                String
+  modelName                 String
+  contextWindowTokens       Int     @default(128000)
+  costPer1kPromptTokens     Decimal @default(0.005) @db.Decimal(6, 4)
+  costPer1kCompletionTokens Decimal @default(0.015) @db.Decimal(6, 4)
+  isActive                  Boolean @default(true)
+
+  provider AIProviders @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, modelName])
+}
+
+model TokenUsageLogs {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  usageDate             DateTime @db.Date
+  totalPromptTokens     Int      @default(0)
+  totalCompletionTokens Int      @default(0)
+  totalCostUSD          Decimal  @default(0.0000) @db.Decimal(10, 4)
+
+  @@unique([tenantId, usageDate])
+}
+
+// ============================================================================
+// DOMAIN 24: AI PROMPTS & APPROVAL WORKFLOWS
+// ============================================================================
+
+model PromptTemplates {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  category     String   @default("GENERAL")
+  templateText String
+  variables    Json?
+  createdAt    DateTime @default(now())
+
+  versions PromptVersions[]
+}
+
+model PromptVersions {
+  id               String   @id @default(uuid())
+  promptTemplateId String
+  versionNumber    Int      @default(1)
+  templateText     String
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  template PromptTemplates @relation(fields: [promptTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([promptTemplateId, versionNumber])
+}
+
+model AIGeneratedContents {
+  id               String               @id @default(uuid())
+  tenantId         String?
+  agentCode        String
+  contentType      String               @default("RESOURCE")
+  rawContent       Json
+  approvalStatus   AIApprovalStatusEnum @default(PENDING)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime             @default(now())
+
+  approvals ContentApprovals[]
+
+  @@index([approvalStatus])
+}
+
+model ContentApprovals {
+  id              String               @id @default(uuid())
+  contentId       String
+  reviewerUserId  String
+  action          AIApprovalStatusEnum @default(APPROVED)
+  rejectionReason String?
+  reviewedAt      DateTime             @default(now())
+
+  generatedContent AIGeneratedContents @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 25: RAG & VECTOR SEARCH (PGVECTOR)
+// ============================================================================
+
+model KnowledgeBases {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  languageId  String
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  sources KnowledgeSources[]
+}
+
+model KnowledgeSources {
+  id               String                  @id @default(uuid())
+  knowledgeBaseId  String
+  title            String
+  sourceType       String                  @default("PDF")
+  r2StorageKey     String
+  processingStatus RAGProcessingStatusEnum @default(PENDING)
+  createdAt        DateTime                @default(now())
+
+  knowledgeBase KnowledgeBases       @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  documents     KnowledgeDocuments[]
+
+  @@index([knowledgeBaseId])
+}
+
+model KnowledgeDocuments {
+  id            String   @id @default(uuid())
+  sourceId      String
+  documentTitle String
+  fileSizeBytes BigInt
+  pageCount     Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  source KnowledgeSources @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  chunks DocumentChunks[]
+}
+
+model DocumentChunks {
+  id         String @id @default(uuid())
+  documentId String
+  chunkIndex Int
+  chunkText  String
+  tokenCount Int    @default(0)
+  metadata   Json?
+
+  document  KnowledgeDocuments  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  embedding DocumentEmbeddings?
+
+  @@index([documentId, chunkIndex])
+}
+
+model DocumentEmbeddings {
+  id             String                      @id @default(uuid())
+  chunkId        String                      @unique
+  embeddingModel String                      @default("text-embedding-3-small")
+  embedding      Unsupported("vector(1536)")
+  createdAt      DateTime                    @default(now())
+
+  chunk DocumentChunks @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+}
+
+model RAGQueries {
+  id                String   @id @default(uuid())
+  tenantId          String
+  studentUserId     String
+  queryText         String
+  retrievedChunkIds Json?
+  relevanceScores   Json?
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId, studentUserId])
+}
+
+// ============================================================================
+// DOMAIN 26: MCP (MODEL CONTEXT PROTOCOL) INTEGRATION
+// ============================================================================
+
+model MCPServers {
+  id              String   @id @default(uuid())
+  serverName      String   @unique
+  serverUrl       String
+  protocolVersion String   @default("2024-11-05")
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+
+  tools       MCPTools[]
+  connections MCPConnections[]
+}
+
+model MCPTools {
+  id          String  @id @default(uuid())
+  mcpServerId String
+  toolName    String
+  description String?
+  inputSchema Json
+  isActive    Boolean @default(true)
+
+  mcpServer     MCPServers         @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
+  executionLogs MCPExecutionLogs[]
+
+  @@unique([mcpServerId, toolName])
+}
+
+model MCPConnections {
+  id               String   @id @default(uuid())
+  mcpServerId      String
+  agentCode        String
+  connectionStatus String   @default("CONNECTED")
+  lastHeartbeatAt  DateTime @default(now())
+
+  mcpServer MCPServers @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
+}
+
+model MCPExecutionLogs {
+  id              String   @id @default(uuid())
+  mcpToolId       String
+  agentCode       String
+  inputArgs       Json
+  outputResult    Json?
+  executionTimeMs Int      @default(0)
+  status          String   @default("SUCCESS")
+  executedAt      DateTime @default(now())
+
+  mcpTool MCPTools @relation(fields: [mcpToolId], references: [id], onDelete: Cascade)
+
+  @@index([mcpToolId, executedAt])
+}
+
+// ============================================================================
+// DOMAIN 27: PAYMENT GATEWAY (RAZORPAY) & WEBHOOK IDEMPOTENCY
+// ============================================================================
+
+model PaymentProviders {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  name       String
+  isActive   Boolean  @default(true)
+  isTestMode Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+
+  orders PaymentOrders[]
+}
+
+model PaymentOrders {
+  id              String            @id @default(uuid())
+  tenantId        String?
+  providerId      String
+  orderNumber     String            @unique
+  amount          Decimal           @db.Decimal(10, 2)
+  currency        String            @default("INR")
+  status          PaymentStatusEnum @default(CREATED)
+  razorpayOrderId String            @unique
+  metadata        Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  provider     PaymentProviders      @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  transactions PaymentTransactions[]
+  attempts     PaymentAttempts[]
+
+  @@index([tenantId, orderNumber])
+}
+
+model PaymentTransactions {
+  id                String            @id @default(uuid())
+  orderId           String
+  transactionNumber String            @unique
+  razorpayPaymentId String            @unique
+  paymentMethod     String            @default("UPI")
+  amount            Decimal           @db.Decimal(10, 2)
+  fee               Decimal           @default(0.00) @db.Decimal(8, 2)
+  tax               Decimal           @default(0.00) @db.Decimal(8, 2)
+  status            PaymentStatusEnum @default(SUCCESS)
+  failureReason     String?
+  paidAt            DateTime          @default(now())
+
+  order   PaymentOrders    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  receipt PaymentReceipts?
+
+  @@index([razorpayPaymentId])
+}
+
+model PaymentAttempts {
+  id            String   @id @default(uuid())
+  orderId       String
+  attemptNumber Int      @default(1)
+  ipAddress     String
+  status        String   @default("ATTEMPTED")
+  attemptedAt   DateTime @default(now())
+
+  order PaymentOrders @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model PaymentWebhooks {
+  id              String    @id @default(uuid())
+  webhookId       String    @unique
+  eventId         String    @unique
+  event           String
+  payload         Json
+  processedStatus String    @default("PENDING")
+  receivedAt      DateTime  @default(now())
+  processedAt     DateTime?
+
+  @@index([eventId, processedStatus])
+}
+
+model PaymentReceipts {
+  id            String   @id @default(uuid())
+  transactionId String   @unique
+  receiptNumber String   @unique
+  pdfUrl        String
+  issuedAt      DateTime @default(now())
+
+  transaction PaymentTransactions @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model Invoices {
+  id            String    @id @default(uuid())
+  tenantId      String
+  invoiceNumber String    @unique
+  amount        Decimal   @db.Decimal(10, 2)
+  taxAmount     Decimal   @default(0.00) @db.Decimal(10, 2)
+  totalAmount   Decimal   @db.Decimal(10, 2)
+  pdfUrl        String?
+  status        String    @default("PAID")
+  dueDate       DateTime
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([tenantId, status])
+}
+
+// ============================================================================
+// DOMAIN 28: SUBSCRIPTIONS & INSTITUTION BILLING
+// ============================================================================
+
+model SubscriptionPlans {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  maxStudents  Int      @default(2000)
+  monthlyPrice Decimal  @db.Decimal(10, 2)
+  annualPrice  Decimal  @db.Decimal(10, 2)
+  features     Json?
+  createdAt    DateTime @default(now())
+
+  subscriptions Subscriptions[]
+}
+
+model Subscriptions {
+  id        String   @id @default(uuid())
+  tenantId  String   @unique
+  planId    String
+  startDate DateTime
+  endDate   DateTime
+  autoRenew Boolean  @default(true)
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plan           SubscriptionPlans @relation(fields: [planId], references: [id], onDelete: Restrict)
+  billingRecords BillingRecords[]
+}
+
+model BillingRecords {
+  id             String   @id @default(uuid())
+  subscriptionId String
+  amount         Decimal  @db.Decimal(10, 2)
+  billingDate    DateTime @default(now())
+  status         String   @default("PAID")
+  invoiceId      String?
+
+  subscription Subscriptions @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, billingDate])
+}
+
+model InstitutionPayments {
+  id              String   @id @default(uuid())
+  tenantId        String
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentDate     DateTime @default(now())
+  paymentMode     String   @default("BANK_TRANSFER")
+  referenceNumber String
+  status          String   @default("VERIFIED")
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+// ============================================================================
+// DOMAIN 29: MULTI-CHANNEL NOTIFICATION DISPATCHER
+// ============================================================================
+
+model Notifications {
+  id        String                  @id @default(uuid())
+  tenantId  String?
+  userId    String
+  title     String
+  message   String
+  channel   NotificationChannelEnum @default(IN_APP)
+  isRead    Boolean                 @default(false)
+  readAt    DateTime?
+  createdAt DateTime                @default(now())
+
+  deliveryLogs DeliveryLogs[]
+
+  @@index([userId, isRead])
+}
+
+model NotificationTemplates {
+  id           String                  @id @default(uuid())
+  code         String                  @unique
+  name         String
+  channel      NotificationChannelEnum @default(EMAIL)
+  subject      String
+  bodyTemplate String
+  variables    Json?
+  createdAt    DateTime                @default(now())
+}
+
+model NotificationPreferences {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  emailEnabled    Boolean  @default(true)
+  smsEnabled      Boolean  @default(true)
+  whatsappEnabled Boolean  @default(true)
+  pushEnabled     Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+}
+
+model NotificationChannels {
+  id           String                  @id @default(uuid())
+  channelType  NotificationChannelEnum @unique
+  providerName String                  @default("TWILIO")
+  credentials  Json?
+  isActive     Boolean                 @default(true)
+}
+
+model DeliveryLogs {
+  id               String                  @id @default(uuid())
+  notificationId   String
+  channel          NotificationChannelEnum
+  gatewayMessageId String?
+  status           String                  @default("SENT")
+  errorReason      String?
+  deliveredAt      DateTime?
+
+  notification Notifications @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([gatewayMessageId])
+}
+
+model NotificationEvents {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  eventType String
+  payload   Json
+  createdAt DateTime @default(now())
+}
+
+// ============================================================================
+// DOMAIN 30: ACADEMIC DOUBT Q&A CHAT
+// ============================================================================
+
+model AcademicConversations {
+  id            String   @id @default(uuid())
+  tenantId      String?
+  batchId       String
+  courseId      String
+  studentUserId String
+  title         String
+  status        String   @default("OPEN")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  members  AcademicChatMembers[]
+  messages AcademicChatMessages[]
+  ticket   DoubtTickets?
+
+  @@index([tenantId, studentUserId, status])
+}
+
+model AcademicChatMembers {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  userRole       String   @default("STUDENT")
+  joinedAt       DateTime @default(now())
+
+  conversation AcademicConversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model AcademicChatMessages {
+  id             String   @id @default(uuid())
+  conversationId String
+  senderUserId   String
+  messageType    String   @default("TEXT")
+  messageText    String
+  fileUrl        String?
+  createdAt      DateTime @default(now())
+
+  conversation AcademicConversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model DoubtTickets {
+  id                      String    @id @default(uuid())
+  conversationId          String    @unique
+  tenantId                String?
+  assignedAssistantUserId String?
+  category                String    @default("ACADEMIC")
+  priority                String    @default("MEDIUM")
+  resolutionTimeMins      Int?
+  resolvedAt              DateTime?
+  createdAt               DateTime  @default(now())
+
+  conversation AcademicConversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  aiResponses  DoubtResponses[]
+
+  @@index([assignedAssistantUserId])
+}
+
+model DoubtResponses {
+  id                   String   @id @default(uuid())
+  doubtTicketId        String
+  suggestedAnswerText  String
+  confidenceScore      Decimal  @default(0.90) @db.Decimal(3, 2)
+  wasAcceptedByStudent Boolean  @default(false)
+  createdAt            DateTime @default(now())
+
+  doubtTicket DoubtTickets @relation(fields: [doubtTicketId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 31: TECHNICAL CUSTOMER SUPPORT
+// ============================================================================
+
+model SupportTickets {
+  id           String             @id @default(uuid())
+  tenantId     String?
+  userId       String
+  ticketNumber String             @unique
+  subject      String
+  description  String
+  category     TicketCategoryEnum @default(LOGIN_ISSUE)
+  priority     TicketPriorityEnum @default(MEDIUM)
+  status       TicketStatusEnum   @default(OPEN)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  messages      TicketMessages[]
+  attachments   TicketAttachments[]
+  assignments   TicketAssignments[]
+  statusHistory TicketStatusHistory[]
+
+  @@index([tenantId, status])
+}
+
+model TicketCategories {
+  id                 String             @id @default(uuid())
+  code               TicketCategoryEnum @unique
+  name               String
+  slaResolutionHours Int                @default(24)
+}
+
+model TicketMessages {
+  id             String   @id @default(uuid())
+  ticketId       String
+  senderUserId   String
+  messageText    String
+  isInternalNote Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  ticket SupportTickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+}
+
+model TicketAttachments {
+  id            String   @id @default(uuid())
+  ticketId      String
+  r2Key         String
+  fileName      String
+  fileSizeBytes BigInt
+  createdAt     DateTime @default(now())
+
+  ticket SupportTickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model TicketAssignments {
+  id                  String   @id @default(uuid())
+  ticketId            String
+  assignedAgentUserId String
+  assignedAt          DateTime @default(now())
+
+  ticket SupportTickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model TicketStatusHistory {
+  id              String           @id @default(uuid())
+  ticketId        String
+  fromStatus      TicketStatusEnum
+  toStatus        TicketStatusEnum
+  changedByUserId String
+  changedAt       DateTime         @default(now())
+
+  ticket SupportTickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// DOMAIN 32: CAREER GUIDANCE & JOB PORTAL
+// ============================================================================
+
+model CareerPrograms {
+  id               String   @id @default(uuid())
+  title            String
+  description      String?
+  targetLanguageId String
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+
+  resources CareerResources[]
+}
+
+model CareerResources {
+  id           String   @id @default(uuid())
+  programId    String
+  title        String
+  resourceType String   @default("PDF")
+  r2Key        String
+  createdAt    DateTime @default(now())
+
+  program CareerPrograms @relation(fields: [programId], references: [id], onDelete: Cascade)
+}
+
+model Companies {
+  id           String   @id @default(uuid())
+  name         String
+  logoUrl      String?
+  website      String?
+  contactEmail String
+  createdAt    DateTime @default(now())
+
+  jobOpportunities JobOpportunities[]
+}
+
+model JobOpportunities {
+  id                       String   @id @default(uuid())
+  companyId                String
+  jobTitle                 String
+  requiredLanguageId       String
+  requiredProficiencyLevel String   @default("B1")
+  location                 String
+  salaryRange              String?
+  applicationDeadline      DateTime
+  status                   String   @default("OPEN")
+  createdAt                DateTime @default(now())
+
+  company      Companies         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications JobApplications[]
+
+  @@index([requiredLanguageId])
+}
+
+model StudentCareerProfiles {
+  id                String   @id @default(uuid())
+  studentUserId     String   @unique
+  resumeR2Key       String?
+  linkedInUrl       String?
+  preferredRoles    Json?
+  isSearchingForJob Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+}
+
+model JobApplications {
+  id                String                   @id @default(uuid())
+  jobId             String
+  studentUserId     String
+  applicationStatus JobApplicationStatusEnum @default(APPLIED)
+  appliedAt         DateTime                 @default(now())
+
+  job JobOpportunities @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, studentUserId])
+}
+
+// ============================================================================
+// DOMAIN 33: STUDENT PROGRESS & LEARNING STREAKS
+// ============================================================================
+
+model StudentCourseProgress {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  studentUserId         String
+  courseId              String
+  completedLessonsCount Int      @default(0)
+  totalLessonsCount     Int      @default(0)
+  overallProgressPct    Decimal  @default(0.00) @db.Decimal(5, 2)
+  lastStudiedAt         DateTime @default(now())
+
+  @@unique([studentUserId, courseId])
+}
+
+model ActivityProgressLogs {
+  id            String   @id @default(uuid())
+  studentUserId String
+  topicItemId   String
+  timeSpentSecs Int      @default(0)
+  completedAt   DateTime @default(now())
+
+  @@unique([studentUserId, topicItemId])
+}
+
+model LSRWProgressSummaries {
+  id                String   @id @default(uuid())
+  studentUserId     String
+  languageId        String
+  listeningScorePct Decimal  @default(0.00) @db.Decimal(5, 2)
+  speakingScorePct  Decimal  @default(0.00) @db.Decimal(5, 2)
+  readingScorePct   Decimal  @default(0.00) @db.Decimal(5, 2)
+  writingScorePct   Decimal  @default(0.00) @db.Decimal(5, 2)
+  updatedAt         DateTime @updatedAt
+
+  @@unique([studentUserId, languageId])
+}
+
+model LearningStreaks {
+  id                String   @id @default(uuid())
+  studentUserId     String   @unique
+  currentStreakDays Int      @default(1)
+  longestStreakDays Int      @default(1)
+  lastActiveDate    DateTime @db.Date
+  updatedAt         DateTime @updatedAt
+}
+
+model StudentAchievements {
+  id            String   @id @default(uuid())
+  studentUserId String
+  badgeCode     String
+  badgeName     String
+  earnedAt      DateTime @default(now())
+
+  @@unique([studentUserId, badgeCode])
+}
+
+// ============================================================================
+// DOMAIN 34: SYSTEM ANALYTICS & REPORTS
+// ============================================================================
+
+model BatchAnalytics {
+  id               String   @id @default(uuid())
+  batchId          String
+  weekNumber       Int
+  avgAttendancePct Decimal  @default(0.00) @db.Decimal(5, 2)
+  avgExamScorePct  Decimal  @default(0.00) @db.Decimal(5, 2)
+  updatedAt        DateTime @updatedAt
+
+  @@unique([batchId, weekNumber])
+}
+
+model ExamAnalytics {
+  id             String   @id @default(uuid())
+  examId         String   @unique
+  totalAttempted Int      @default(0)
+  passRatePct    Decimal  @default(0.00) @db.Decimal(5, 2)
+  avgTimeSecs    Int      @default(0)
+  updatedAt      DateTime @updatedAt
+}
+
+model AIUsageAnalytics {
+  id           String   @id @default(uuid())
+  tenantId     String
+  analyticDate DateTime @db.Date
+  totalTokens  BigInt   @default(0)
+  totalCostUSD Decimal  @default(0.0000) @db.Decimal(10, 4)
+  avgLatencyMs Int      @default(0)
+
+  @@unique([tenantId, analyticDate])
+}
+
+model InstitutionReports {
+  id          String   @id @default(uuid())
+  tenantId    String
+  reportType  String   @default("ATTENDANCE")
+  r2ReportKey String
+  generatedAt DateTime @default(now())
+}
+
+// ============================================================================
+// DOMAIN 35: ENTERPRISE AUDIT LOGS & SECURITY
+// ============================================================================
+
+model AuditLogs {
+  id         String   @id @default(uuid())
+  tenantId   String?
+  userId     String?
+  action     String   @default("UPDATE")
+  entityName String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  ipAddress  String
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, entityName, createdAt])
+}
+
+model LoginLogs {
+  id              String   @id @default(uuid())
+  tenantId        String?
+  userId          String
+  authMethod      String   @default("PASSWORD")
+  ipAddress       String
+  locationCountry String?
+  createdAt       DateTime @default(now())
+}
+
+model SecurityEvents {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  eventType String
+  severity  String   @default("HIGH")
+  details   Json
+  createdAt DateTime @default(now())
+
+  @@index([severity])
+}
+
+model APIAccessLogs {
+  id             String   @id @default(uuid())
+  tenantId       String?
+  userId         String?
+  endpoint       String
+  httpMethod     String   @default("GET")
+  statusCode     Int      @default(200)
+  responseTimeMs Int      @default(0)
+  createdAt      DateTime @default(now())
+}
+
+model PermissionChangeLogs {
+  id                String   @id @default(uuid())
+  tenantId          String
+  modifiedRoleId    String
+  modifiedByUserId  String
+  permissionAdded   String?
+  permissionRemoved String?
+  changedAt         DateTime @default(now())
+}
+
+// ============================================================================
+// DOMAIN 36: SYSTEM CONFIGURATIONS
+// ============================================================================
+
+model SystemSettings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model FeatureFlags {
+  id                String   @id @default(uuid())
+  featureKey        String   @unique
+  isEnabled         Boolean  @default(false)
+  rolloutPercentage Int      @default(100)
+  tenantWhitelist   Json?
+  updatedAt         DateTime @updatedAt
+}
+
+model MaintenanceWindows {
+  id        String   @id @default(uuid())
+  title     String
+  startTime DateTime
+  endTime   DateTime
+  status    String   @default("SCHEDULED")
+  createdAt DateTime @default(now())
+}
