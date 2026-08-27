@@ -70,10 +70,10 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is fully des
 
 ---
 
-## 🧩 36 Business Modules & Sub-Modules Tree
+## 🧩 Complete 36 Business Domains & 195 Models Inventory
 
 <details>
-<summary><b>👉 Click to Expand All 36 Business Domains & 195 Models List</b></summary>
+<summary><b>👉 Click to Expand All 36 Business Domains & 195 Models List (Domain 01 to Domain 36)</b></summary>
 
 <br/>
 
@@ -182,26 +182,167 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is fully des
 - `ResourceTags` (Search Discovery Tags)
 - `LessonResources` (Junction Linking Resources to Curriculum Lessons)
 
-### 14. 🎧 Domain 14: LSRW Listening (4 Models)
-- `ListeningActivities`, `ListeningAudios`, `ListeningAttempts`, `ListeningAnswers`
+### 14. 🎧 Domain 14: LSRW — Listening Engine (4 Models)
+- `ListeningActivities` (Listening Practice Master)
+- `ListeningAudios` (Native Speaker Tracks with Speed Controls)
+- `ListeningAttempts` (Student Listening Task Log)
+- `ListeningAnswers` (Detailed Listening Answer Breakdown)
 
-### 15. 🎙️ Domain 15: LSRW Speaking & Whisper STT (4 Models)
-- `SpeakingActivities`, `SpeakingPrompts`, `SpeakingAudioSubmissions`, `SpeakingAIEvaluations`
+### 15. 🎙️ Domain 15: LSRW — Speaking & Whisper STT (4 Models)
+- `SpeakingActivities` (Speaking Practice Master)
+- `SpeakingPrompts` (Sentence / Phrase Card Prompts)
+- `SpeakingAudioSubmissions` (Student Recorded Voice Files in R2)
+- `SpeakingAIEvaluations` (Whisper STT Pronunciation AI Score)
 
-### 16. 📖 Domain 16: LSRW Reading (4 Models)
-- `ReadingActivities`, `ReadingPassages`, `ReadingQuestions`, `ReadingAttempts`
+### 16. 📖 Domain 16: LSRW — Reading Engine (4 Models)
+- `ReadingActivities` (Reading Practice Master)
+- `ReadingPassages` (Comprehension Passage Texts)
+- `ReadingQuestions` (Passage-based Questions)
+- `ReadingAttempts` (Student Reading Comprehension Log)
 
-### 17. ✍️ Domain 17: LSRW Writing & Accents (5 Models)
-- `WritingActivities`, `WritingPrompts`, `WritingSubmissions`, `WritingAIEvaluations`, `VirtualKeyboardConfigs`
+### 17. ✍️ Domain 17: LSRW — Writing Engine & Accents (5 Models)
+- `WritingActivities` (Writing Exercise Master)
+- `WritingPrompts` (Prose & Essay Prompts)
+- `WritingSubmissions` (Student Typed Essay Submissions)
+- `WritingAIEvaluations` (AI Grammar & Spelling Evaluation)
+- `VirtualKeyboardConfigs` (French/German Soft Keyboard Layout Matrix)
 
-### 18. 📝 Domain 18–21: Assignments, Exams & QR Certificates (23 Models)
-- `Assignments`, `AssignmentSubmissions`, `QuestionBanks`, `Questions`, `Exams`, `ExamAttempts`, `ExamResults`, `Certificates`, `CertificateVerifications`
+### 18. 📝 Domain 18: Assignments & Homework (5 Models)
+- `Assignments` (Homework Master)
+- `AssignmentQuestions` (Questions within Assignment)
+- `AssignmentSubmissions` (Student Homework Submission)
+- `SubmissionFiles` (Files Uploaded with Homework)
+- `AssignmentGradings` (Question-level Tutor Grades)
 
-### 19. 🤖 Domain 22–26: AI Platform, RAG (`pgvector`) & MCP (25 Models)
-- `AIAgents`, `AITasks`, `AIRequests`, `TokenUsageLogs`, `KnowledgeBases`, `DocumentEmbeddings`, `MCPServers`, `MCPTools`
+### 19. ❓ Domain 19: Question Bank Engine (6 Models)
+- `QuestionBanks` (Master Repository per Language)
+- `Questions` (MCQ, Fill in blanks, Dictation Items)
+- `QuestionOptions` (Multiple Choice Options)
+- `QuestionExplanations` (Audio / Video / Text Solutions)
+- `QuestionTags` (Subject Matter Search Tags)
+- `QuestionDifficultyLevels` (Difficulty Bands & Scoring Weights)
 
-### 20. 💳 Domain 27–36: Payments, Doubt Chat, Support, Career & Security Audit (45 Models)
-- `PaymentOrders`, `PaymentWebhooks`, `AcademicConversations`, `DoubtTickets`, `SupportTickets`, `JobOpportunities`, `AuditLogs`, `APIAccessLogs`
+### 20. 🎓 Domain 20: Examinations & Proctoring (7 Models)
+- `Exams` (Exam Master Record)
+- `ExamSections` (Structural Sections inside Exam)
+- `ExamSchedules` (Active Window for Exam)
+- `ExamAttempts` (Student Exam Attempt & Proctor Logs)
+- `StudentExamAnswers` (Detailed Answers Submitted)
+- `ExamResults` (Published Score Card Report)
+- `TutorReviews` (Manual Grade Adjustments by Tutors)
+
+### 21. 📜 Domain 21: QR Digital Certification (5 Models)
+- `CertificateTemplates` (SVG / HTML Certificate Templates)
+- `Certificates` (Issued Digital Certificate with Unique QR Code)
+- `CertificateIssuances` (Automated Completion Log)
+- `CertificateVerifications` (Public QR Scan Audit Trail)
+- `CertificateDownloads` (PDF Download Analytics)
+
+### 22. 🤖 Domain 22: AI Platform Core Agents (6 Models)
+- `AIAgents` (Registration for Python FastAPI Agents)
+- `AgentVersions` (Version Control for AI Agent Code & Prompts)
+- `AgentConfigurations` (Temperature, Max Tokens, System Prompts)
+- `AITasks` (Async Background Task Queue)
+- `AIExecutions` (Runtime Execution Logs)
+- `AIEvaluations` (Tutor Quality Rating of AI Output)
+
+### 23. 📊 Domain 23: AI Request & Token Audit (5 Models)
+- `AIRequests` (API Request Log to OpenAI / Claude)
+- `AIResponses` (Raw LLM Response Payload & Latency)
+- `AIProviders` (LLM Provider Configs)
+- `AIModels` (Model Token Pricing Tiers)
+- `TokenUsageLogs` (Daily Token Cost Aggregation per College)
+
+### 24. 📝 Domain 24: AI Prompts & Tutor Approvals (4 Models)
+- `PromptTemplates` (Base Agent Prompt Templates)
+- `PromptVersions` (Prompt Version History)
+- `AIGeneratedContents` (Generated Materials Awaiting Tutor Review)
+- `ContentApprovals` (Review & Approval Log by Main Tutors)
+
+### 25. 🔍 Domain 25: RAG & `pgvector` Search (6 Models)
+- `KnowledgeBases` (Vector Store Container per Course)
+- `KnowledgeSources` (PDF, PPT, Audio Ingest Sources)
+- `KnowledgeDocuments` (Processed Document Records)
+- `DocumentChunks` (Text Chunking Output)
+- `DocumentEmbeddings` (`pgvector` 1536-dim Vector Store)
+- `RAGQueries` (Student Queries & Retrieved Chunk Matches)
+
+### 26. 🔌 Domain 26: MCP Protocol Integration (4 Models)
+- `MCPServers` (Registered Model Context Protocol Servers)
+- `MCPTools` (Tools Exposed to AI Agents via MCP)
+- `MCPConnections` (Active Agent-Tool Connection Sessions)
+- `MCPExecutionLogs` (Log of Tool Execution Calls)
+
+### 27. 💳 Domain 27: Payment Gateway & Razorpay (6 Models)
+- `PaymentProviders` (Razorpay / Stripe Gateway Setup)
+- `PaymentOrders` (Order Request Creation)
+- `PaymentTransactions` (Financial Transaction Log)
+- `PaymentAttempts` (Payment Gateway Attempt Log)
+- `PaymentWebhooks` (Idempotency Log with Unique `eventId`)
+- `PaymentReceipts` (Generated Tax Receipts)
+
+### 28. 🧾 Domain 28: Subscriptions & Billing (5 Models)
+- `Invoices` (B2B Enterprise GST Tax Invoices)
+- `SubscriptionPlans` (SaaS Pricing Tiers)
+- `Subscriptions` (Active College Subscription)
+- `BillingRecords` (Billing Ledger History)
+- `InstitutionPayments` (Offline / Wire Payments)
+
+### 29. 🔔 Domain 29: Multi-Channel Notifications (6 Models)
+- `Notifications` (User Notification Inbox)
+- `NotificationTemplates` (Multi-Channel Message Templates)
+- `NotificationPreferences` (User Delivery Preferences)
+- `NotificationChannels` (SMS, Email, WhatsApp, Push Gateways)
+- `DeliveryLogs` (Gateway Delivery Status Logs)
+- `NotificationEvents` (Automated System Event Triggers)
+
+### 30. 💬 Domain 30: Academic Doubt Q&A Chat (5 Models)
+- `AcademicConversations` (Doubt Thread between Student & Assistant Tutors)
+- `AcademicChatMembers` (Members in Doubt Thread)
+- `AcademicChatMessages` (Messages in Doubt Chat)
+- `DoubtTickets` (Ticket Assigned to Assistant Tutor)
+- `DoubtResponses` (AI Suggested Answer for Doubt Tickets)
+
+### 31. 🎧 Domain 31: Customer Helpdesk & Support (6 Models)
+- `SupportTickets` (Technical Support Ticket)
+- `TicketCategories` (Category & SLA Resolution Rules)
+- `TicketMessages` (Messages inside Ticket)
+- `TicketAttachments` (Screenshots / Logs Attached)
+- `TicketAssignments` (Support Agent Assigned)
+- `TicketStatusHistory` (Status Change Log)
+
+### 32. 💼 Domain 32: Career Portal & Placement (6 Models)
+- `CareerPrograms` (Career Prep Program)
+- `CareerResources` (Placement Guides & Resume Templates)
+- `Companies` (Partner Hiring Companies)
+- `JobOpportunities` (Job Postings for Language Graduates)
+- `StudentCareerProfiles` (Student Career Profile & Resume)
+- `JobApplications` (Job Application Tracking)
+
+### 33. 📈 Domain 33: Student Progress & Streaks (5 Models)
+- `StudentCourseProgress` (Course Completion Metrics)
+- `ActivityProgressLogs` (Activity Completion Log with Time Spent)
+- `LSRWProgressSummaries` (Competency Breakdown across LSRW)
+- `LearningStreaks` (Daily Gamified Learning Streak Tracker)
+- `StudentAchievements` (Badges & Milestones Earned)
+
+### 34. 📊 Domain 34: System Analytics & Reports (4 Models)
+- `BatchAnalytics` (Attendance & Exam Score Metrics per Batch)
+- `ExamAnalytics` (Difficulty & Pass Rate Analytics)
+- `AIUsageAnalytics` (Daily LLM Token Cost Analytics per College)
+- `InstitutionReports` (Executive Summary Reports for Principals)
+
+### 35. 🛡️ Domain 35: Enterprise Audit & Security Logs (5 Models)
+- `AuditLogs` (Low-Level Data Mutation Audit Trail)
+- `LoginLogs` (Dedicated Security Log for User Logins)
+- `SecurityEvents` (Security Alerts for Brute Force or RLS Violations)
+- `APIAccessLogs` (API Endpoint Response Time & Status Log)
+- `PermissionChangeLogs` (Audit Trail of RBAC Edits)
+
+### 36. ⚙️ Domain 36: System Configurations (3 Models)
+- `SystemSettings` (Global Platform Runtime Configuration)
+- `FeatureFlags` (System Feature Toggles & Rollout Rules)
+- `MaintenanceWindows` (Scheduled Downtime Windows)
 
 </details>
 
