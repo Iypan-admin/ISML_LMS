@@ -14,51 +14,41 @@
 
 ---
 
-## 💎 Master Architecture Artifacts & Production Source Specifications
-
-The entire backend and database infrastructure of **ISML LMS v1.0** is 100% designed, normalized in 3NF, formatted, and architecturally verified. Click any card below to open the target production file directly on GitHub:
-
 </div>
 
-<table width="100%">
-  <tr>
-    <td width="33%" align="center" style="padding: 16px;">
-      <a href="./prisma/schema.prisma">
-        <img src="https://img.shields.io/badge/1._Prisma_Schema-195_Models-2D3748?style=for-the-badge&logo=prisma&logoColor=white" width="100%"/>
-      </a>
-      <br/><br/>
-      <h3>📄 Master Prisma Schema</h3>
-      <p>Production database schema powering PostgreSQL & Supabase <code>pgvector</code>.</p>
-      <p><b><code>195 Models • 41 Enums • 36 Domains</code></b></p>
-      <a href="./prisma/schema.prisma">
-        <img src="https://img.shields.io/badge/View_Schema_Code-%E2%86%97-0969DA?style=flat-square"/>
-      </a>
-    </td>
-    <td width="33%" align="center" style="padding: 16px;">
-      <a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md">
-        <img src="https://img.shields.io/badge/2._ERD_Documentation-36_Diagrams-0052CC?style=for-the-badge&logo=markdown&logoColor=white" width="100%"/>
-      </a>
-      <br/><br/>
-      <h3>📘 Master ERD Specification</h3>
-      <p>Complete ERD reference featuring 36 visual Mermaid diagrams & 1:1, 1:N, N:M tables.</p>
-      <p><b><code>36 Domains • Cardinality Matrix</code></b></p>
-      <a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md">
-        <img src="https://img.shields.io/badge/Read_ERD_Specs-%E2%86%97-0052CC?style=flat-square"/>
-      </a>
-    </td>
-    <td width="33%" align="center" style="padding: 16px;">
-      <a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md">
-        <img src="https://img.shields.io/badge/3._Audit_Report-Score_10%2F10-00D9A5?style=for-the-badge&logo=checkmarx&logoColor=white" width="100%"/>
-      </a>
-      <br/><br/>
-      <h3>📋 Cross-Validation Audit</h3>
-      <p>Architectural audit report confirming zero critical bugs & DB freeze readiness.</p>
-      <p><b><code>Score 10/10 • Ready for Freeze</code></b></p>
-      <a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md">
-        <img src="https://img.shields.io/badge/View_Audit_Report-%E2%86%97-00D9A5?style=flat-square"/>
-      </a>
-    </td>
-  </tr>
+## 📌 Master Architecture Artifacts & Source Links
+
+The entire backend and database infrastructure of **ISML LMS v1.0** is fully designed, normalized in 3NF, formatted, and verified. Access the 3 master production files below (click any link to open directly in GitHub):
+
+<table>
+  <thead>
+    <tr>
+      <th align="center">Icon</th>
+      <th>Deliverable Document</th>
+      <th>Architectural Summary</th>
+      <th>Direct Repository Link</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">📄</td>
+      <td><a href="./prisma/schema.prisma"><b>Master Prisma Schema</b></a></td>
+      <td>Production schema powering PostgreSQL & Supabase <code>pgvector</code> (195 Models, 41 Enums).</td>
+      <td><a href="./prisma/schema.prisma"><b><code>prisma/schema.prisma</code></b></a></td>
+    </tr>
+    <tr>
+      <td align="center">📘</td>
+      <td><a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><b>Master ERD Documentation</b></a></td>
+      <td>Complete ERD reference featuring 36 visual Mermaid diagrams & explicit 1:1, 1:N, N:M tables.</td>
+      <td><a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><b><code>ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md</code></b></a></td>
+    </tr>
+    <tr>
+      <td align="center">📋</td>
+      <td><a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><b>Cross-Validation Audit Report</b></a></td>
+      <td>Architectural audit report (Score 10/10, ZERO critical bugs, ready for DB freeze).</td>
+      <td><a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><b><code>ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md</code></b></a></td>
+    </tr>
+  </tbody>
 </table>
 
 ---
@@ -67,14 +57,14 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is 100% desi
 
 <div align="center">
 
-| Metric | System Total | Architectural Guarantee | Status |
-| :--- | :---: | :--- | :---: |
-| 🗄️ **Database Models** | **`195`** | 100% Normalized in 3NF (Zero Fake Padding) | `[ 🟢 VERIFIED ]` |
-| 🔢 **System Enums** | **`41`** | Strongly Typed CEFR Levels, States & Protocols | `[ 🟢 STRICT ]` |
-| 🧩 **Business Modules** | **`36`** | Decoupled Domain Architecture | `[ 🟢 COMPLETE ]` |
-| 🔀 **Junction Tables (N:M)** | **`14`** | Explicit Metadata-backed M:N Relationships | `[ 🟢 AUDITED ]` |
-| 🧠 **AI Vector Search Engine** | **`pgvector`** | `vector(1536)` OpenAI Embeddings | `[ 🟢 NATIVE ]` |
-| 🔑 **Primary Key Standard** | **`UUID v4`** | Distributed Security Across Tenants | `[ 🟢 SECURE ]` |
+| Metric | System Total | Architectural Guarantee |
+| :--- | :---: | :--- |
+| 🗄️ **Database Models** | **`195`** | 100% Normalized in 3NF (Zero Fake Padding) |
+| 🔢 **System Enums** | **`41`** | Strongly Typed CEFR Levels, States & Protocols |
+| 🧩 **Business Modules** | **`36`** | Decoupled Domain Architecture |
+| 🔀 **Junction Tables (N:M)** | **`14`** | Explicit Metadata-backed M:N Relationships |
+| 🧠 **AI Vector Search Engine** | **`pgvector`** | `vector(1536)` OpenAI Embeddings |
+| 🔑 **Primary Key Standard** | **`UUID v4`** | Distributed Security Across Tenants |
 
 </div>
 
