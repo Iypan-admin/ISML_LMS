@@ -18,12 +18,12 @@
 
 ## 📌 Master Architecture Artifacts & Source Links
 
-The entire backend and database infrastructure of **ISML LMS v1.0** is fully designed, normalized in 3NF, formatted, and verified. Access the 3 master production files below:
+The entire backend and database infrastructure of **ISML LMS v1.0** is fully designed, normalized in 3NF, formatted, and verified. Access the 3 master production files below (click any link to open directly in GitHub):
 
 <table>
   <thead>
     <tr>
-      <th>Icon</th>
+      <th align="center">Icon</th>
       <th>Deliverable Document</th>
       <th>Architectural Summary</th>
       <th>Direct Repository Link</th>
@@ -32,21 +32,21 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is fully des
   <tbody>
     <tr>
       <td align="center">📄</td>
-      <td><b>Master Prisma Schema</b></td>
+      <td><a href="./prisma/schema.prisma"><b>Master Prisma Schema</b></a></td>
       <td>Production schema powering PostgreSQL & Supabase <code>pgvector</code> (195 Models, 41 Enums).</td>
-      <td><a href="file:///d:/ISML/ISML_LMS/prisma/schema.prisma"><code>prisma/schema.prisma</code></a></td>
+      <td><a href="./prisma/schema.prisma"><b><code>prisma/schema.prisma</code></b></a></td>
     </tr>
     <tr>
       <td align="center">📘</td>
-      <td><b>Master ERD Documentation</b></td>
+      <td><a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><b>Master ERD Documentation</b></a></td>
       <td>Complete ERD reference featuring 36 visual Mermaid diagrams & explicit 1:1, 1:N, N:M tables.</td>
-      <td><a href="file:///d:/ISML/ISML_LMS/ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><code>ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md</code></a></td>
+      <td><a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><b><code>ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md</code></b></a></td>
     </tr>
     <tr>
       <td align="center">📋</td>
-      <td><b>Cross-Validation Audit Report</b></td>
+      <td><a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><b>Cross-Validation Audit Report</b></a></td>
       <td>Architectural audit report (Score 10/10, ZERO critical bugs, ready for DB freeze).</td>
-      <td><a href="file:///d:/ISML/ISML_LMS/ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><code>ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md</code></a></td>
+      <td><a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><b><code>ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md</code></b></a></td>
     </tr>
   </tbody>
 </table>
@@ -73,7 +73,7 @@ The entire backend and database infrastructure of **ISML LMS v1.0** is fully des
 ## 🧩 Complete 36 Business Domains & 195 Models Inventory
 
 <details>
-<summary><b>👉 Click to Expand All 36 Business Domains & 195 Models List (Domain 01 to Domain 36)</b></summary>
+<summary><b><font color="#2563EB">🔹 🟦 CLICK HERE TO EXPAND ALL 36 BUSINESS DOMAINS & 195 MODELS LIST (Domains 01 to 36) 🟦 🔹</font></b></summary>
 
 <br/>
 
