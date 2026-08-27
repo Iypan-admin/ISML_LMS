@@ -157,6 +157,19 @@ def create_document():
         h.paragraph_format.line_spacing = 1.15
         return h
 
+    def add_heading3(text):
+        h = doc.add_paragraph()
+        h.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        run = h.add_run(text)
+        run.font.name = 'Calibri'
+        run.font.size = Pt(13)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0x25, 0x63, 0xEB) # Sapphire Blue
+        h.paragraph_format.space_before = Pt(10)
+        h.paragraph_format.space_after = Pt(4)
+        h.paragraph_format.line_spacing = 1.15
+        return h
+
     def add_callout_box(title, text):
         tbl = doc.add_table(rows=1, cols=1)
         tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -218,7 +231,7 @@ def create_document():
     # -------------------------------------------------------------
     # 1. Comprehensive Executive Summary & Business Guide
     # -------------------------------------------------------------
-    add_heading1("1. Comprehensive Executive Summary & Business Guide")
+    add_heading1("1. Executive Summary & Business Guide (For Management)")
     
     p1 = doc.add_paragraph()
     p1.add_run(
@@ -230,7 +243,7 @@ def create_document():
         "the actual production source of truth defined in schema.prisma."
     )
 
-    add_heading2("💡 What is ISML LMS?")
+    add_heading2("What is ISML LMS?")
     p2 = doc.add_paragraph()
     p2.add_run(
         "ISML LMS (Indian School for Modern Languages Learning Management System) is an enterprise-grade multi-tenant B2B SaaS "
@@ -255,14 +268,14 @@ def create_document():
 
     # Visual Diagram Container Box
     add_callout_box(
-        "📊 VISUAL ARCHITECTURE OVERVIEW — SHARED WEBINAR BATCH PATTERN",
+        "SYSTEM ARCHITECTURE OVERVIEW — SHARED WEBINAR BATCH PATTERN",
         "  [Partner College A (Chennai)]  \\  \n"
         "  [Partner College B (Mumbai)]   ---> [1 Shared LiveKit Webinar Batch (French A1)]\n"
         "  [Partner College C (Delhi)]    /   \n\n"
         "  Teaching Staff: 1 Main Tutor + 1 Backup Tutor + 4 Assistant Doubt Tutors"
     )
 
-    add_heading2("🔑 The 5 Core Principles Every Executive Must Understand:")
+    add_heading2("The 5 Core Architectural Principles:")
 
     principles = [
         ("1. Batch != College (Multi-Tenant B2B Isolation): ", 
@@ -330,7 +343,7 @@ def create_document():
     )
 
     add_callout_box(
-        "🗺️ MASTER SYSTEM ARCHITECTURE TREE",
+        "MASTER SYSTEM ARCHITECTURE TREE",
         "[Institutions (Root B2B Partner College)]\n"
         "  ├── (1:N) ──► [Campuses]\n"
         "  ├── (1:N) ──► [Departments]\n"
@@ -811,7 +824,18 @@ def create_document():
          "  [SystemSettings] (1) ─── (N) ──► [FeatureFlags]\n  [SystemSettings] (1) ─── (N) ──► [MaintenanceWindows]")
     ]
 
-    for d_title, d_desc, d_extra, d_models, d_diagram in domains_36:
+    for item in domains_36:
+        d_title = item[0]
+        d_desc = item[1]
+        if len(item) == 5:
+            d_extra = item[2]
+            d_models = item[3]
+            d_diagram = item[4]
+        else:
+            d_extra = item[2] + "\n\n" + item[3]
+            d_models = item[4]
+            d_diagram = item[5]
+
         add_heading2(d_title)
         
         # Paragraph 1: Executive Concept
@@ -819,7 +843,7 @@ def create_document():
         p_desc1.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         p_desc1.paragraph_format.line_spacing = 1.5
         p_desc1.paragraph_format.space_after = Pt(6)
-        r_lbl1 = p_desc1.add_run("📋 Executive Story & Purpose: ")
+        r_lbl1 = p_desc1.add_run("Executive Story & Purpose: ")
         r_lbl1.font.bold = True
         r_lbl1.font.size = Pt(12)
         r_lbl1.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
@@ -832,7 +856,7 @@ def create_document():
         p_desc2.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         p_desc2.paragraph_format.line_spacing = 1.5
         p_desc2.paragraph_format.space_after = Pt(8)
-        r_lbl2 = p_desc2.add_run("⚙️ Operational Mechanics & Business Value: ")
+        r_lbl2 = p_desc2.add_run("Operational Mechanics & Business Value: ")
         r_lbl2.font.bold = True
         r_lbl2.font.size = Pt(12)
         r_lbl2.font.color.rgb = RGBColor(0x1E, 0x3A, 0x8A)
@@ -844,7 +868,7 @@ def create_document():
         p_m_hdr.alignment = WD_ALIGN_PARAGRAPH.LEFT
         p_m_hdr.paragraph_format.line_spacing = 1.15
         p_m_hdr.paragraph_format.space_after = Pt(4)
-        r_mh = p_m_hdr.add_run("🧩 Underpinning Database Models:")
+        r_mh = p_m_hdr.add_run("Underpinning Database Models:")
         r_mh.font.bold = True
         r_mh.font.size = Pt(11.5)
         r_mh.font.color.rgb = RGBColor(0x1E, 0x3A, 0x8A)
@@ -862,7 +886,7 @@ def create_document():
             r_mp = p_m.add_run(m_purpose)
             r_mp.font.size = Pt(11.5)
 
-        add_callout_box(f"🔄 CARDINALITY & RELATIONSHIP FLOW — {d_title.split(':')[0]}", d_diagram)
+        add_callout_box(f"CARDINALITY & RELATIONSHIP FLOW — {d_title.split(':')[0]}", d_diagram)
         doc.add_paragraph().paragraph_format.space_after = Pt(10)
 
     # -------------------------------------------------------------
@@ -933,7 +957,7 @@ def create_document():
     # -------------------------------------------------------------
     add_heading1("6. Real-World Business Workflow Scenarios")
 
-    add_heading2("🎬 Scenario 1: Onboarding a New Partner College")
+    add_heading2("Scenario 1: Onboarding a New Partner College")
     p_sc1 = doc.add_paragraph()
     p_sc1.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p_sc1.paragraph_format.line_spacing = 1.5
@@ -944,7 +968,7 @@ def create_document():
         "4. The system sends welcome OTP emails via NotificationEvents to all 2,000 students."
     ).font.size = Pt(12)
 
-    add_heading2("🎬 Scenario 2: Student Attending Live Class & Watching Recording")
+    add_heading2("Scenario 2: Student Attending Live Class & Watching Recording")
     p_sc2 = doc.add_paragraph()
     p_sc2.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     p_sc2.paragraph_format.line_spacing = 1.5
