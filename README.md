@@ -16,41 +16,49 @@
 
 </div>
 
-## 💎 Master Architecture Artifacts & Production Source Links
+## 📌 Master Architecture Artifacts & Source Links
 
-The entire backend and database infrastructure of **ISML LMS v1.0** is 100% designed, normalized in 3NF, formatted, and verified. Tap any card below to open the target production file directly on GitHub:
+The entire backend and database infrastructure of **ISML LMS v1.0** is fully designed, normalized in 3NF, formatted, and verified. Access the 3 master production files below (click any link to open directly in GitHub):
+
+<table>
+  <thead>
+    <tr>
+      <th>Deliverable Document</th>
+      <th>Architectural Summary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><a href="./prisma/schema.prisma"><b>Master Prisma Schema</b></a></td>
+      <td>Production schema powering PostgreSQL & Supabase <code>pgvector</code> (195 Models, 41 Enums).</td>
+    </tr>
+    <tr>
+      <td><a href="./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md"><b>Master ERD Documentation</b></a></td>
+      <td>Complete ERD reference featuring 36 visual Mermaid diagrams & explicit 1:1, 1:N, N:M tables.</td>
+    </tr>
+    <tr>
+      <td><a href="./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md"><b>Cross-Validation Audit Report</b></a></td>
+      <td>Architectural audit report (Score 10/10, ZERO critical bugs, ready for DB freeze).</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
-### 📄 1. [Master Prisma Production Schema (`prisma/schema.prisma`)](./prisma/schema.prisma)
-> **Production database schema powering PostgreSQL & Supabase `pgvector`.**  
-> 📌 *195 Models • 41 Enums • 36 Business Domains • Normalized 3NF*  
-> 👉 [**Click to View `prisma/schema.prisma` Source ↗**](./prisma/schema.prisma)
+## 📊 Database Statistics & High-Level System Architecture
 
----
+<div align="center">
 
-### 📘 2. [Master ERD Documentation (`ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md`)](./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md)
-> **Complete ERD reference featuring 36 visual Mermaid diagrams & explicit 1:1, 1:N, N:M tables.**  
-> 📌 *36 Domain Diagrams • 1:1, 1:N, N:M Cardinality Matrix • Plain Language Guide*  
-> 👉 [**Click to Read `ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md` Specs ↗**](./ISML_LMS_COMPLETE_ERD_DOCUMENTATION.md)
+| Metric | System Total | Architectural Guarantee |
+| :--- | :---: | :--- |
+| 🗄️ **Database Models** | **`195`** | 100% Normalized in 3NF (Zero Fake Padding) |
+| 🔢 **System Enums** | **`41`** | Strongly Typed CEFR Levels, States & Protocols |
+| 🧩 **Business Modules** | **`36`** | Decoupled Domain Architecture |
+| 🔀 **Junction Tables (N:M)** | **`14`** | Explicit Metadata-backed M:N Relationships |
+| 🧠 **AI Vector Search Engine** | **`pgvector`** | `vector(1536)` OpenAI Embeddings |
+| 🔑 **Primary Key Standard** | **`UUID v4`** | Distributed Security Across Tenants |
 
----
-
-### 📋 3. [Cross-Validation Audit Report (`ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md`)](./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md)
-> **Architectural audit report confirming zero critical bugs & DB freeze readiness.**  
-> 📌 *Score 10/10 • 0 Critical Bugs • Production Freeze Approved*  
-> 👉 [**Click to View `ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md` Audit ↗**](./ISML_LMS_ERD_PRISMA_CROSS_VALIDATION_REPORT.md)
-
----
-
-## 📊 Database Statistics & High-Level Architecture
-
-- 🗄️ **Database Models**: **`195 Models`** *(100% Normalized in 3NF, Zero Fake Padding)*
-- 🔢 **System Enums**: **`41 Enums`** *(Strongly Typed CEFR Levels, States & Protocols)*
-- 🧩 **Business Modules**: **`36 Modules`** *(Decoupled Domain Architecture)*
-- 🔀 **Junction Tables (N:M)**: **`14 Tables`** *(Explicit Metadata-backed M:N Relationships)*
-- 🧠 **AI Vector Search Engine**: **`pgvector`** *(1536-dim OpenAI Vector Search)*
-- 🔑 **Primary Key Standard**: **`UUID v4`** *(Distributed Security Across Tenants)*
+</div>
 
 ---
 
@@ -349,13 +357,15 @@ The system features a **100% Database-Driven Menu-Based Access Control Engine**.
 
 ## 👥 System & Custom User Roles Matrix
 
-- **👑 Super Admin** (`SYSTEM`): Full platform control & college tenant onboarding.
-- **🏫 College Admin / Principal** (`CUSTOM`): College portal setup, student import & staff role management.
-- **👨‍🏫 Main Tutor** (`CUSTOM`): Teaches live webinars on LiveKit Cloud & approves AI content.
-- **🔄 Substitute Backup Tutor** (`CUSTOM`): Standby main tutor ready to take over stream on network failure.
-- **💬 Assistant Doubt Tutor** (`CUSTOM`): Handles student Q&A chat & resolves doubt tickets.
-- **🎓 Student** (`SYSTEM`): Attends live webinars, practices LSRW, takes exams & gets QR certs.
-- **👨‍👩‍👧 Parent / Guardian** (`SYSTEM`): Views student attendance %, LSRW score cards & exam report cards.
+| Role | Type | Scope | Primary Function |
+| :--- | :---: | :---: | :--- |
+| **👑 Super Admin** | `SYSTEM` | Global | Full platform control & college tenant onboarding. |
+| **🏫 College Admin / Principal** | `CUSTOM` | Tenant | College portal setup, student import & staff role management. |
+| **👨‍🏫 Main Tutor** | `CUSTOM` | Batch | Teaches live webinars on LiveKit Cloud & approves AI content. |
+| **🔄 Substitute Backup Tutor** | `CUSTOM` | Batch | Standby main tutor ready to take over stream on network failure. |
+| **💬 Assistant Doubt Tutor** | `CUSTOM` | College | Handles student Q&A chat & resolves doubt tickets. |
+| **🎓 Student** | `SYSTEM` | Enrolled | Attends live webinars, practices LSRW, takes exams & gets QR certs. |
+| **👨‍👩‍👧 Parent / Guardian** | `SYSTEM` | Student | Views student attendance %, LSRW score cards & exam report cards. |
 
 ---
 
