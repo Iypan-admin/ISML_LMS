@@ -2,7 +2,7 @@ import docx
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 import os
@@ -22,6 +22,18 @@ def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
         tcMar.append(node)
     tcPr.append(tcMar)
 
+def set_cell_left_border(cell, color_hex="1E293B", sz="24"):
+    tcPr = cell._tc.get_or_add_tcPr()
+    tcBorders = parse_xml(
+        f'<w:tcBorders {nsdecls("w")}>'
+        f'  <w:left w:val="single" w:sz="{sz}" w:space="0" w:color="{color_hex}"/>'
+        f'  <w:top w:val="none"/>'
+        f'  <w:right w:val="none"/>'
+        f'  <w:bottom w:val="none"/>'
+        f'</w:tcBorders>'
+    )
+    tcPr.append(tcBorders)
+
 def create_document():
     doc = Document()
 
@@ -32,42 +44,44 @@ def create_document():
         section.left_margin = Inches(1.0)
         section.right_margin = Inches(1.0)
 
-    # Base Styles
+    # Base Styles (Strict 12pt Body Text)
     normal_style = doc.styles['Normal']
     normal_style.font.name = 'Calibri'
     normal_style.font.size = Pt(12)
-    normal_style.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
+    normal_style.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A) # Dark Charcoal
     normal_style.paragraph_format.line_spacing = 1.15
     normal_style.paragraph_format.space_after = Pt(6)
 
-    # Title Banner / Header
+    # -------------------------------------------------------------
+    # Document Header Banner (Enterprise Slate Navy Palette)
+    # -------------------------------------------------------------
     p_title = doc.add_paragraph()
-    p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run_title = p_title.add_run("ISML LMS – Complete Enterprise Database ERD & Architecture Master Guide")
+    p_title.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run_title = p_title.add_run("ISML LMS — Complete Enterprise Database ERD & Architecture Master Guide")
     run_title.font.name = 'Calibri'
-    run_title.font.size = Pt(22)
+    run_title.font.size = Pt(20)
     run_title.font.bold = True
-    run_title.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
-    p_title.paragraph_format.space_after = Pt(4)
+    run_title.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B) # Corporate Slate Navy
+    p_title.paragraph_format.space_after = Pt(2)
 
     p_sub = doc.add_paragraph()
-    p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run_sub = p_sub.add_run("Production Database Architecture Specification • Manager & Executive Reference")
+    p_sub.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    run_sub = p_sub.add_run("Production Database Architecture Specification • Executive Technical Reference")
     run_sub.font.name = 'Calibri'
-    run_sub.font.size = Pt(13)
+    run_sub.font.size = Pt(12)
     run_sub.font.italic = True
-    run_sub.font.color.rgb = RGBColor(0x47, 0x55, 0x69)
-    p_sub.paragraph_format.space_after = Pt(18)
+    run_sub.font.color.rgb = RGBColor(0x47, 0x55, 0x69) # Slate Gray
+    p_sub.paragraph_format.space_after = Pt(14)
 
-    # Metadata Box Table
+    # Metadata Box (Executive Summary Card)
     meta_table = doc.add_table(rows=4, cols=2)
     meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     meta_table.autofit = False
 
     meta_data = [
-        ("System Architecture:", "B2B Multi-Tenant Foreign Language Learning System"),
-        ("Database Engine:", "PostgreSQL + Supabase PostgreSQL (pgvector Extension Enabled)"),
-        ("ORM & Framework:", "Prisma ORM v5+ / v6+ • NestJS Core & Python FastAPI AI"),
+        ("System Architecture:", "B2B Multi-Tenant Foreign Language SaaS Platform"),
+        ("Database Engine:", "PostgreSQL 16 + Supabase PostgreSQL (pgvector Extension Enabled)"),
+        ("ORM & Framework:", "Prisma ORM v5+ / v6+ • NestJS Core LMS & Python FastAPI AI"),
         ("Source of Truth:", "schema.prisma (195 Models, 41 Enums, 36 Business Domains)")
     ]
 
@@ -81,7 +95,7 @@ def create_document():
         r0 = p0.add_run(label)
         r0.font.bold = True
         r0.font.size = Pt(11)
-        r0.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
+        r0.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
 
         p1 = c1.paragraphs[0]
         r1 = p1.add_run(val)
@@ -93,15 +107,16 @@ def create_document():
         set_cell_margins(c0, 80, 80, 120, 120)
         set_cell_margins(c1, 80, 80, 120, 120)
 
-    doc.add_paragraph().paragraph_format.space_after = Pt(12)
+    doc.add_paragraph().paragraph_format.space_after = Pt(10)
 
+    # Helper functions for headings & tables
     def add_heading1(text):
         h = doc.add_paragraph()
         run = h.add_run(text)
         run.font.name = 'Calibri'
-        run.font.size = Pt(18)
+        run.font.size = Pt(16)
         run.font.bold = True
-        run.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
+        run.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B) # Unified Slate Navy
         h.paragraph_format.space_before = Pt(16)
         h.paragraph_format.space_after = Pt(6)
         return h
@@ -110,23 +125,33 @@ def create_document():
         h = doc.add_paragraph()
         run = h.add_run(text)
         run.font.name = 'Calibri'
-        run.font.size = Pt(15)
+        run.font.size = Pt(14)
         run.font.bold = True
-        run.font.color.rgb = RGBColor(0x1E, 0x3A, 0x8A)
-        h.paragraph_format.space_before = Pt(14)
+        run.font.color.rgb = RGBColor(0x33, 0x41, 0x55) # Slate Blue
+        h.paragraph_format.space_before = Pt(12)
         h.paragraph_format.space_after = Pt(4)
         return h
 
-    def add_heading3(text):
-        h = doc.add_paragraph()
-        run = h.add_run(text)
-        run.font.name = 'Calibri'
-        run.font.size = Pt(13)
-        run.font.bold = True
-        run.font.color.rgb = RGBColor(0x25, 0x63, 0xEB)
-        h.paragraph_format.space_before = Pt(10)
-        h.paragraph_format.space_after = Pt(4)
-        return h
+    def add_callout_box(title, text):
+        tbl = doc.add_table(rows=1, cols=1)
+        tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
+        cell = tbl.rows[0].cells[0]
+        cell.width = Inches(6.5)
+        set_cell_background(cell, "F8FAFC")
+        set_cell_left_border(cell, "1E293B", "36")
+        set_cell_margins(cell, 120, 120, 160, 160)
+        
+        p = cell.paragraphs[0]
+        p.paragraph_format.space_after = Pt(4)
+        r_t = p.add_run(title + "\n")
+        r_t.font.bold = True
+        r_t.font.size = Pt(11.5)
+        r_t.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
+
+        r_txt = p.add_run(text)
+        r_txt.font.size = Pt(11)
+        r_txt.font.color.rgb = RGBColor(0x33, 0x41, 0x55)
+        doc.add_paragraph().paragraph_format.space_after = Pt(6)
 
     def format_table_headers_and_rows(table, col_widths, headers, data):
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -140,7 +165,7 @@ def create_document():
             r.font.bold = True
             r.font.size = Pt(11)
             r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-            set_cell_background(hdr_cells[i], "0F172A")
+            set_cell_background(hdr_cells[i], "1E293B") # Unified Professional Slate Navy
             set_cell_margins(hdr_cells[i], 100, 100, 120, 120)
 
         # Data Rows
@@ -152,7 +177,7 @@ def create_document():
                 p = row_cells[c_idx].paragraphs[0]
                 r = p.add_run(str(cell_value))
                 r.font.size = Pt(11)
-                r.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
+                r.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
                 set_cell_background(row_cells[c_idx], bg_color)
                 set_cell_margins(row_cells[c_idx], 80, 80, 120, 120)
 
@@ -172,23 +197,14 @@ def create_document():
     p_lms = doc.add_paragraph()
     p_lms.add_run("ISML LMS (Indian School for Modern Languages Learning Management System) is an enterprise B2B SaaS platform designed to teach foreign languages (starting with French A1, expanding dynamically to German, Japanese, Spanish, IELTS) to bulk student batches from partner colleges and universities.").font.size = Pt(12)
 
-    # ASCII Architecture Box
-    p_box = doc.add_paragraph()
-    p_box.paragraph_format.left_indent = Inches(0.2)
-    r_box = p_box.add_run(
-        "+-----------------------------------------------------------------------------------+\n"
-        "|                               ISML LMS PLATFORM                                  |\n"
-        "|                                                                                   |\n"
-        "|  [Partner College A (Chennai)]  \\                                                 |\n"
-        "|  [Partner College B (Mumbai)]   ---> [1 Shared LiveKit Webinar Batch (French A1)] |\n"
-        "|  [Partner College C (Delhi)]    /                                                 |\n"
-        "|                                                                                   |\n"
-        "|  Teaching Staff: 1 Main Tutor + 1 Backup Tutor + 4 Assistant Doubt Tutors        |\n"
-        "+-----------------------------------------------------------------------------------+"
+    # Visual Diagram Container Box
+    add_callout_box(
+        "📊 VISUAL ARCHITECTURE OVERVIEW — SHARED WEBINAR BATCH PATTERN",
+        "  [Partner College A (Chennai)]  \\  \n"
+        "  [Partner College B (Mumbai)]   ---> [1 Shared LiveKit Webinar Batch (French A1)]\n"
+        "  [Partner College C (Delhi)]    /   \n\n"
+        "  Teaching Staff: 1 Main Tutor + 1 Backup Tutor + 4 Assistant Doubt Tutors"
     )
-    r_box.font.name = 'Consolas'
-    r_box.font.size = Pt(10.5)
-    r_box.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
 
     add_heading2("🔑 The 5 Core Architectural Principles:")
 
@@ -205,7 +221,7 @@ def create_document():
         r_t = p_pr.add_run(title)
         r_t.font.bold = True
         r_t.font.size = Pt(12)
-        r_t.font.color.rgb = RGBColor(0x1E, 0x3A, 0x8A)
+        r_t.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
         r_d = p_pr.add_run(desc)
         r_d.font.size = Pt(12)
 
@@ -236,7 +252,6 @@ def create_document():
 
     inv_headers = ["#", "Model Name", "Business Domain", "Plain Language Purpose"]
     
-    # All 195 models raw inventory data
     raw_models = [
         (1, "Institutions", "Domain 01: Tenant Org", "Partner university/college tenant container"),
         (2, "Campuses", "Domain 01: Tenant Org", "Physical campus branch of a university"),
@@ -443,8 +458,8 @@ def create_document():
     # 4. Master Architectural Relationship Map
     # -------------------------------------------------------------
     add_heading1("4. Master Architectural Relationship Map")
-    p_arch = doc.add_paragraph()
-    r_arch = p_arch.add_run(
+    add_callout_box(
+        "🗺️ MASTER SYSTEM ARCHITECTURE TREE",
         "[Institutions (Root B2B Partner College)]\n"
         "  ├── (1:N) ──► [Campuses]\n"
         "  ├── (1:N) ──► [Departments]\n"
@@ -461,13 +476,10 @@ def create_document():
         "                                        ├── (1:N) ──► [Assignments]\n"
         "                                        └── (1:N) ──► [Exams] ──► (1:N) ──► [ExamResults] ──► (1:1) ──► [Certificates]"
     )
-    r_arch.font.name = 'Consolas'
-    r_arch.font.size = Pt(10)
-    r_arch.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
     doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
     # -------------------------------------------------------------
-    # 5. Domain-by-Domain Visual & Cardinality Modules (36 DOMAINS)
+    # 5. Domain-by-Domain Specification (36 DOMAINS)
     # -------------------------------------------------------------
     add_heading1("5. Domain-by-Domain Cardinality & Relationship Specification")
 
@@ -568,7 +580,7 @@ def create_document():
              ["SpeakingPrompts", "SpeakingAudioSubmissions", "One-to-Many (1:N)", "SpeakingAudioSubmissions.promptId → SpeakingPrompts.id", "Student recorded voice audio uploaded to R2."],
              ["SpeakingAudioSubmissions", "SpeakingAIEvaluations", "One-to-One (1:1)", "SpeakingAIEvaluations.submissionId → SpeakingAudioSubmissions.id", "Whisper STT pronunciation & accuracy AI evaluation."],
              ["Languages", "WritingActivities", "One-to-Many (1:N)", "WritingActivities.languageId → Languages.id", "Writing composition essay tasks."],
-             ["WritingPrompts", "WritingSubmissions", "One-to-Many (1:N)", "WritingSubmissions.promptId → WritingPrompts.id", "Student typed text using virtual accent keyboard."],
+             ["WritingPrompts", "WritingSubmissions", "One-to-Many (1:N)", "WritingSubmissions.promptId → Languages.id", "Student typed text using virtual accent keyboard."],
              ["WritingSubmissions", "WritingAIEvaluations", "One-to-One (1:1)", "WritingAIEvaluations.submissionId → WritingSubmissions.id", "AI grammar, spelling, and vocabulary evaluation."]
          ]),
         ("ERD 22 & 25 – AI Platform Core & RAG pgvector (12 Models)",
