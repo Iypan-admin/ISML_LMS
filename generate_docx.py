@@ -58,13 +58,14 @@ def create_document():
         section.left_margin = Inches(1.0)
         section.right_margin = Inches(1.0)
 
-    # Base Styles (Strict 12pt Body Text)
+    # Base Styles (Strict 12pt Body Text, 1.5 Line Spacing, Justified Alignment)
     normal_style = doc.styles['Normal']
     normal_style.font.name = 'Calibri'
     normal_style.font.size = Pt(12)
     normal_style.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B) # Slate Charcoal
-    normal_style.paragraph_format.line_spacing = 1.15
-    normal_style.paragraph_format.space_after = Pt(6)
+    normal_style.paragraph_format.line_spacing = 1.5 # Strict 1.5 Line Spacing!
+    normal_style.paragraph_format.space_after = Pt(8)
+    normal_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY # Justified Alignment!
 
     # -------------------------------------------------------------
     # Document Header Banner (Dark Blue #0B2447 Palette)
@@ -77,6 +78,7 @@ def create_document():
     run_title.font.bold = True
     run_title.font.color.rgb = RGBColor(0x0B, 0x24, 0x47) # Executive Dark Blue
     p_title.paragraph_format.space_after = Pt(2)
+    p_title.paragraph_format.line_spacing = 1.15
 
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.LEFT
@@ -86,6 +88,7 @@ def create_document():
     run_sub.font.italic = True
     run_sub.font.color.rgb = RGBColor(0x47, 0x55, 0x69)
     p_sub.paragraph_format.space_after = Pt(14)
+    p_sub.paragraph_format.line_spacing = 1.15
 
     # Metadata Box Table
     meta_table = doc.add_table(rows=4, cols=2)
@@ -106,12 +109,16 @@ def create_document():
         c1.width = Inches(4.5)
 
         p0 = c0.paragraphs[0]
+        p0.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p0.paragraph_format.line_spacing = 1.15
         r0 = p0.add_run(label)
         r0.font.bold = True
         r0.font.size = Pt(11)
         r0.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
 
         p1 = c1.paragraphs[0]
+        p1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p1.paragraph_format.line_spacing = 1.15
         r1 = p1.add_run(val)
         r1.font.size = Pt(11)
         r1.font.color.rgb = RGBColor(0x33, 0x41, 0x55)
@@ -126,6 +133,7 @@ def create_document():
     # Helper functions for Dark Blue headings & styled tables
     def add_heading1(text):
         h = doc.add_paragraph()
+        h.alignment = WD_ALIGN_PARAGRAPH.LEFT
         run = h.add_run(text)
         run.font.name = 'Calibri'
         run.font.size = Pt(16)
@@ -133,10 +141,12 @@ def create_document():
         run.font.color.rgb = RGBColor(0x0B, 0x24, 0x47) # Dark Blue
         h.paragraph_format.space_before = Pt(16)
         h.paragraph_format.space_after = Pt(6)
+        h.paragraph_format.line_spacing = 1.15
         return h
 
     def add_heading2(text):
         h = doc.add_paragraph()
+        h.alignment = WD_ALIGN_PARAGRAPH.LEFT
         run = h.add_run(text)
         run.font.name = 'Calibri'
         run.font.size = Pt(14)
@@ -144,6 +154,7 @@ def create_document():
         run.font.color.rgb = RGBColor(0x1E, 0x3A, 0x8A) # Deep Royal Blue
         h.paragraph_format.space_before = Pt(14)
         h.paragraph_format.space_after = Pt(4)
+        h.paragraph_format.line_spacing = 1.15
         return h
 
     def add_callout_box(title, text):
@@ -157,14 +168,17 @@ def create_document():
         set_cell_margins(cell, 120, 120, 160, 160)
         
         p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.line_spacing = 1.15
         r_t = p.add_run(title + "\n")
         r_t.font.bold = True
         r_t.font.size = Pt(11.5)
         r_t.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
 
         r_txt = p.add_run(text)
-        r_txt.font.size = Pt(11)
+        r_txt.font.name = 'Consolas'
+        r_txt.font.size = Pt(10.5)
         r_txt.font.color.rgb = RGBColor(0x33, 0x41, 0x55)
         doc.add_paragraph().paragraph_format.space_after = Pt(6)
 
@@ -178,6 +192,7 @@ def create_document():
             hdr_cells[i].width = Inches(col_widths[i])
             p = hdr_cells[i].paragraphs[0]
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            p.paragraph_format.line_spacing = 1.15
             r = p.add_run(header_text)
             r.font.bold = True
             r.font.size = Pt(11)
@@ -192,6 +207,8 @@ def create_document():
             for c_idx, cell_value in enumerate(row_data):
                 row_cells[c_idx].width = Inches(col_widths[c_idx])
                 p = row_cells[c_idx].paragraphs[0]
+                p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                p.paragraph_format.line_spacing = 1.15
                 r = p.add_run(str(cell_value))
                 r.font.size = Pt(11)
                 r.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
@@ -204,6 +221,8 @@ def create_document():
     add_heading1("1. Executive Summary & Business Guide (For Management)")
     
     p_intro = doc.add_paragraph()
+    p_intro.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_intro.paragraph_format.line_spacing = 1.5
     p_intro.add_run(
         "This master architectural document provides the complete, production-verified database specification "
         "for the ISML LMS v1.0 enterprise SaaS platform. It has been structured specifically to bridge technical "
@@ -213,6 +232,8 @@ def create_document():
 
     add_heading2("💡 What is ISML LMS?")
     p_lms = doc.add_paragraph()
+    p_lms.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_lms.paragraph_format.line_spacing = 1.5
     p_lms.add_run(
         "ISML LMS (Indian School for Modern Languages Learning Management System) is a multi-tenant B2B enterprise SaaS "
         "platform designed to deliver foreign language training (starting with French A1, expanding dynamically to German, "
@@ -248,6 +269,9 @@ def create_document():
 
     for title, desc in principles:
         p_pr = doc.add_paragraph()
+        p_pr.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        p_pr.paragraph_format.line_spacing = 1.5
+        p_pr.paragraph_format.space_after = Pt(8)
         r_t = p_pr.add_run(title)
         r_t.font.bold = True
         r_t.font.size = Pt(12)
@@ -305,6 +329,8 @@ def create_document():
     add_heading1("4. Strategic Business Subsystems & Domain Specifications (All 36 Domains)")
 
     p_cards_intro = doc.add_paragraph()
+    p_cards_intro.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_cards_intro.paragraph_format.line_spacing = 1.5
     p_cards_intro.add_run(
         "The ISML LMS database is organized into 36 decoupled functional domains across 8 core subsystems. "
         "Each domain below provides a plain-language executive explanation of its business purpose, "
@@ -510,6 +536,9 @@ def create_document():
         add_heading2(d_title)
         
         p_desc = doc.add_paragraph()
+        p_desc.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        p_desc.paragraph_format.line_spacing = 1.5
+        p_desc.paragraph_format.space_after = Pt(8)
         r_lbl = p_desc.add_run("📋 Executive Business Story: ")
         r_lbl.font.bold = True
         r_lbl.font.size = Pt(12)
@@ -519,6 +548,9 @@ def create_document():
         r_txt.font.color.rgb = RGBColor(0x33, 0x41, 0x55)
 
         p_m_hdr = doc.add_paragraph()
+        p_m_hdr.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p_m_hdr.paragraph_format.line_spacing = 1.15
+        p_m_hdr.paragraph_format.space_after = Pt(4)
         r_mh = p_m_hdr.add_run("🧩 Underpinning Database Models:")
         r_mh.font.bold = True
         r_mh.font.size = Pt(11.5)
@@ -526,14 +558,16 @@ def create_document():
 
         for m_name, m_purpose in d_models:
             p_m = doc.add_paragraph()
+            p_m.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             p_m.paragraph_format.left_indent = Inches(0.2)
-            p_m.paragraph_format.space_after = Pt(3)
+            p_m.paragraph_format.line_spacing = 1.5
+            p_m.paragraph_format.space_after = Pt(4)
             r_mn = p_m.add_run(f"• {m_name}: ")
             r_mn.font.bold = True
-            r_mn.font.size = Pt(11)
+            r_mn.font.size = Pt(11.5)
             r_mn.font.color.rgb = RGBColor(0x0B, 0x24, 0x47)
             r_mp = p_m.add_run(m_purpose)
-            r_mp.font.size = Pt(11)
+            r_mp.font.size = Pt(11.5)
 
         add_callout_box(f"🔄 CARDINALITY & RELATIONSHIP FLOW — {d_title.split(':')[0]}", d_diagram)
         doc.add_paragraph().paragraph_format.space_after = Pt(10)
@@ -544,6 +578,8 @@ def create_document():
     add_heading1("5. System Enums Reference Table (41 Enums Overview)")
 
     p_enum = doc.add_paragraph()
+    p_enum.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_enum.paragraph_format.line_spacing = 1.5
     p_enum.add_run(
         "To guarantee data integrity and strict type safety across PostgreSQL, all status flags, role types, "
         "and protocol states are enforced using 41 strongly typed Prisma Enums."
@@ -605,6 +641,8 @@ def create_document():
 
     add_heading2("🎬 Scenario 1: Onboarding a New Partner College")
     p_sc1 = doc.add_paragraph()
+    p_sc1.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_sc1.paragraph_format.line_spacing = 1.5
     p_sc1.add_run(
         "1. Super Admin creates a record in Institutions (e.g. code: 'ANNA_UNIV').\n"
         "2. InstitutionSettings and InstitutionBranding are populated with Anna University's logo, primary color (#0F172A), and portal domain (lms.annauniv.edu).\n"
@@ -613,6 +651,8 @@ def create_document():
 
     add_heading2("🎬 Scenario 2: Student Attending Live Class & Watching Recording")
     p_sc2 = doc.add_paragraph()
+    p_sc2.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_sc2.paragraph_format.line_spacing = 1.5
     p_sc2.add_run(
         "1. Student logs into Anna University portal → JWT issued with tenantId & userId.\n"
         "2. Student connects to LiveKit webinar stream (LiveClasses → LiveKitRooms).\n"
@@ -626,6 +666,8 @@ def create_document():
     # -------------------------------------------------------------
     add_heading1("7. Final Architecture Validation Summary")
     p_val = doc.add_paragraph()
+    p_val.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p_val.paragraph_format.line_spacing = 1.5
     p_val.add_run(
         "This document represents the definitive, production-verified database specification for ISML LMS v1.0. "
         "It directly maps every single one of the 195 models and 41 enums defined in schema.prisma, "
