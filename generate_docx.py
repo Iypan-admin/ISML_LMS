@@ -157,19 +157,6 @@ def create_document():
         h.paragraph_format.line_spacing = 1.15
         return h
 
-    def add_heading3(text):
-        h = doc.add_paragraph()
-        h.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        run = h.add_run(text)
-        run.font.name = 'Calibri'
-        run.font.size = Pt(13)
-        run.font.bold = True
-        run.font.color.rgb = RGBColor(0x25, 0x63, 0xEB) # Sapphire Blue
-        h.paragraph_format.space_before = Pt(10)
-        h.paragraph_format.space_after = Pt(4)
-        h.paragraph_format.line_spacing = 1.15
-        return h
-
     def add_callout_box(title, text):
         tbl = doc.add_table(rows=1, cols=1)
         tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -231,7 +218,7 @@ def create_document():
     # -------------------------------------------------------------
     # 1. Comprehensive Executive Summary & Business Guide
     # -------------------------------------------------------------
-    add_heading1("1. Executive Summary & Business Guide (For Management)")
+    add_heading1("1. Comprehensive Executive Summary & Business Guide")
     
     p1 = doc.add_paragraph()
     p1.add_run(
@@ -363,22 +350,23 @@ def create_document():
     doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
     # -------------------------------------------------------------
-    # 4. Domain-by-Domain Comprehensive Briefing Cards (ALL 36 DOMAINS)
+    # 4. Domain-by-Domain Comprehensive Briefing Cards (ALL 36 DOMAINS INDIVIDUALLY)
     # -------------------------------------------------------------
     add_heading1("4. Comprehensive Business Subsystems & Domain Specifications (All 36 Domains)")
 
     p_cards_intro = doc.add_paragraph()
     p_cards_intro.add_run(
         "The ISML LMS database is organized into 36 decoupled functional domains across 8 core subsystems. "
-        "Below, every single domain is analyzed in thorough detail: providing a multi-paragraph executive explanation of its "
-        "business ROI and operational mechanics, a bulleted breakdown of its underlying database models, and an explicit "
-        "cardinality relationship diagram."
+        "Below, every single one of the 36 business domains is analyzed individually in thorough detail: providing "
+        "a multi-paragraph executive explanation of its business ROI, operational mechanics, security rules, "
+        "a bulleted breakdown of its underlying database models, and an explicit cardinality relationship diagram."
     )
 
-    domains_36 = [
+    domains_36_full = [
         ("Domain 01: Multi-Tenant Organization Architecture (8 Models)",
          "This domain serves as the foundational multi-tenant boundary for the entire platform. In a B2B SaaS LMS model, partner universities (such as Anna University or IIT Madras) register as master Institutions. Each institution operates physical Campuses, academic Departments, and Academic Years. The system provides white-label custom domain routing (e.g. lms.annauniv.edu) and isolated InstitutionBranding (custom logo, favicons, primary color theme) so each partner college maintains its unique institutional identity. InstitutionSettings controls portal session timeouts, 2FA policies, and login security.",
          "From a business perspective, multi-tenant isolation ensures that each university partner has complete confidence in data confidentiality. Student records, exam grades, and administrative logs from Anna University are strictly segregated from IIT Bombay, even though both operate on the same database cluster. The composite @@index([tenantId]) index applied across all tenant models guarantees sub-millisecond query execution speeds while preventing cross-tenant data leakage.",
+         "When a new university signs an enterprise contract, the Super Admin creates an Institutions record. The system automatically initializes default security settings in InstitutionSettings, white-label CSS theme configurations in InstitutionBranding, and sets up custom subdomain DNS routing in InstitutionDomains. This automated onboarding flow reduces partner setup time from weeks to under 5 minutes.",
          [
              ("Institutions", "Root B2B partner university tenant container holding billing and master settings."),
              ("Campuses", "Physical campus branches of a university (e.g., Guindy Campus, Chromepet Campus)."),
@@ -394,6 +382,7 @@ def create_document():
         ("Domain 02: User Identity & Authentication (9 Models)",
          "The User Identity domain acts as the single source of truth for every individual on the platform — whether they are a student, main tutor, backup tutor, college administrator, or super admin. Accounts are strictly bound to their partner college via tenantId. Security is enforced through multi-device UserSessions, JWT token family rotation via RefreshTokens, OTPVerifications for two-factor authentication, and PasswordResetTokens. Detailed audit logs are preserved in LoginHistory to track IP addresses and login timestamps for security compliance, while UserDevices registers mobile push notification tokens.",
          "User security and access control are critical in enterprise educational environments. The system enforces JWT token family rotation: when a student logs into their mobile app or web browser, a unique refresh token family is issued. If a malicious actor attempts to reuse a stolen refresh token, the database instantly revokes the entire token family (UserSessions.status = REVOKED), forcing all active sessions on that account to re-authenticate immediately.",
+         "Additionally, UserPreferences allows individual users to customize their interface font sizes, dark/light mode, and language locales without affecting other users. EmergencyContacts stores guardian and parent phone numbers, enabling automated SMS/WhatsApp alerts when a student falls below attendance thresholds or misses mandatory foreign language exams.",
          [
              ("Users", "Central account identity for all users (students, tutors, admins)."),
              ("UserSessions", "Active user login sessions across web and mobile applications."),
@@ -410,6 +399,7 @@ def create_document():
         ("Domain 03: Dynamic Menu-Based RBAC Engine (6 Models)",
          "Role-Based Access Control (RBAC) in ISML LMS is 100% database-driven to provide maximum enterprise flexibility. Instead of hard-coding sidebar links or permissions in frontend code, the Menus table stores a full hierarchical navigation tree. System administrators can dynamically create custom roles (e.g., Senior Evaluator, Registrar) in the Roles table, map which menu items are visible using RoleMenuVisibility, and grant granular action permissions (such as student.create, exam.export, certificate.approve) using RolePermissions. Users are assigned roles with start and end dates via UserRoles.",
          "In large university deployments, administrative responsibilities are frequently reshuffled. A principal may want an Assistant Tutor to grade speaking submissions but restrict them from viewing student financial billing records. Traditional LMS software requires developer code changes to adjust UI permissions. In ISML LMS, administrators can check or uncheck permissions directly in the UI dashboard, instantly updating RolePermissions and RoleMenuVisibility in PostgreSQL.",
+         "The database model also supports temporal role assignments via UserRoles.validFrom and UserRoles.validUntil. For example, a visiting guest evaluator can be granted exam grading permissions for a 2-week testing window, after which their access automatically expires without manual administrative intervention.",
          [
              ("Menus", "Hierarchical sidebar menu navigation tree (Parent -> Submenu)."),
              ("PermissionGroups", "Categorized groupings of atomic system action permissions."),
@@ -424,6 +414,7 @@ def create_document():
         ("Domain 04: User Profiles (5 Models)",
          "While the generic Users table handles account identity and authentication, specific profile tables extend account details according to user roles. StudentProfiles maintains student roll numbers, DOB, gender, blood group, and academic standing. TutorProfiles records teaching qualifications, ratings, total hours taught, and substitute eligibility for Main and Backup Tutors. AssistantTutorProfiles manages doubt-clearing capacity for Assistant Tutors, while CollegeAdminProfiles and SuperAdminProfiles store administrative credentials.",
          "Decoupling profile attributes from core user authentication prevents sparse table anti-patterns in database design. A student record requires academic roll numbers and guardian contacts, whereas a tutor record requires teaching certifications, LiveKit stream permissions, and backup availability flags. By establishing strict 1:1 relationships between Users and profile tables, database queries remain lean and highly optimized.",
+         "For tutors, TutorProfiles plays a critical role in stream reliability. If a Main Tutor experiences an ISP network outage during a live French A1 webinar, the system queries TutorProfiles to identify eligible Substitute Backup Tutors assigned to that batch and seamlessly transfers room host controls in LiveKit Cloud without dropping the student stream.",
          [
              ("StudentProfiles", "Academic profile holding student roll numbers, DOB, gender, and academic status."),
              ("TutorProfiles", "Teaching credentials, ratings, hours taught, and backup eligibility for tutors."),
@@ -436,6 +427,7 @@ def create_document():
         ("Domain 05: Foreign Languages Engine (4 Models)",
          "The Foreign Languages domain provides a dynamic master configuration for teaching non-English languages. Launching initially with French (A1), the database schema is architected to dynamically onboard German, Japanese, Spanish, and IELTS without database schema changes. LanguageVariants tracks regional dialects (e.g., Metropolitan French vs Canadian French), while LanguageProficiencyLevels establishes CEFR framework bands (A1, A2, B1, B2, C1, C2). LanguageSettings configures virtual accent keyboard layouts and speech recognition locales.",
          "International language standards require strict adherence to the Common European Framework of Reference for Languages (CEFR). The database explicitly models CEFR bands (A1 breakthrough, A2 elementary, B1 intermediate, B2 upper intermediate, C1 advanced, C2 mastery) in LanguageProficiencyLevels, ensuring that course progression and digital certificates align with international university and visa standards.",
+         "LanguageSettings also configures client-side assets for the frontend UI. For example, when a student enters a French writing exercise, LanguageSettings delivers the dynamic accent soft keyboard overlay (é, è, à, ç, œ) and sets the Speech-to-Text locale code to 'fr-FR' for Python Whisper STT audio processing.",
          [
              ("Languages", "Master table for foreign languages (French, German, Japanese, Spanish)."),
              ("LanguageVariants", "Regional dialects (Metropolitan French vs Canadian French)."),
@@ -447,6 +439,7 @@ def create_document():
         ("Domain 06: Course Architecture & Structural Hierarchy (8 Models)",
          "The academic structure of language courses is modeled as a multi-tier hierarchical tree: Course -> CourseLevel (e.g. A1) -> CourseSubLevel (A1.1, A1.2) -> CourseModule -> CourseUnit -> Lesson. A 100-hour French A1 syllabus is structured into structural modules and thematic units. TopicItems stores individual learning elements (grammatical explanations, vocabulary audio, reading passages, LSRW practice tasks). CourseVersions provides full versioning control.",
          "Curriculum design in foreign language education requires granular structural organization. A 100-hour French A1 course is broken down into 10 core modules (e.g., Module 1: Greetings & Self-Introduction, Module 2: Ordering Food & Shopping). Each module contains thematic units, and each unit contains structured daily lessons. TopicItems holds actual content payloads — including native speaker mp3 audio files, grammar PDFs, and interactive quiz items.",
+         "CourseVersions provides full audit versioning for academic compliance. If the academic board updates the French A1 syllabus for the 2026 academic year, a new CourseVersions record is created. Enrolled students on legacy versions continue on their assigned curriculum version without breaking active progress tracking.",
          [
              ("CourseCategories", "High-level classification of courses (European Languages, Exam Prep)."),
              ("Courses", "Master course entity (e.g., French A1 Master Course)."),
@@ -462,6 +455,7 @@ def create_document():
         ("Domain 07: Curriculum Content & Objectives (4 Models)",
          "This domain models the internal pedagogical content of individual lessons. Topics breaks down lessons into specific coverage topics. TopicItems stores granular learning assets (texts, audios, videos, exercises). LearningObjectives aligns Bloom's taxonomy learning goals with AI evaluation agents, while CoursePrerequisites enforces prerequisite requirements before a student can enroll in advanced language modules.",
          "Pedagogical alignment ensures that every exercise directly map to measurable learning outcomes. By storing Bloom's taxonomy levels (Remembering, Understanding, Applying, Analyzing, Evaluating, Creating) in LearningObjectives, the Python FastAPI AI microservice can automatically evaluate whether a student's essay or speaking submission demonstrates the required level of mastery.",
+         "CoursePrerequisites prevents students from jumping into advanced courses without passing foundational prerequisites. When a student attempts to enroll in French A2, the system checks whether they have completed French A1 in StudentCourseProgress.",
          [
              ("Topics", "Coverage topics inside a lesson."),
              ("TopicItems", "Granular texts, audios, videos, and exercises."),
@@ -473,6 +467,7 @@ def create_document():
         ("Domain 08: 3 Duration Patterns Engine (3 Models)",
          "A core B2B feature of ISML LMS is supporting 3 flexible duration pacing options for the EXACT SAME 100-hour course content: Option 1 (12 Months - 1 day/week, 2 hrs/day), Option 2 (6 Months - 2 days/week, 2 hrs/day), and Option 3 (3 Months - 3 days/week, 2 hrs/day). CourseDurationPatterns maps the course to pacing models, PatternSchedules defines weekly timetable templates, and PatternPacingRules establishes target module coverage speeds so colleges can select their preferred pacing without duplicating course content.",
          "From a business perspective, different partner universities have vastly different academic timetables. Engineering colleges may prefer an intensive 3-month crash course before campus placement season, whereas arts universities may prefer spreading the 100 hours across a full 12-month academic year. In traditional software, this would require creating 3 duplicate course copies, leading to content sync nightmares when curriculum updates occur.",
+         "ISML LMS solves this through CourseDurationPatterns. The underlying 100-hour curriculum content remains unified in a single master record. PatternPacingRules dynamically calculates expected weekly lesson milestones based on the selected duration pattern, allowing automated progress tracking regardless of pacing schedule.",
          [
              ("CourseDurationPatterns", "Pacing options (12Mo, 6Mo, 3Mo) mapped to a 100-hour course."),
              ("PatternSchedules", "Weekly timetable templates per duration pattern option."),
@@ -483,6 +478,7 @@ def create_document():
         ("Domain 09: Multi-College Batches & Enrollment (6 Models)",
          "To maximize tutor efficiency, ISML LMS decouples webinar batches from individual colleges. Students from multiple partner universities (e.g. Chennai, Mumbai, Delhi) attend the SAME live webinar batch simultaneously. The BatchInstitutions junction table links multiple colleges to a batch while preserving student privacy and billing boundaries. BatchTutors assigns the teaching team (1 Main Tutor, 1 Backup Tutor, 4 Assistant Tutors). StudentBatchEnrollments manages student enrollments with a strict 1-Year access expiration date.",
          "The multi-college batch model provides massive cost optimizations. A certified native French tutor commands a high hourly rate. If each partner college had to hire an individual tutor for small batches of 30 students, the financial model would be unsustainable. By pooling 300 students from 10 colleges into a single LiveKit webinar batch, tutor costs are distributed across all partner institutions.",
+         "StudentBatchEnrollments handles portal access control and subscription validity. Upon enrollment, the system sets StudentBatchEnrollments.expiresAt to exactly 1 year from enrollment date. Automated background cron jobs monitor expiration dates, sending reminder notifications before revoking live webinar streaming access.",
          [
              ("Batches", "Live webinar batch instance."),
              ("BatchInstitutions", "Junction linking multiple partner colleges to 1 webinar batch."),
@@ -496,6 +492,7 @@ def create_document():
         ("Domain 10: Timetable & Scheduling Engine (6 Models)",
          "Manages complex academic schedules, recurring timetable slots, tutor availability windows, and institutional holidays across multiple university tenants. Timetables acts as the master container, ScheduleEntries stores individual class occurrences, TutorAvailabilities prevents scheduling conflicts, Holidays blocks national/college holidays, ScheduleExceptions manages rescheduled classes, and CalendarEvents feeds iCal calendars for mobile devices.",
          "Automated scheduling conflict detection ensures that tutors are never double-booked across different batches. When an administrator reschedules a class, ScheduleExceptions overrides the base schedule, automatically sending push notifications to affected students and updating their mobile calendar feeds.",
+         "Holidays integrates college-specific academic calendars. If Anna University has a local festival holiday on a Wednesday, the scheduling engine automatically suppresses class notifications for Anna University students while keeping the stream active for other partner colleges.",
          [
              ("Timetables", "Master container for academic schedules."),
              ("ScheduleEntries", "Individual scheduled class occurrences."),
@@ -509,6 +506,7 @@ def create_document():
         ("Domain 11: LiveKit Webinars & Real-Time Attendance (7 Models)",
          "Live webinar classes are conducted via LiveKit Cloud WebRTC streams (LiveClasses -> LiveSessions -> LiveKitRooms). LiveClassParticipants logs student and tutor join/leave timestamps. AttendanceSessions automatically calculates student attendance based on connection stay duration (>80% stay duration = PRESENT). ClassEvents captures in-class interactive events such as polls, hand raises, and chat alerts.",
          "Automated attendance processing eliminates manual attendance taking by tutors. At the end of every live webinar session, background microservices analyze LiveClassParticipants connection logs. If a student stayed connected for at least 80% of the total session duration, their record in AttendanceSessions is marked PRESENT automatically.",
+         "LiveKitRooms dynamically issues WebRTC tokens with strict role permissions. Main tutors receive host controls (mute all, share screen), assistant tutors receive moderation controls (answer chat polls), and students receive attendee controls.",
          [
              ("LiveClasses", "Scheduled live webinar class occurrence for a batch."),
              ("LiveSessions", "Execution attempt of a live webinar session."),
@@ -523,6 +521,7 @@ def create_document():
         ("Domain 12: Cloudflare R2 Recordings Pipeline (6 Models)",
          "Manages the end-to-end video recording SLA pipeline. When a live webinar ends, LiveKit triggers a webhook, BullMQ queues RecordingProcessingJobs, transcoded mp4 video files (1080p, 720p) are uploaded to Cloudflare R2 object storage within a 24-hour SLA. Recordings tracks metadata, RecordingAccessLogs monitors viewing durations, and RecordingViewingHistory records detailed play/pause/seek events.",
          "Cloudflare R2 storage provides zero-egress fee video hosting, saving thousands of dollars in bandwidth costs. The 24-hour SLA guarantees that recorded classes are transcoded and published to student dashboards within 1 day of class completion, with 1-year access validity.",
+         "RecordingViewingHistory tracks granular video analytics. Tutors can view heatmaps showing which segments of a recorded grammar lecture students replayed most frequently, indicating areas requiring review.",
          [
              ("Recordings", "Recording metadata tracking 24h upload SLA & 1Yr validity."),
              ("RecordingFiles", "Physical mp4 video files stored in Cloudflare R2 bucket."),
@@ -536,6 +535,7 @@ def create_document():
         ("Domain 13: Learning Resources System (6 Models)",
          "Central repository for supplementary learning materials (PDF study guides, PPT slides, native audio tracks, grammar worksheets). Resources acts as the master entity, ResourceFiles tracks Cloudflare R2 storage files, ResourceCategories categorizes assets, ResourceVersions supports document versioning, ResourceTags enables search discovery, and LessonResources links study materials to curriculum lessons.",
          "Organizing study materials into versioned, tagged assets ensures that students can search and download supplementary materials easily on mobile or desktop without broken file links.",
+         "ResourceFiles enforces signed CDN URL delivery, ensuring that proprietary ISML study materials cannot be hotlinked or downloaded by unauthorized non-enrolled users.",
          [
              ("Resources", "Master study material entity."),
              ("ResourceFiles", "Physical files stored in Cloudflare R2."),
@@ -549,6 +549,7 @@ def create_document():
         ("Domain 14: LSRW — Listening Competency Engine (4 Models)",
          "Manages French/German audio listening practice exercises. ListeningActivities defines listening tasks, ListeningAudios stores native speaker mp3 audio tracks with speed control metadata (0.75x, 1x, 1.25x), ListeningAttempts records student practice attempts, and ListeningAnswers logs detailed itemized answers.",
          "Audio playback speed controls allow beginner students to listen to native speakers at 0.75x speed before attempting full 1x native speed, boosting listening comprehension confidence.",
+         "ListeningAnswers logs granular distractor analysis, showing tutors which specific phonetic distractors confused students during listening comprehension tests.",
          [
              ("ListeningActivities", "Listening practice audio exercise master."),
              ("ListeningAudios", "Native speaker audio tracks with speed/accent controls."),
@@ -560,6 +561,7 @@ def create_document():
         ("Domain 15: LSRW — Speaking Competency & Whisper STT AI (4 Models)",
          "Powers mobile voice recording and AI speech pronunciation evaluation. SpeakingActivities defines speaking tasks, SpeakingPrompts provides phrase cards, SpeakingAudioSubmissions stores student voice audio uploaded to Cloudflare R2, and SpeakingAIEvaluations runs Python Whisper STT AI models to score pronunciation accuracy, fluency, and phoneme correctness.",
          "Speech evaluation is fully automated: student voice audio is transcribed by Whisper STT AI within 5 seconds, providing instant pronunciation feedback without consuming tutor evaluation hours.",
+         "SpeakingAIEvaluations returns granular phoneme accuracy scores, highlighting specific mispronounced letters (e.g. mispronouncing French 'u' vs 'ou') so students can practice targeted voice drills.",
          [
              ("SpeakingActivities", "Speaking practice task master."),
              ("SpeakingPrompts", "Sentence/phrase prompt cards for voice recording."),
@@ -571,6 +573,7 @@ def create_document():
         ("Domain 16: LSRW — Reading Competency Engine (4 Models)",
          "Manages reading comprehension exercises. ReadingActivities defines reading tasks, ReadingPassages stores reading passage texts and vocabulary notes, ReadingQuestions holds passage-based comprehension questions, and ReadingAttempts logs student reading attempt results.",
          "Comprehension passages feature embedded vocabulary notes that students can tap on mobile screens to view instant word definitions and grammatical notes.",
+         "ReadingAttempts tracks reading speed (words per minute) alongside comprehension accuracy scores, giving students a complete view of their reading fluency progress.",
          [
              ("ReadingActivities", "Reading practice activity master."),
              ("ReadingPassages", "Reading passage text and vocabulary notes."),
@@ -582,6 +585,7 @@ def create_document():
         ("Domain 17: LSRW — Writing Competency & Virtual Keyboards (5 Models)",
          "Manages essay and composition writing practice. WritingActivities defines composition tasks, WritingPrompts provides prompts, WritingSubmissions stores student typed compositions using VirtualKeyboardConfigs soft accent keyboards (é, è, à, ç), and WritingAIEvaluations runs AI grammar and vocabulary checks.",
          "Soft accent keyboards eliminate the frustration of typing foreign accents on standard English QWERTY keyboards, allowing seamless composition on mobile phones and laptops.",
+         "WritingAIEvaluations flags grammatical errors (e.g. noun-adjective gender agreement in French) and suggests corrected sentence structures in real-time.",
          [
              ("WritingActivities", "Writing composition essay tasks."),
              ("WritingPrompts", "Essay/prose composition prompt."),
@@ -594,6 +598,7 @@ def create_document():
         ("Domain 18: Assignments & Homework Management (5 Models)",
          "Manages homework assignments created by tutors. Assignments defines assignment metadata, AssignmentQuestions holds individual questions, AssignmentSubmissions manages student submissions, SubmissionFiles handles uploaded attachments, and AssignmentGradings logs tutor question-level grades and feedback.",
          "Tutors can review and grade homework submissions directly from their mobile app dashboard, leaving voice comments or typed feedback for students.",
+         "SubmissionFiles supports multi-format uploads (PDFs, voice recordings, photos of handwritten homework worksheets), providing complete flexibility for diverse student submission preferences.",
          [
              ("Assignments", "Homework assignment master."),
              ("AssignmentQuestions", "Questions within an assignment."),
@@ -603,9 +608,10 @@ def create_document():
          ],
          "  [Batches] (1) ─── (N) ──► [Assignments] ─── (N) ──► [AssignmentQuestions]\n  [Assignments] (1) ─── (N) ──► [AssignmentSubmissions] ─── (N) ──► [AssignmentGradings]"),
 
-        ("Domain 19: Question Bank Engine (6 Models)",
+        ("Domain 19: Question Bank Engine & Item Generation (6 Models)",
          "Central repository of randomized exam questions. QuestionBanks holds question banks per course, Questions stores individual items (MCQ, Fill-in-blanks, LSRW), QuestionOptions holds MCQ options, QuestionExplanations provides text/audio solutions, QuestionTags enables topic filtering, and QuestionDifficultyLevels manages difficulty weights.",
          "Randomized question generation ensures that no two students receive the exact same exam paper, drastically reducing exam cheating during online assessments.",
+         "QuestionExplanations provides step-by-step solutions after exam publication, allowing students to review their mistakes and understand correct grammatical rules.",
          [
              ("QuestionBanks", "Master question repository per course/language."),
              ("Questions", "Individual question item (MCQ, Fill in blanks, LSRW)."),
@@ -616,9 +622,10 @@ def create_document():
          ],
          "  [Courses] (1) ─── (N) ──► [QuestionBanks] ─── (N) ──► [Questions]\n  [Questions] (1) ─── (N) ──► [QuestionOptions]\n  [Questions] (1) ─── (1) ──► [QuestionExplanations]"),
 
-        ("Domain 20: Examinations & Proctoring (7 Models)",
+        ("Domain 20: Examinations & Proctoring Security (7 Models)",
          "Manages formal online exams and assessments. Exams defines exam rules, ExamSections structures section layouts, ExamSchedules controls testing time windows, ExamAttempts logs proctoring browser tab switches and camera logs, StudentExamAnswers stores answers, ExamResults publishes report cards, and TutorReviews logs manual grade adjustments.",
          "Automated proctoring logs tab switching, copy-paste attempts, and webcam snapshots during online exams, giving university administrators complete confidence in exam integrity.",
+         "TutorReviews allows Main Tutors to review AI-graded essay scores and make manual grade adjustments before final report cards are published.",
          [
              ("Exams", "Examination master record."),
              ("ExamSections", "Structural sections inside an exam."),
@@ -630,9 +637,10 @@ def create_document():
          ],
          "  [Courses] (1) ─── (N) ──► [Exams] ─── (N) ──► [ExamSchedules]\n  [Exams] (1) ─── (N) ──► [ExamAttempts] ─── (N) ──► [StudentExamAnswers]\n  [ExamAttempts] (1) ─── (1) ──► [ExamResults]"),
 
-        ("Domain 21: QR Digital Certification (5 Models)",
+        ("Domain 21: QR Digital Certification & Verification (5 Models)",
          "Generates verifiable digital certificates upon course completion. CertificateTemplates stores SVG/HTML templates, Certificates issues signed certificates with unique QR codes, CertificateIssuances logs issuance events, CertificateVerifications handles public QR code verification scans, and CertificateDownloads tracks PDF downloads.",
          "Public QR code verification allows employers and embassy officials to instantly verify the authenticity of a student's French A1 certificate by scanning the printed QR code with any smartphone.",
+         "CertificateVerifications records public verification scan geolocation and timestamp logs, providing complete fraud prevention audit trails.",
          [
              ("CertificateTemplates", "SVG/HTML digital certificate template."),
              ("Certificates", "Issued digital certificate with unique QR code."),
@@ -645,6 +653,7 @@ def create_document():
         ("Domain 22: AI Platform Core & Agent Registration (6 Models)",
          "Registers Python FastAPI AI microservices. AIAgents manages registered agents (Evaluation Agent, AI Tutor Agent, Doubt Agent), AgentVersions tracks prompt/code versions, AgentConfigurations manages temperature and system prompts, AITasks queues async tasks, AIExecutions logs runtime execution performance, and AIEvaluations records tutor feedback on AI accuracy.",
          "Version-controlled AI agents allow AI engineers to deploy updated system prompts and model configurations seamlessly while monitoring quality ratings given by main tutors.",
+         "AIEvaluations enables continuous RLHF (Reinforcement Learning from Human Feedback) tuning, capturing tutor ratings to refine AI model accuracy over time.",
          [
              ("AIAgents", "Registration for Python FastAPI AI Agents."),
              ("AgentVersions", "Version control for AI agent code and prompts."),
@@ -658,6 +667,7 @@ def create_document():
         ("Domain 23: AI Request & Token Cost Audit (5 Models)",
          "Monitors and audits LLM API consumption costs. AIRequests logs raw requests to LLM providers (OpenAI, Claude), AIResponses records response payloads and latency, AIProviders manages provider configurations, AIModels tracks token pricing tiers, and TokenUsageLogs aggregates daily token costs per college tenant.",
          "Aggregating token consumption daily per college ensures that AI microservice operating costs are accurately tracked and billed to the respective partner university without financial loss.",
+         "AIRequests logs request latencies, alerting infrastructure engineers if an upstream LLM provider experiences high response latency or API downtime.",
          [
              ("AIRequests", "API request log to LLM providers (OpenAI, Claude)."),
              ("AIResponses", "Raw AI response payload and latency."),
@@ -667,9 +677,10 @@ def create_document():
          ],
          "  [AIProviders] (1) ─── (N) ──► [AIModels] ─── (N) ──► [AIRequests]\n  [AIRequests] (1) ─── (1) ──► [AIResponses]\n  [Institutions] (1) ─── (N) ──► [TokenUsageLogs]"),
 
-        ("Domain 24: AI Prompts & Tutor Approvals (4 Models)",
+        ("Domain 24: AI Prompts & Human-in-the-Loop Tutor Approvals (4 Models)",
          "Manages prompt engineering and human-in-the-loop tutor approvals. PromptTemplates stores base prompt templates, PromptVersions tracks prompt revisions, AIGeneratedContents holds AI-generated materials awaiting tutor review, and ContentApprovals logs Main Tutor review actions (Approve, Edit, Reject).",
          "Human-in-the-loop review ensures that AI-generated study materials or exam questions are thoroughly vetted by certified Main Tutors before being published to student dashboards.",
+         "ContentApprovals maintains an audit trail showing which tutor approved or modified an AI-generated learning resource before student publication.",
          [
              ("PromptTemplates", "Base prompt templates for AI agents."),
              ("PromptVersions", "Prompt engineering version history."),
@@ -681,6 +692,7 @@ def create_document():
         ("Domain 25: RAG & `pgvector` Vector Search (6 Models)",
          "Powers Retrieval-Augmented Generation (RAG) vector search. KnowledgeBases acts as the vector container, KnowledgeSources ingests course PDFs/audios, KnowledgeDocuments processes documents, DocumentChunks chunks text, DocumentEmbeddings stores 1536-dim vector embeddings directly in PostgreSQL using pgvector, and RAGQueries tracks student doubt queries.",
          "Storing 1536-dimensional OpenAI vector embeddings directly inside PostgreSQL using the pgvector extension avoids external vector database costs, providing ultra-fast vector search directly inside the main database.",
+         "RAGQueries logs similarity match confidence scores, allowing AI engineers to refine document chunking strategies for low-confidence student queries.",
          [
              ("KnowledgeBases", "Vector store container per course/language."),
              ("KnowledgeSources", "Ingested document sources (PDF, PPT, Audio)."),
@@ -691,9 +703,10 @@ def create_document():
          ],
          "  [KnowledgeBases] (1) ─── (N) ──► [KnowledgeSources] ─── (N) ──► [KnowledgeDocuments]\n  [KnowledgeDocuments] (1) ─── (N) ──► [DocumentChunks] ─── (1) ──► [DocumentEmbeddings] (pgvector)"),
 
-        ("Domain 26: MCP Protocol Integration (4 Models)",
+        ("Domain 26: MCP Protocol Integration & Tool Execution (4 Models)",
          "Integrates Model Context Protocol (MCP) for tool execution. MCPServers registers MCP servers, MCPTools exposes execution tools (e.g. grade calculator, dictionary lookup), MCPConnections manages active agent connections, and MCPExecutionLogs records execution call histories.",
          "The Model Context Protocol allows AI Agents to securely invoke external tools and utility functions through a standardized, sandboxed protocol interface.",
+         "MCPExecutionLogs records tool execution arguments and output responses, ensuring full traceability when AI agents call external utility tools.",
          [
              ("MCPServers", "Registered Model Context Protocol servers."),
              ("MCPTools", "Tools exposed by MCP servers for AI agents."),
@@ -705,6 +718,7 @@ def create_document():
         ("Domain 27: Payment Gateway & Razorpay Idempotency (6 Models)",
          "Handles student and B2B college payments. PaymentProviders configures gateway setups (Razorpay, Stripe), PaymentOrders stores order requests, PaymentTransactions records captured payments, PaymentAttempts logs gateway attempts, PaymentWebhooks enforces unique eventId constraints (@unique([eventId])) for webhook idempotency, and PaymentReceipts issues receipts.",
          "Unique eventId constraints on PaymentWebhooks guarantee that duplicate webhook retries from Razorpay or Stripe are automatically rejected by PostgreSQL, preventing financial double-crediting bugs.",
+         "PaymentAttempts logs failed payment attempts with gateway error codes, enabling automated drop-off recovery messages to assist students with checkout errors.",
          [
              ("PaymentProviders", "Payment provider setup (Razorpay, Stripe)."),
              ("PaymentOrders", "Pre-payment order request record."),
@@ -718,6 +732,7 @@ def create_document():
         ("Domain 28: Subscriptions & B2B GST Billing (5 Models)",
          "Manages B2B SaaS enterprise billing for partner universities. Invoices generates formal GST tax invoices, SubscriptionPlans defines pricing tiers, Subscriptions tracks active university contracts, BillingRecords maintains immutable ledger history, and InstitutionPayments processes offline/wire payments.",
          "Automated GST tax invoice generation creates legally compliant tax invoices with HSN/SAC codes and serial numbering, simplifying university financial audit procedures.",
+         "InstitutionPayments allows university finance departments to submit wire transfer details, which super admins can verify and approve in the portal.",
          [
              ("Invoices", "B2B enterprise GST tax invoice for colleges."),
              ("SubscriptionPlans", "SaaS pricing tiers for institutions."),
@@ -730,6 +745,7 @@ def create_document():
         ("Domain 29: Multi-Channel Notifications (6 Models)",
          "Delivers alerts across SMS, Email, WhatsApp, and Push. Notifications acts as user inbox, NotificationTemplates stores templates, NotificationPreferences holds user delivery preferences, NotificationChannels configures gateway setups, DeliveryLogs tracks delivery status, and NotificationEvents triggers automated event alerts.",
          "Multi-channel routing ensures that critical alerts (such as class rescheduling or exam reminders) reach students via WhatsApp and Push notifications instantly.",
+         "DeliveryLogs monitors delivery bounce rates across SMS and Email gateways, automatically re-routing failed alerts through secondary WhatsApp channels.",
          [
              ("Notifications", "User notification message inbox."),
              ("NotificationTemplates", "Multi-channel notification templates."),
@@ -743,6 +759,7 @@ def create_document():
         ("Domain 30: Academic Doubt Q&A Chat (5 Models)",
          "Manages real-time doubt resolution. AcademicConversations holds doubt threads between students and Assistant Tutors, AcademicChatMembers tracks thread members, AcademicChatMessages stores messages, DoubtTickets assigns tickets to Assistant Tutors, and DoubtResponses provides AI-suggested answers.",
          "Assistant Tutors resolve student doubts in real-time chat threads, utilizing AI-suggested answers to reduce average doubt resolution time to under 3 minutes.",
+         "AcademicConversations automatically archives resolved doubt threads, building a searchable FAQ knowledge base for future student cohorts.",
          [
              ("AcademicConversations", "Doubt chat thread between student & assistant tutors."),
              ("AcademicChatMembers", "Members in an academic doubt thread."),
@@ -752,9 +769,10 @@ def create_document():
          ],
          "  [Users] (1) ─── (N) ──► [AcademicConversations] ─── (N) ──► [AcademicChatMessages]\n  [AcademicConversations] (1) ─── (1) ──► [DoubtTickets]"),
 
-        ("Domain 31: Customer Helpdesk & Support (6 Models)",
+        ("Domain 31: Customer Helpdesk & SLA Support (6 Models)",
          "Manages technical support tickets. SupportTickets holds support tickets, TicketCategories defines SLA rules, TicketMessages stores messages, TicketAttachments holds attached log files, TicketAssignments tracks support agent assignments, and TicketStatusHistory logs ticket state changes.",
          "SLA resolution rules ensure that technical portal issues experienced by students or tutors are escalated and resolved within strict enterprise time limits.",
+         "TicketStatusHistory maintains an immutable audit record of ticket assignments and resolution SLA timestamps for quality management compliance.",
          [
              ("SupportTickets", "Platform technical support ticket."),
              ("TicketCategories", "Category and SLA resolution rules for support."),
@@ -768,6 +786,7 @@ def create_document():
         ("Domain 32: Career Portal & Placement Assistance (6 Models)",
          "Connects language graduates with hiring corporate partners. CareerPrograms defines career prep programs, CareerResources holds resume templates, Companies manages partner hiring companies, JobOpportunities posts language jobs (e.g. French Translator), StudentCareerProfiles stores resumes, and JobApplications tracks student applications.",
          "The Career Portal connects foreign language graduates directly with multinational corporate partners seeking certified bilingual professionals.",
+         "JobApplications tracks candidate selection pipelines (Applied, Screened, Interviewed, Placed), providing university placement officers with placement statistics.",
          [
              ("CareerPrograms", "Career assistance and interview prep program."),
              ("CareerResources", "Placement resources (resumes, interview guides)."),
@@ -781,6 +800,7 @@ def create_document():
         ("Domain 33: Student Progress & Gamified Streaks (5 Models)",
          "Tracks student progress and learning engagement. StudentCourseProgress stores overall progress metrics, ActivityProgressLogs tracks activity completion and time spent, LSRWProgressSummaries breaks down LSRW skill competency, LearningStreaks tracks daily gamified login streaks, and StudentAchievements awards badges.",
          "Gamified learning streaks and badges motivate students to log in daily, resulting in a 40% increase in practice activity completion rates.",
+         "LSRWProgressSummaries presents visual radar charts on student dashboards, displaying competency strengths across Listening, Speaking, Reading, and Writing.",
          [
              ("StudentCourseProgress", "Course completion metrics per student."),
              ("ActivityProgressLogs", "Activity completion log with time spent."),
@@ -790,9 +810,10 @@ def create_document():
          ],
          "  [Users] (1) ─── (N) ──► [StudentCourseProgress]\n  [Users] (1) ─── (1) ──► [LearningStreaks]\n  [Users] (1) ─── (N) ──► [StudentAchievements]"),
 
-        ("Domain 34: System Analytics & Principal Reports (4 Models)",
+        ("Domain 34: System Analytics & Principal PDF Reports (4 Models)",
          "Generates executive analytics and PDF/Excel report cards for university leadership. BatchAnalytics calculates batch attendance metrics, ExamAnalytics tracks exam pass rates, AIUsageAnalytics monitors daily LLM costs, and InstitutionReports compiles executive reports for principals.",
          "Automated PDF executive reports empower university principals to review batch attendance and pass rates at a glance during academic board meetings.",
+         "AIUsageAnalytics breaks down daily API token consumption by AI Agent type, helping administrators optimize prompt efficiency.",
          [
              ("BatchAnalytics", "Attendance and exam score metrics per batch."),
              ("ExamAnalytics", "Difficulty and pass rate analytics per exam."),
@@ -804,6 +825,7 @@ def create_document():
         ("Domain 35: Enterprise Security & Audit Logs (5 Models)",
          "Provides security auditing and data mutation tracking. AuditLogs records database mutations (INSERT, UPDATE, DELETE), LoginLogs maintains security login logs, SecurityEvents triggers security alerts (e.g. brute force attempts), APIAccessLogs logs API latency, and PermissionChangeLogs audits RBAC edits.",
          "Complete audit logging guarantees compliance with SOC2 and university security standards, recording every administrative permission change and data mutation.",
+         "SecurityEvents automatically locks user accounts if more than 5 consecutive failed login attempts occur from an unrecognized IP address.",
          [
              ("AuditLogs", "Low-level data mutation audit trail."),
              ("LoginLogs", "Dedicated security log for user logins."),
@@ -816,6 +838,7 @@ def create_document():
         ("Domain 36: System Configurations & Feature Flags (3 Models)",
          "Manages global platform configurations and feature rollouts. SystemSettings stores platform runtime settings, FeatureFlags controls feature rollouts (e.g. enabling Whisper AI evaluation for select colleges), and MaintenanceWindows schedules planned downtime.",
          "Feature flags allow software engineers to roll out experimental AI capabilities incrementally to target university cohorts without risking platform stability.",
+         "MaintenanceWindows schedules zero-downtime database maintenance, displaying friendly maintenance banners on student mobile apps prior to scheduled updates.",
          [
              ("SystemSettings", "Global platform runtime configuration."),
              ("FeatureFlags", "System feature toggles and rollout rules."),
@@ -824,7 +847,7 @@ def create_document():
          "  [SystemSettings] (1) ─── (N) ──► [FeatureFlags]\n  [SystemSettings] (1) ─── (N) ──► [MaintenanceWindows]")
     ]
 
-    for item in domains_36:
+    for item in domains_36_full:
         d_title = item[0]
         d_desc = item[1]
         if len(item) == 5:
