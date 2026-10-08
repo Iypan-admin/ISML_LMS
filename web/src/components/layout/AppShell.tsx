@@ -6,12 +6,18 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import MobileNav from "@/components/layout/MobileNav";
 
+import SuperAdminAppShell from "@/components/super-admin/layout/SuperAdminAppShell";
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
   if (isAuthPage) {
     return <div className="min-h-screen w-full">{children}</div>;
+  }
+
+  if (pathname.startsWith("/super-admin")) {
+    return <SuperAdminAppShell>{children}</SuperAdminAppShell>;
   }
 
   return (

@@ -8,7 +8,7 @@ import { currentStudent } from '@/mock/students';
 
 const platformRoles = [
   { id: 'STUDENT', name: 'Student', desc: 'Bharathi M (Learning Portal)', isAvailable: true, credentials: { id: currentStudent.rollNo, pwd: 'student2026pass' } },
-  { id: 'SUPER_ADMIN', name: 'Super Admin', desc: 'Full System & Delete Access', isAvailable: false },
+  { id: 'SUPER_ADMIN', name: 'Super Admin', desc: 'Full College LMS & RBAC Portal', isAvailable: true, credentials: { id: 'superadmin@isml.edu', pwd: 'admin2026pass' } },
   { id: 'MANAGER', name: 'Manager', desc: 'Internal Team & User Mgmt', isAvailable: false },
   { id: 'FINANCE_MANAGER', name: 'Finance Manager', desc: 'College Fees & Accounts', isAvailable: false },
   { id: 'ACADEMIC_COORD', name: 'Academic Coord', desc: 'Course & Resource Monitoring', isAvailable: false },
@@ -38,14 +38,17 @@ export default function LoginPage() {
       setPassword(role.credentials.pwd);
       setActiveNotice(null);
     } else {
-      setActiveNotice(`${role.name} portal is currently under active development. Current access is enabled for Student role.`);
+      setActiveNotice(`${role.name} portal is currently under active development. Current access is enabled for Student and Super Admin roles.`);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => router.push('/dashboard'), 750);
+    const targetPath = selectedRole === 'SUPER_ADMIN' || studentId.toLowerCase().includes('admin')
+      ? '/super-admin/dashboard'
+      : '/dashboard';
+    setTimeout(() => router.push(targetPath), 750);
   };
 
   return (
