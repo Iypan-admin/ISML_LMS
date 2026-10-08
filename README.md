@@ -4,6 +4,8 @@
 
 ### *Multi-Tenant B2B • AI-Powered LSRW • Real-Time LiveKit Webinars*
 
+[![Deploy Status](https://img.shields.io/badge/Deployment-Super%20Admin%20Governance-0052CC?style=for-the-badge)](https://github.com/Iypan-admin/ISML_LMS)
+
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.2-blue?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Prisma ORM](https://img.shields.io/badge/Prisma-v5%2Fv6-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![pgvector](https://img.shields.io/badge/pgvector-1536--dim-00D9A5?style=for-the-badge&logo=supabase&logoColor=white)](https://github.com/pgvector/pgvector)
