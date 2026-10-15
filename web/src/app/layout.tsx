@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
 
@@ -18,12 +18,6 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
-
 export const metadata: Metadata = {
   title: "Student Portal — ISML College LMS",
   description: "Enterprise Multi-Tenant Foreign Language Learning Management System (French A1, German, Japanese, Spanish)",
@@ -39,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="overflow-x-hidden max-w-full" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${outfit.variable} antialiased min-h-screen bg-slate-50 font-sans overflow-x-hidden max-w-full`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased min-h-screen bg-slate-50 font-sans overflow-x-hidden max-w-full`} suppressHydrationWarning>
         <AppShell>{children}</AppShell>
       </body>
     </html>
