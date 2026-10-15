@@ -7,8 +7,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Layers, X, Plus, Sparkles, BookOpen, Clock, FileText } from 'lucide-react';
-import { AcademicModule } from '@/types/rbac';
-import { mockSubjects } from '@/mock/superAdminData';
+import { AcademicModule, AcademicLevel } from '@/types/rbac';
+import { mockSubjects, mockCourses, mockLevels } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 
 interface CreateModuleDrawerProps {
@@ -17,6 +17,10 @@ interface CreateModuleDrawerProps {
   onModuleCreated: (newModule: AcademicModule) => void;
   editModule?: AcademicModule | null;
   onModuleUpdated?: (module: AcademicModule) => void;
+  defaultCourseId?: string;
+  defaultSubjectId?: string;
+  defaultLevelId?: string;
+  levelsList?: AcademicLevel[];
 }
 
 export default function CreateModuleDrawer({
@@ -25,12 +29,18 @@ export default function CreateModuleDrawer({
   onModuleCreated,
   editModule,
   onModuleUpdated,
+  defaultCourseId,
+  defaultSubjectId,
+  defaultLevelId,
+  levelsList = mockLevels,
 }: CreateModuleDrawerProps) {
   const { showSuccess, showError } = useToast();
 
   const isEditMode = Boolean(editModule);
 
-  const [selectedSubjectId, setSelectedSubjectId] = useState(mockSubjects[0]?.id || 'sub-01');
+  const [selectedCourseId, setSelectedCourseId] = useState(mockCourses[0]?.id || 'crs-01');
+  const [selectedSubjectId, setSelectedSubjectId] = useState(mockSubjects[0]?.id || 'subj-fr101');
+  const [selectedLevelId, setSelectedLevelId] = useState(defaultLevelId || 'lvl-fr-a1');
   const [moduleNumber, setModuleNumber] = useState(1);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -39,20 +49,27 @@ export default function CreateModuleDrawer({
   useEffect(() => {
     if (isOpen) {
       if (editModule) {
+        setSelectedCourseId(editModule.courseId || mockCourses[0]?.id || 'crs-01');
         setSelectedSubjectId(editModule.subjectId);
+        setSelectedLevelId(editModule.levelId || 'lvl-fr-a1');
         setModuleNumber(editModule.moduleNumber);
         setTitle(editModule.title);
         setDescription(editModule.description);
         setEstimatedHours(editModule.estimatedHours);
       } else {
-        setSelectedSubjectId(mockSubjects[0]?.id || 'sub-01');
+        const initialCourse = defaultCourseId || (defaultSubjectId ? mockSubjects.find(s => s.id === defaultSubjectId)?.courseId : undefined) || mockCourses[0]?.id || 'crs-01';
+        const initialSubject = defaultSubjectId || mockSubjects.find(s => s.courseId === initialCourse)?.id || mockSubjects[0]?.id || 'subj-fr101';
+        const initialLevel = defaultLevelId || levelsList.find(l => l.subjectId === initialSubject)?.id || levelsList[0]?.id || 'lvl-fr-a1';
+        setSelectedCourseId(initialCourse);
+        setSelectedSubjectId(initialSubject);
+        setSelectedLevelId(initialLevel);
         setModuleNumber(1);
         setTitle('');
         setDescription('');
         setEstimatedHours(12);
       }
     }
-  }, [isOpen, editModule]);
+  }, [isOpen, editModule, defaultCourseId, defaultSubjectId]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -75,14 +92,22 @@ export default function CreateModuleDrawer({
       return;
     }
 
+    const matchedCourse = mockCourses.find((c) => c.id === selectedCourseId);
+    const crsName = matchedCourse ? matchedCourse.name : undefined;
     const sub = mockSubjects.find((s) => s.id === selectedSubjectId);
-    const subName = sub ? sub.name : 'Data Structures and Algorithms in C++';
+    const subName = sub ? sub.name : 'Curriculum Subject';
+    const lvl = levelsList.find((l) => l.id === selectedLevelId);
+    const lvlCode = lvl ? lvl.levelCode : 'A1';
 
     if (isEditMode && editModule) {
       const updatedModule: AcademicModule = {
         ...editModule,
+        courseId: selectedCourseId,
+        courseName: crsName,
         subjectId: selectedSubjectId,
         subjectName: subName,
+        levelId: selectedLevelId,
+        levelCode: lvlCode,
         moduleNumber: Number(moduleNumber),
         title: title.trim(),
         description: description.trim() || 'Unit syllabus coverage & lecture outlines.',
@@ -91,15 +116,19 @@ export default function CreateModuleDrawer({
       if (onModuleUpdated) {
         onModuleUpdated(updatedModule);
       }
-      showSuccess(`Module ${updatedModule.moduleNumber}: "${updatedModule.title}" updated.`);
+      showSuccess(`Chapter / Module ${updatedModule.moduleNumber}: "${updatedModule.title}" updated.`);
       onClose();
       return;
     }
 
     const newModule: AcademicModule = {
       id: `mod-${Date.now().toString().slice(-4)}`,
+      courseId: selectedCourseId,
+      courseName: crsName,
       subjectId: selectedSubjectId,
       subjectName: subName,
+      levelId: selectedLevelId,
+      levelCode: lvlCode,
       moduleNumber: Number(moduleNumber),
       title: title.trim(),
       description: description.trim() || 'Unit syllabus coverage & lecture outlines.',
@@ -109,7 +138,7 @@ export default function CreateModuleDrawer({
     };
 
     onModuleCreated(newModule);
-    showSuccess(`Module ${newModule.moduleNumber}: "${newModule.title}" created successfully.`);
+    showSuccess(`Chapter ${newModule.moduleNumber}: "${newModule.title}" mapped to Level ${lvlCode}.`);
     onClose();
   };
 
@@ -132,10 +161,10 @@ export default function CreateModuleDrawer({
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  {isEditMode ? 'Edit Curriculum Module' : 'Create Curriculum Module'}
+                  {isEditMode ? 'Edit Course Chapter / Module' : 'Create Course Chapter / Module'}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-slate-400">
-                  {isEditMode ? 'Modify unit outline and lecture duration' : 'Unit breakdown, lecture duration & topic container'}
+                  {isEditMode ? 'Modify unit outline and course mapping' : 'Course mapping, unit breakdown & topic container'}
                 </p>
               </div>
             </div>
@@ -149,14 +178,38 @@ export default function CreateModuleDrawer({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+            {/* Integrated Course Selection */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-[#0052CC]" />
+                <span>Associated Course *</span>
+              </label>
+              <select
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="w-full px-3 py-2 bg-blue-50/50 border border-blue-200 rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+              >
+                {mockCourses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    📘 {c.name} ({c.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Target Curriculum Subject *
+                Curriculum Subject *
               </label>
               <select
                 value={selectedSubjectId}
-                onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                onChange={(e) => {
+                  const newSubId = e.target.value;
+                  setSelectedSubjectId(newSubId);
+                  const matchingLevel = levelsList.find((l) => l.subjectId === newSubId);
+                  if (matchingLevel) setSelectedLevelId(matchingLevel.id);
+                }}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none cursor-pointer"
               >
                 {mockSubjects.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -164,6 +217,35 @@ export default function CreateModuleDrawer({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Proficiency Level Track (e.g. A1, A2, N5, N4) */}
+            <div className="p-3 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-1.5">
+              <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center justify-between">
+                <span>Target Proficiency Level Track *</span>
+                <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                  Level Stage
+                </span>
+              </label>
+              <select
+                value={selectedLevelId}
+                onChange={(e) => setSelectedLevelId(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-purple-200 rounded-lg text-xs font-bold text-purple-950 focus:ring-2 focus:ring-purple-600 outline-none cursor-pointer"
+              >
+                {levelsList
+                  .filter((l) => !selectedSubjectId || l.subjectId === selectedSubjectId)
+                  .map((l) => (
+                    <option key={l.id} value={l.id}>
+                      🏆 Level {l.levelCode} — {l.name} ({l.targetCefrOrJlpt || 'Standard'})
+                    </option>
+                  ))}
+                {levelsList.filter((l) => !selectedSubjectId || l.subjectId === selectedSubjectId).length === 0 && (
+                  <option value="lvl-custom">Level A1 (Default Foundation)</option>
+                )}
+              </select>
+              <p className="text-[11px] text-purple-700">
+                This chapter will be categorized under the chosen level (e.g., A1, A2, N5, N4) before sub-topics.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

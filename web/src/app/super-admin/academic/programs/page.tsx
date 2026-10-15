@@ -170,24 +170,11 @@ export default function ProgramsPage() {
         <div className="flex items-center justify-end gap-1">
           <button
             onClick={() => setInspectProgram(row)}
-            className="p-1.5 text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+            className="px-2.5 py-1 text-[11px] font-bold text-[#0052CC] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-blue-200"
             title="Inspect Semesters, Subjects, Batches & Fees"
           >
             <Eye className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => openEditDrawer(row)}
-            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-            title="Edit Program"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setDeleteProgram(row)}
-            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Delete Program"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
+            <span>Inspect</span>
           </button>
         </div>
       ),
@@ -205,22 +192,12 @@ export default function ProgramsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold text-[#0B2447] tracking-tight">
-            Programs & Degree Courses Management
+            Programs & Degree Courses Oversight
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
             Degree curricula, per-semester tuition fees, cohort batch allocations, and semester subjects hub.
           </p>
         </div>
-
-        <Can permission="PROGRAM_CREATE">
-          <button
-            onClick={openCreateDrawer}
-            className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Create Program</span>
-          </button>
-        </Can>
       </div>
 
       {/* Quick Summary KPIs */}
@@ -332,34 +309,11 @@ export default function ProgramsPage() {
         )}
       />
 
-      {/* Create/Edit Program Slide-over Drawer */}
-      <CreateProgramDrawer
-        isOpen={isCreateDrawerOpen}
-        onClose={() => {
-          setIsCreateDrawerOpen(false);
-          setEditProgram(null);
-        }}
-        onProgramCreated={handleProgramCreated}
-        editProgram={editProgram}
-        onProgramUpdated={handleProgramUpdated}
-      />
-
       {/* In-Place Program Detail Inspector Drawer */}
       <ProgramDetailDrawer
         isOpen={!!inspectProgram}
         onClose={() => setInspectProgram(null)}
         program={inspectProgram}
-      />
-
-      {/* Delete Confirmation Drawer */}
-      <DeleteConfirmDrawer
-        isOpen={!!deleteProgram}
-        onClose={() => setDeleteProgram(null)}
-        onConfirm={handleProgramDeleted}
-        entityType="Program"
-        entityName={deleteProgram?.name || ''}
-        entityCode={deleteProgram?.code}
-        description="Deleting this degree program will detach curriculum semesters, cohorts, and tuition fee associations."
       />
     </div>
   );

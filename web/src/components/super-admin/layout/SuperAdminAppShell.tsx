@@ -22,15 +22,15 @@ function ShellContent({ children }: { children: React.ReactNode }) {
   const activeMenu = findMenuByRoute(pathname);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased w-full relative">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased w-full max-w-full overflow-x-hidden relative">
       {/* Desktop Navy Sidebar — Fixed to Left Viewport (100vh) */}
       <SuperAdminSidebar />
 
       {/* Main Administrative Workplace — Offset by Sidebar Width (lg:pl-72) */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen pb-24 lg:pb-0 lg:pl-72">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full min-h-screen pb-24 lg:pb-0 lg:pl-72 overflow-x-hidden pt-[53px] lg:pt-0">
         <SuperAdminHeader />
         
-        <main className="flex-1 p-3 sm:p-5 md:p-6 lg:p-8 max-w-7xl mx-auto w-full min-w-0">
+        <main className="flex-1 p-3 sm:p-5 md:p-6 lg:p-8 w-full max-w-full min-w-0 overflow-x-hidden">
           {!isAllowed ? (
             <AccessDenied
               requiredPermissionName={activeMenu?.requiredPermissions.join(', ')}

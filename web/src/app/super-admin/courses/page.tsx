@@ -1,6 +1,6 @@
 // ============================================================================
 // ISML COLLEGE LMS — COURSES MANAGEMENT
-// Active Teaching Courses, Faculty Allocations, Credits & Course Fees
+// Active Teaching Courses, Faculty Allocations & Course Fees
 // ============================================================================
 
 "use client";
@@ -15,8 +15,6 @@ import { Can } from '@/context/AuthRbacContext';
 import { CourseSummary } from '@/types/rbac';
 import { mockCourses, mockDepartments, mockStudents } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
-import CreateCourseDrawer from '@/components/super-admin/academic/CreateCourseDrawer';
-import DeleteConfirmDrawer from '@/components/common/DeleteConfirmDrawer';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import ViewEnrolledStudentsDrawer from '@/components/super-admin/academic/ViewEnrolledStudentsDrawer';
 import { useCollege } from '@/context/CollegeContext';
@@ -25,9 +23,6 @@ export default function CoursesPage() {
   const { showSuccess } = useToast();
   const { selectedCollegeId, isOverall } = useCollege();
   const [courses, setCourses] = useState<CourseSummary[]>(mockCourses);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editCourse, setEditCourse] = useState<CourseSummary | null>(null);
-  const [deleteCourse, setDeleteCourse] = useState<CourseSummary | null>(null);
   const [studentsDrawerCourse, setStudentsDrawerCourse] = useState<CourseSummary | null>(null);
 
   // Filter courses based on selected college or overall
@@ -50,30 +45,7 @@ export default function CoursesPage() {
     showSuccess(`Course "${course.name}" status updated to ${nextStatus}.`);
   };
 
-  const handleCourseCreated = (newCourse: CourseSummary) => {
-    setCourses((prev) => [newCourse, ...prev]);
-  };
 
-  const handleCourseUpdated = (updatedCourse: CourseSummary) => {
-    setCourses((prev) => prev.map((c) => (c.id === updatedCourse.id ? updatedCourse : c)));
-  };
-
-  const handleCourseDeleted = () => {
-    if (!deleteCourse) return;
-    setCourses((prev) => prev.filter((c) => c.id !== deleteCourse.id));
-    showSuccess(`Course "${deleteCourse.name}" (${deleteCourse.code}) deleted successfully.`);
-    setDeleteCourse(null);
-  };
-
-  const openCreateDrawer = () => {
-    setEditCourse(null);
-    setIsCreateOpen(true);
-  };
-
-  const openEditDrawer = (course: CourseSummary) => {
-    setEditCourse(course);
-    setIsCreateOpen(true);
-  };
 
   const columns: Column<CourseSummary>[] = [
     {
@@ -84,12 +56,12 @@ export default function CoursesPage() {
       render: (row) => (
         <div className="space-y-1">
           <p className="font-bold text-[#0B2447] text-xs leading-snug line-clamp-1">{row.name}</p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
               {row.code}
             </span>
-            <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
-              {row.credits || 4} Cr
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+              AY {row.academicYear || '2026–2027'}
             </span>
           </div>
         </div>
@@ -97,7 +69,7 @@ export default function CoursesPage() {
     },
     {
       key: 'collegeName',
-      header: 'College & Dept',
+      header: 'College & Duration',
       className: 'min-w-[190px]',
       render: (row) => (
         <div className="space-y-0.5">
@@ -105,7 +77,7 @@ export default function CoursesPage() {
             {row.collegeName || 'Loyola College'}
           </p>
           <p className="text-[11px] text-slate-500 leading-tight">
-            {row.department} <span className="text-slate-400">•</span> Sem {row.semester}
+            {row.duration || (row.durationDays ? `${row.durationDays} Days Track` : '90 Days Track')}
           </p>
         </div>
       ),
@@ -138,9 +110,18 @@ export default function CoursesPage() {
       sortable: true,
       className: 'min-w-[130px]',
       render: (row) => (
-        <span className="font-medium text-slate-800 text-xs truncate max-w-[130px] block">
-          {row.facultyName}
-        </span>
+        <div className="space-y-0.5">
+          <span className="font-semibold text-slate-900 text-xs truncate max-w-[150px] block">
+            {row.facultyName}
+          </span>
+          {(row.substituteTutors && row.substituteTutors.length > 0) || row.doubtSupportTutor ? (
+            <div className="flex items-center gap-1 text-[10px] text-indigo-700">
+              <span className="px-1.5 py-0.2 bg-indigo-50 border border-indigo-200 rounded font-medium truncate max-w-[140px]" title={`Doubt Support: ${row.doubtSupportTutor || row.substituteTutors?.[0]}`}>
+                TA: {row.doubtSupportTutor || row.substituteTutors?.[0]}
+              </span>
+            </div>
+          ) : null}
+        </div>
       ),
     },
     {
@@ -204,23 +185,17 @@ export default function CoursesPage() {
     },
     {
       key: 'actions',
-      header: '',
-      className: 'text-right min-w-[80px]',
+      header: 'Actions',
+      className: 'text-right min-w-[120px]',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
           <button
-            onClick={() => openEditDrawer(row)}
-            className="p-1.5 text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-            title="Edit Course"
+            onClick={() => setStudentsDrawerCourse(row)}
+            className="px-2.5 py-1 text-slate-700 hover:text-[#0052CC] bg-blue-50/70 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-blue-200"
+            title="Inspect Enrolled Learners & Curricula"
           >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setDeleteCourse(row)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Delete Course"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Users className="w-3.5 h-3.5 text-[#0052CC]" />
+            <span>Learners</span>
           </button>
         </div>
       ),
@@ -262,19 +237,9 @@ export default function CoursesPage() {
             College Course Delivery
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-            Active teaching courses, enrolled learners, faculty assignments, and syllabus progress.
+            Institutional monitoring of active teaching courses, enrolled learners, faculty assignments, and syllabus progress.
           </p>
         </div>
-
-        <Can permission="COURSE_CREATE">
-          <button
-            onClick={openCreateDrawer}
-            className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Create Course</span>
-          </button>
-        </Can>
       </div>
 
       <DataTable
@@ -323,8 +288,6 @@ export default function CoursesPage() {
                 {row.code}
               </span>
               <span>•</span>
-              <span className="font-semibold">{row.credits} Credits</span>
-              <span>•</span>
               <span className="font-bold text-emerald-800">₹{(row.courseFee || 12500).toLocaleString('en-IN')}</span>
               <span>•</span>
               <span>{row.facultyName}</span>
@@ -347,34 +310,16 @@ export default function CoursesPage() {
                   {row.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
                 </button>
                 <button
-                  onClick={() => openEditDrawer(row)}
+                  onClick={() => setStudentsDrawerCourse(row)}
                   className="px-2 py-1 rounded-lg text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <Edit2 className="w-3 h-3" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={() => setDeleteCourse(row)}
-                  className="px-2 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Delete</span>
+                  <Users className="w-3 h-3" />
+                  <span>Learners</span>
                 </button>
               </div>
             </div>
           </div>
         )}
-      />
-
-      <CreateCourseDrawer
-        isOpen={isCreateOpen}
-        onClose={() => {
-          setIsCreateOpen(false);
-          setEditCourse(null);
-        }}
-        onCourseCreated={handleCourseCreated}
-        editCourse={editCourse}
-        onCourseUpdated={handleCourseUpdated}
       />
 
       <ViewEnrolledStudentsDrawer
@@ -383,16 +328,6 @@ export default function CoursesPage() {
         title={studentsDrawerCourse ? `${studentsDrawerCourse.name} (${studentsDrawerCourse.code})` : 'Enrolled Learners'}
         subtitle={`Campus: ${studentsDrawerCourse?.collegeName || 'All Campuses'} • ${studentsDrawerCourse?.department || ''}`}
         students={enrolledLearnersForDrawer}
-      />
-
-      <DeleteConfirmDrawer
-        isOpen={!!deleteCourse}
-        onClose={() => setDeleteCourse(null)}
-        onConfirm={handleCourseDeleted}
-        entityType="Teaching Course"
-        entityName={deleteCourse?.name || ''}
-        entityCode={deleteCourse?.code}
-        description="Deleting this course will remove enrolled learner progress, lesson schedules, and fee allocations."
       />
     </div>
   );

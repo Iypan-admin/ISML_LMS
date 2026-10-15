@@ -25,7 +25,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ISML LMS — B2B Foreign Language Student Portal",
+  title: "Student Portal — ISML College LMS",
   description: "Enterprise Multi-Tenant Foreign Language Learning Management System (French A1, German, Japanese, Spanish)",
   icons: {
     icon: "/logo.png",
@@ -38,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${outfit.variable} antialiased min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans`} suppressHydrationWarning>
+    <html lang="en" className="overflow-x-hidden max-w-full" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${outfit.variable} antialiased min-h-screen bg-slate-50 font-sans overflow-x-hidden max-w-full`} suppressHydrationWarning>
         <AppShell>{children}</AppShell>
       </body>
     </html>

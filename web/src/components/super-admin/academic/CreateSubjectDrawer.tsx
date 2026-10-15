@@ -6,9 +6,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, X, Plus, Sparkles, Hash, Award, User, Mail } from 'lucide-react';
+import { BookOpen, X, Plus, Sparkles, Hash, Layers, CheckCircle2 } from 'lucide-react';
 import { Subject } from '@/types/rbac';
-import { mockPrograms } from '@/mock/superAdminData';
+import { mockCourses } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 
 interface CreateSubjectDrawerProps {
@@ -30,38 +30,29 @@ export default function CreateSubjectDrawer({
 
   const isEditMode = Boolean(editSubject);
 
-  const [selectedProgramId, setSelectedProgramId] = useState(mockPrograms[0]?.id || 'prog-01');
-  const [semesterNumber, setSemesterNumber] = useState(3);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [semesterNumber, setSemesterNumber] = useState(1);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [credits, setCredits] = useState(4);
   const [type, setType] = useState<'THEORY' | 'PRACTICAL' | 'ELECTIVE'>('THEORY');
-  const [facultyName, setFacultyName] = useState('Dr. R. Ramanathan, Ph.D.');
-  const [facultyEmail, setFacultyEmail] = useState('ramanathan.r@loyolacollege.edu');
-  const [status, setStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
+  const [status, setStatus] = useState<'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'ACTIVE' | 'INACTIVE'>('DRAFT');
 
   useEffect(() => {
     if (isOpen) {
       if (editSubject) {
-        setSelectedProgramId(editSubject.programId);
-        setSemesterNumber(editSubject.semesterNumber);
+        setSelectedCourseId(editSubject.courseId || '');
+        setSemesterNumber(editSubject.semesterNumber || 1);
         setName(editSubject.name);
         setCode(editSubject.code);
-        setCredits(editSubject.credits);
-        setType(editSubject.type);
-        setFacultyName(editSubject.facultyName);
-        setFacultyEmail(editSubject.facultyEmail);
-        setStatus(editSubject.status);
+        setType(editSubject.type || 'THEORY');
+        setStatus(editSubject.status || 'DRAFT');
       } else {
-        setSelectedProgramId(mockPrograms[0]?.id || 'prog-01');
-        setSemesterNumber(3);
+        setSelectedCourseId('');
+        setSemesterNumber(1);
         setName('');
         setCode('');
-        setCredits(4);
         setType('THEORY');
-        setFacultyName('Dr. R. Ramanathan, Ph.D.');
-        setFacultyEmail('ramanathan.r@loyolacollege.edu');
-        setStatus('ACTIVE');
+        setStatus('DRAFT');
       }
     }
   }, [isOpen, editSubject]);
@@ -82,57 +73,59 @@ export default function CreateSubjectDrawer({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !code.trim() || !facultyName.trim()) {
-      showError('Please provide subject name, code, and faculty in-charge.');
+    if (!name.trim() || !code.trim()) {
+      showError('Please provide subject name and code.');
       return;
     }
 
-    const prog = mockPrograms.find((p) => p.id === selectedProgramId);
-    const progName = prog ? prog.name : 'Degree Program';
+    const matchedCourse = mockCourses.find((c) => c.id === selectedCourseId);
+    const crsName = matchedCourse ? matchedCourse.name : undefined;
 
     if (isEditMode && editSubject) {
       const updatedSubject: Subject = {
         ...editSubject,
-        programId: selectedProgramId,
-        programName: progName,
+        courseId: selectedCourseId || undefined,
+        courseName: crsName || editSubject.courseName,
         semesterNumber: Number(semesterNumber),
         name: name.trim(),
         code: code.trim().toUpperCase(),
-        credits: Number(credits),
+        credits: 0,
         type,
-        facultyName: facultyName.trim(),
-        facultyEmail: facultyEmail.trim().toLowerCase(),
+        facultyName: editSubject.facultyName || 'Unassigned',
+        facultyEmail: editSubject.facultyEmail || '—',
         status,
       };
       if (onSubjectUpdated) {
         onSubjectUpdated(updatedSubject);
       }
-      showSuccess(`Subject "${updatedSubject.name}" (${updatedSubject.code}) updated successfully.`);
+      showSuccess(`Subject "${updatedSubject.name}" (${updatedSubject.code}) updated.`);
       onClose();
       return;
     }
 
     const newSubject: Subject = {
       id: `subj-${Date.now().toString().slice(-4)}`,
-      programId: selectedProgramId,
-      programName: progName,
+      courseId: selectedCourseId || undefined,
+      courseName: crsName,
       semesterNumber: Number(semesterNumber),
       name: name.trim(),
       code: code.trim().toUpperCase(),
-      credits: Number(credits),
+      credits: 0,
       type,
-      facultyName: facultyName.trim(),
-      facultyEmail: facultyEmail.trim().toLowerCase(),
+      facultyName: 'Unassigned',
+      facultyEmail: '—',
       modulesCount: 0,
-      status,
+      status: 'DRAFT', // Saved in draft pending super admin approval and publish
     };
 
     onSubjectCreated(newSubject);
-    showSuccess(`Subject "${newSubject.name}" (${newSubject.code}) added successfully.`);
+    showSuccess(`Subject "${newSubject.name}" saved as Draft (Waiting for Super Admin approval & publish).`);
     onClose();
   };
 
   if (!isOpen) return null;
+
+  const currentCourse = mockCourses.find((c) => c.id === selectedCourseId);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden font-sans">
@@ -154,7 +147,7 @@ export default function CreateSubjectDrawer({
                   {isEditMode ? 'Edit Curriculum Subject' : 'Add Curriculum Subject'}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-slate-400">
-                  {isEditMode ? 'Modify coursework syllabus, credits & faculty lead' : 'Coursework syllabus, credit weightage & faculty lead'}
+                  {isEditMode ? 'Modify coursework syllabus & classification' : 'Coursework syllabus & classification'}
                 </p>
               </div>
             </div>
@@ -168,21 +161,34 @@ export default function CreateSubjectDrawer({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Target Degree Program *
-              </label>
+            {/* Optional Course Integration */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Assign to Course</span>
+                </label>
+                <span className="text-[10px] font-semibold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full">
+                  Optional
+                </span>
+              </div>
               <select
-                value={selectedProgramId}
-                onChange={(e) => setSelectedProgramId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#0052CC] outline-none shadow-xs cursor-pointer"
               >
-                {mockPrograms.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.code})
+                <option value="">— Don't assign to a course now (Standalone Subject) —</option>
+                {mockCourses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    📘 {c.name} ({c.code})
                   </option>
                 ))}
               </select>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                {currentCourse
+                  ? `Will be linked to ${currentCourse.name}. You can also reassign anytime later.`
+                  : 'You can create the subject standalone first, and assign it to any course later whenever ready.'}
+              </p>
             </div>
 
             <div>
@@ -199,7 +205,7 @@ export default function CreateSubjectDrawer({
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Code *
@@ -213,23 +219,6 @@ export default function CreateSubjectDrawer({
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     className="w-full pl-7 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none uppercase"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Credits *
-                </label>
-                <div className="relative">
-                  <Award className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={credits}
-                    onChange={(e) => setCredits(Number(e.target.value))}
-                    className="w-full pl-7 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
                   />
                 </div>
               </div>
@@ -264,57 +253,39 @@ export default function CreateSubjectDrawer({
               </select>
             </div>
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-              <h3 className="text-xs font-bold text-[#0B2447] flex items-center gap-1.5 uppercase tracking-wider">
-                <User className="w-3.5 h-3.5 text-[#0052CC]" />
-                Faculty Lead Assignment
-              </h3>
-
+            {/* Status & Approval Notice */}
+            {isEditMode ? (
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Faculty Name *
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Curriculum Status
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Dr. R. Ramanathan, Ph.D."
-                  value={facultyName}
-                  onChange={(e) => setFacultyName(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-[#0052CC] outline-none"
-                />
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as any)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                >
+                  <option value="DRAFT">DRAFT (Under Preparation / Pending Approval)</option>
+                  <option value="PENDING_APPROVAL">PENDING APPROVAL (Submitted for Super Admin Verification)</option>
+                  <option value="PUBLISHED">PUBLISHED (Verified & Live in Course Curriculum)</option>
+                  <option value="ACTIVE">ACTIVE (Taught in Current Syllabus)</option>
+                  <option value="INACTIVE">INACTIVE</option>
+                </select>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Faculty Institutional Email *
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. ramanathan.r@loyolacollege.edu"
-                    value={facultyEmail}
-                    onChange={(e) => setFacultyEmail(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-[#0052CC] outline-none"
-                  />
+            ) : (
+              <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                  ⏳
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-amber-900">
+                    Draft & Approval Workflow
+                  </h4>
+                  <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                    New subjects are automatically saved as <strong>DRAFT</strong>. Super Admin will verify the syllabus details and publish it to the active curriculum.
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Curriculum Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-              >
-                <option value="ACTIVE">ACTIVE (Taught in Current Syllabus)</option>
-                <option value="INACTIVE">INACTIVE</option>
-              </select>
-            </div>
+            )}
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
               <button

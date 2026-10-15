@@ -1,14 +1,33 @@
 // ============================================================================
-// ISML COLLEGE LMS — CREATE BATCH DRAWER
-// Student Cohort Initialization, Academic Cycle & Intake Capacity
+// ISML COLLEGE LMS — CREATE / EDIT BATCH DRAWER
+// Professional Cohort Initialization:
+// - Removed strict academic degree program dependencies
+// - Course-mapped batch cohort initialization
+// - In-built Class Timing & Schedule Days configuration (Morning/Evening, Days of week)
+// - Lead Faculty & Staff / Tutor assignment
+// - Intake capacity & student allocation
 // ============================================================================
 
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Layers, X, Plus, Sparkles, Calendar, BookOpen, Users, Grid, Building2 } from 'lucide-react';
+import {
+  Layers,
+  X,
+  Plus,
+  Sparkles,
+  Calendar,
+  BookOpen,
+  Users,
+  Grid,
+  Building2,
+  Clock,
+  UserCheck,
+  CheckCircle2,
+  Info,
+} from 'lucide-react';
 import { Batch } from '@/types/rbac';
-import { mockPrograms, mockInstitutions, mockCourses } from '@/mock/superAdminData';
+import { mockInstitutions, mockCourses, mockDepartments } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 
 interface CreateBatchDrawerProps {
@@ -18,6 +37,35 @@ interface CreateBatchDrawerProps {
   editBatch?: Batch | null;
   onBatchUpdated?: (batch: Batch) => void;
 }
+
+const PRESET_TIMINGS = [
+  '07:00 AM – 08:30 AM (Early Morning)',
+  '09:00 AM – 11:00 AM (Morning Session)',
+  '11:30 AM – 01:00 PM (Mid-Day Session)',
+  '02:00 PM – 04:00 PM (Afternoon Track)',
+  '05:00 PM – 06:30 PM (Evening Fast-Track)',
+  '07:00 PM – 08:30 PM (Night Professional)',
+];
+
+const WEEK_DAYS = [
+  { id: 'MON', label: 'Mon' },
+  { id: 'TUE', label: 'Tue' },
+  { id: 'WED', label: 'Wed' },
+  { id: 'THU', label: 'Thu' },
+  { id: 'FRI', label: 'Fri' },
+  { id: 'SAT', label: 'Sat' },
+  { id: 'SUN', label: 'Sun' },
+];
+
+const PRESET_STAFFS = [
+  'Dr. Anandhakumar V.',
+  'Mme. Claire Fontaine',
+  'Herr Wolfgang Meyer',
+  'Sensei Kenji Takahashi',
+  'Prof. Rajesh Raman',
+  'Ms. Ananya Sharma (TA)',
+  'Mr. Karthik Sundaram (TA)',
+];
 
 export default function CreateBatchDrawer({
   isOpen,
@@ -32,60 +80,89 @@ export default function CreateBatchDrawer({
 
   const [institutionId, setInstitutionId] = useState(mockInstitutions[0]?.id || 'inst-01');
   const [institutionName, setInstitutionName] = useState(mockInstitutions[0]?.name || 'Loyola College');
-  const [selectedProgramId, setSelectedProgramId] = useState(mockPrograms[0]?.id || 'prog-01');
+  const [departmentName, setDepartmentName] = useState(mockDepartments[0]?.name || 'Department of Foreign Languages');
   const [name, setName] = useState('');
-  const [admissionYear, setAdmissionYear] = useState(2024);
-  const [graduationYear, setGraduationYear] = useState(2028);
-  const [currentSemesterNumber, setCurrentSemesterNumber] = useState(1);
-  const [sectionsCount, setSectionsCount] = useState(2);
+  const [academicYear, setAcademicYear] = useState('2026–2027');
+  const [admissionYear, setAdmissionYear] = useState(2026);
+  const [graduationYear, setGraduationYear] = useState(2027);
+  const [sectionsCount, setSectionsCount] = useState(1);
   const [studentsCount, setStudentsCount] = useState(60);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
   const [status, setStatus] = useState<'ACTIVE' | 'GRADUATED' | 'INACTIVE'>('ACTIVE');
+
+  // Schedule & Timing
+  const [isCustomTiming, setIsCustomTiming] = useState(false);
+  const [batchTiming, setBatchTiming] = useState(PRESET_TIMINGS[1]);
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('11:00');
+  const [selectedDays, setSelectedDays] = useState<string[]>(['MON', 'WED', 'FRI']);
+  const [assignedFaculty, setAssignedFaculty] = useState(PRESET_STAFFS[0]);
+  const [assignedStaffTutor, setAssignedStaffTutor] = useState(PRESET_STAFFS[5]);
 
   // Filter courses available for selected institution
   const availableCourses = mockCourses.filter(
     (c) => !c.collegeId || c.collegeId === institutionId
   );
 
-  // Auto-generate name when program or admission year changes only in create mode
-  useEffect(() => {
-    if (!isEditMode) {
-      const prog = mockPrograms.find((p) => p.id === selectedProgramId);
-      if (prog) {
-        setName(`${prog.code} - Class of ${graduationYear}`);
-      }
-    }
-  }, [selectedProgramId, graduationYear, isEditMode]);
+  // Helper to format 24h "HH:MM" to "hh:mm AM/PM"
+  const formatTimeSlot = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12.toString().padStart(2, '0')}:${(m || 0).toString().padStart(2, '0')} ${period}`;
+  };
+
+  const effectiveTiming = isCustomTiming
+    ? `${formatTimeSlot(startTime)} – ${formatTimeSlot(endTime)} (Custom Slot)`
+    : batchTiming;
 
   useEffect(() => {
     if (isOpen) {
       if (editBatch) {
         setInstitutionId(editBatch.institutionId || mockInstitutions[0]?.id || 'inst-01');
         setInstitutionName(editBatch.institutionName || mockInstitutions[0]?.name || 'Loyola College');
-        setSelectedProgramId(editBatch.programId);
+        setDepartmentName(editBatch.departmentName || mockDepartments[0]?.name || 'Academic Department');
         setName(editBatch.name);
-        setAdmissionYear(editBatch.admissionYear);
-        setGraduationYear(editBatch.graduationYear);
-        setCurrentSemesterNumber(editBatch.currentSemesterNumber);
-        setSectionsCount(editBatch.sectionsCount);
-        setStudentsCount(editBatch.studentsCount);
+        setAcademicYear(editBatch.academicYear || (editBatch.admissionYear ? `${editBatch.admissionYear}–${editBatch.graduationYear}` : '2026–2027'));
+        setAdmissionYear(editBatch.admissionYear || 2026);
+        setGraduationYear(editBatch.graduationYear || 2027);
+        setSectionsCount(editBatch.sectionsCount || 1);
+        setStudentsCount(editBatch.studentsCount || 60);
         setSelectedCourseIds(editBatch.courseIds || []);
         setStatus(editBatch.status as 'ACTIVE' | 'GRADUATED' | 'INACTIVE');
+        
+        const existingTiming = editBatch.batchTiming || PRESET_TIMINGS[1];
+        if (PRESET_TIMINGS.includes(existingTiming)) {
+          setBatchTiming(existingTiming);
+          setIsCustomTiming(false);
+        } else {
+          setIsCustomTiming(true);
+          setBatchTiming(existingTiming);
+        }
+
+        setSelectedDays(editBatch.scheduleDays || ['MON', 'WED', 'FRI']);
+        setAssignedFaculty(editBatch.assignedFacultyName || PRESET_STAFFS[0]);
+        setAssignedStaffTutor(editBatch.assignedStaffNames?.[0] || PRESET_STAFFS[5]);
       } else {
-        const prog = mockPrograms[0];
         setInstitutionId(mockInstitutions[0]?.id || 'inst-01');
         setInstitutionName(mockInstitutions[0]?.name || 'Loyola College');
-        if (prog) {
-          setSelectedProgramId(prog.id);
-          setName(`${prog.code} - Class of 2028`);
-        }
-        setAdmissionYear(2024);
-        setGraduationYear(2028);
-        setCurrentSemesterNumber(1);
-        setSectionsCount(2);
+        setDepartmentName(mockDepartments[0]?.name || 'Department of Foreign Languages');
+        setName(`Batch 2026 (Regular Track)`);
+        setAcademicYear('2026–2027');
+        setAdmissionYear(2026);
+        setGraduationYear(2027);
+        setSectionsCount(1);
         setStudentsCount(60);
         setSelectedCourseIds([]);
         setStatus('ACTIVE');
+        setBatchTiming(PRESET_TIMINGS[1]);
+        setIsCustomTiming(false);
+        setStartTime('09:00');
+        setEndTime('11:00');
+        setSelectedDays(['MON', 'WED', 'FRI']);
+        setAssignedFaculty(PRESET_STAFFS[0]);
+        setAssignedStaffTutor(PRESET_STAFFS[5]);
       }
     }
   }, [isOpen, editBatch]);
@@ -110,17 +187,18 @@ export default function CreateBatchDrawer({
     );
   };
 
+  const toggleDay = (dayId: string) => {
+    setSelectedDays((prev) =>
+      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId]
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       showError('Please provide batch cohort title.');
       return;
     }
-
-    const prog = mockPrograms.find((p) => p.id === selectedProgramId) || {
-      name: 'Computer Science & Engineering',
-      departmentName: 'Department of Computer Science & IT',
-    };
 
     const matchedCourses = mockCourses.filter((c) => selectedCourseIds.includes(c.id));
     const courseNames = matchedCourses.map((c) => c.name);
@@ -130,17 +208,22 @@ export default function CreateBatchDrawer({
         ...editBatch,
         institutionId,
         institutionName,
-        programId: selectedProgramId,
-        programName: prog.name,
-        departmentName: prog.departmentName || 'Academic Department',
+        programId: 'course-track',
+        programName: courseNames.length > 0 ? courseNames.slice(0, 2).join(' • ') : 'Course Cohort',
+        departmentName,
         name: name.trim(),
+        academicYear: academicYear.trim(),
         admissionYear: Number(admissionYear),
         graduationYear: Number(graduationYear),
-        currentSemesterNumber: Number(currentSemesterNumber),
+        currentSemesterNumber: 1,
         sectionsCount: Number(sectionsCount),
         studentsCount: Number(studentsCount),
         courseIds: selectedCourseIds,
         courseNames,
+        batchTiming: effectiveTiming,
+        scheduleDays: selectedDays,
+        assignedFacultyName: assignedFaculty,
+        assignedStaffNames: [assignedStaffTutor],
         status,
       };
       if (onBatchUpdated) {
@@ -155,23 +238,28 @@ export default function CreateBatchDrawer({
       id: `batch-${Date.now().toString().slice(-4)}`,
       institutionId,
       institutionName,
-      programId: selectedProgramId,
-      programName: prog.name,
-      departmentName: prog.departmentName || 'Academic Department',
+      programId: 'course-track',
+      programName: courseNames.length > 0 ? courseNames.slice(0, 2).join(' • ') : 'Course Cohort',
+      departmentName,
       name: name.trim(),
+      academicYear: academicYear.trim(),
       admissionYear: Number(admissionYear),
       graduationYear: Number(graduationYear),
-      currentSemesterNumber: Number(currentSemesterNumber),
+      currentSemesterNumber: 1,
       sectionsCount: Number(sectionsCount),
       studentsCount: Number(studentsCount),
       courseIds: selectedCourseIds,
       courseNames,
+      batchTiming: effectiveTiming,
+      scheduleDays: selectedDays,
+      assignedFacultyName: assignedFaculty,
+      assignedStaffNames: [assignedStaffTutor],
       status,
       createdAt: new Date().toISOString(),
     };
 
     onBatchCreated(newBatch);
-    showSuccess(`Batch cohort "${newBatch.name}" created successfully.`);
+    showSuccess(`Batch cohort "${newBatch.name}" created with scheduled timing.`);
     onClose();
   };
 
@@ -194,10 +282,10 @@ export default function CreateBatchDrawer({
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  {isEditMode ? 'Edit Batch Cohort' : 'Create Batch Cohort'}
+                  {isEditMode ? 'Edit Course Batch Cohort' : 'Create Course Batch Cohort'}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-slate-400">
-                  {isEditMode ? 'Modify academic cohort parameters' : 'Initialize academic cohort and section allocations'}
+                  Course mapping, student intake capacity, daily timing & assigned faculty
                 </p>
               </div>
             </div>
@@ -210,10 +298,10 @@ export default function CreateBatchDrawer({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-            {/* College Selection */}
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+            {/* Campus Selection */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-blue-600" />
                 <span>Affiliated Campus / College *</span>
               </label>
@@ -225,146 +313,256 @@ export default function CreateBatchDrawer({
                   setInstitutionId(id);
                   if (inst) setInstitutionName(inst.name);
                 }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
               >
                 {mockInstitutions.map((inst) => (
                   <option key={inst.id} value={inst.id}>
-                    {inst.name} ({inst.code})
+                    🎓 {inst.name} ({inst.code})
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Batch Cohort Title */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Target Academic Program *
-              </label>
-              <select
-                value={selectedProgramId}
-                onChange={(e) => setSelectedProgramId(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-              >
-                {mockPrograms.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Batch Cohort Title *
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. B.Tech CSE - Class of 2028"
+                placeholder="e.g. French A1 - Batch 2026 Morning Track"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Admission Year
+
+
+            {/* ─── CLASS TIMINGS & SCHEDULE DAYS (Requested Feature) ─── */}
+            <div className="p-3.5 bg-gradient-to-br from-indigo-50/70 to-blue-50/40 border border-indigo-200/80 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold text-indigo-900 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Class Timings & Schedule *</span>
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="number"
-                    min="2020"
-                    max="2035"
-                    value={admissionYear}
-                    onChange={(e) => setAdmissionYear(Number(e.target.value))}
-                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-                  />
-                </div>
+                <span className="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                  {selectedDays.length} Days/Wk
+                </span>
               </div>
 
+              {/* Timing Mode Toggle */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Graduation Year
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-bold text-slate-700">
+                    Session Timing Slot
+                  </label>
+                  <div className="flex items-center p-0.5 bg-slate-200/80 rounded-lg text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomTiming(false)}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                        !isCustomTiming ? 'bg-white text-indigo-900 shadow-2xs font-extrabold' : 'text-slate-600'
+                      }`}
+                    >
+                      Presets
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomTiming(true)}
+                      className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                        isCustomTiming ? 'bg-indigo-600 text-white shadow-2xs font-extrabold' : 'text-slate-600'
+                      }`}
+                    >
+                      Custom Time
+                    </button>
+                  </div>
+                </div>
+
+                {!isCustomTiming ? (
+                  <select
+                    value={batchTiming}
+                    onChange={(e) => setBatchTiming(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#0052CC] outline-none"
+                  >
+                    {PRESET_TIMINGS.map((slot) => (
+                      <option key={slot} value={slot}>
+                        ⏰ {slot}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  /* Custom Time Range Pickers */
+                  <div className="p-3 bg-white rounded-xl border border-indigo-200 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                          Start Time
+                        </label>
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-[#0052CC] outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                          End Time
+                        </label>
+                        <input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-[#0052CC] outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-indigo-700 font-bold flex items-center gap-1.5 pt-0.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Configured: {formatTimeSlot(startTime)} to {formatTimeSlot(endTime)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Days of Week Pills */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                  Scheduled Days
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="number"
-                    min="2021"
-                    max="2040"
-                    value={graduationYear}
-                    onChange={(e) => setGraduationYear(Number(e.target.value))}
-                    className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-                  />
+                <div className="flex flex-wrap gap-1.5">
+                  {WEEK_DAYS.map((d) => {
+                    const isSelected = selectedDays.includes(d.id);
+                    return (
+                      <button
+                        type="button"
+                        key={d.id}
+                        onClick={() => toggleDay(d.id)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300'
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            {/* ─── INCHARGE FACULTY & STAFF TUTOR ─── */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Current Sem
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Lead Faculty</span>
+                </label>
+                <select
+                  value={assignedFaculty}
+                  onChange={(e) => setAssignedFaculty(e.target.value)}
+                  className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                >
+                  {PRESET_STAFFS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Doubt Tutor / TA</span>
+                </label>
+                <select
+                  value={assignedStaffTutor}
+                  onChange={(e) => setAssignedStaffTutor(e.target.value)}
+                  className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                >
+                  {PRESET_STAFFS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Admission Cycle & Student Capacity */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Academic Year *</span>
+                </label>
+                <select
+                  value={academicYear}
+                  onChange={(e) => {
+                    const ay = e.target.value;
+                    setAcademicYear(ay);
+                    // Automatically sync admission & graduation year if standard format
+                    const years = ay.match(/\d{4}/g);
+                    if (years && years.length >= 2) {
+                      setAdmissionYear(Number(years[0]));
+                      setGraduationYear(Number(years[1]));
+                    }
+                  }}
+                  className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                >
+                  <option value="2026–2027">2026–2027 (Current)</option>
+                  <option value="2025–2026">2025–2026</option>
+                  <option value="2027–2028">2027–2028</option>
+                  <option value="2028–2029">2028–2029</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Sections
                 </label>
                 <input
                   type="number"
                   min="1"
-                  max="12"
-                  value={currentSemesterNumber}
-                  onChange={(e) => setCurrentSemesterNumber(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                  max="10"
+                  value={sectionsCount}
+                  onChange={(e) => setSectionsCount(Number(e.target.value))}
+                  className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Sections
-                </label>
-                <div className="relative">
-                  <Grid className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={sectionsCount}
-                    onChange={(e) => setSectionsCount(Number(e.target.value))}
-                    className="w-full pl-7 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Students Cap
                 </label>
-                <div className="relative">
-                  <Users className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                  <input
-                    type="number"
-                    min="1"
-                    max="500"
-                    value={studentsCount}
-                    onChange={(e) => setStudentsCount(Number(e.target.value))}
-                    className="w-full pl-7 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-                  />
-                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="500"
+                  value={studentsCount}
+                  onChange={(e) => setStudentsCount(Number(e.target.value))}
+                  className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                />
               </div>
             </div>
 
-            {/* Mapped Courses Checklist */}
+            {/* ─── MAP ENROLLED COURSES (Course Centric Mapping) ─── */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Map Enrolled Courses ({selectedCourseIds.length} Selected)</span>
+                  <span>Map Teaching Courses ({selectedCourseIds.length} Selected)</span>
                 </label>
-                <span className="text-[10px] text-slate-400 font-medium">Select all curricula</span>
+                <span className="text-[10px] text-slate-400 font-medium">Select curricula</span>
               </div>
-              <div className="border border-slate-200 rounded-xl bg-slate-50/70 p-2.5 max-h-44 overflow-y-auto space-y-1.5 divide-y divide-slate-100">
+              <div className="border border-slate-200 rounded-2xl bg-slate-50/70 p-2.5 max-h-44 overflow-y-auto space-y-1.5 divide-y divide-slate-100">
                 {availableCourses.length === 0 ? (
                   <p className="text-[11px] text-slate-400 italic text-center py-2">
-                    No courses available for this campus.
+                    No courses found under this campus.
                   </p>
                 ) : (
                   availableCourses.map((crs) => {
@@ -372,7 +570,7 @@ export default function CreateBatchDrawer({
                     return (
                       <label
                         key={crs.id}
-                        className={`flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors pt-2 ${
+                        className={`flex items-start gap-2.5 p-2 rounded-xl cursor-pointer transition-colors pt-2 ${
                           isChecked ? 'bg-indigo-50/70 border border-indigo-200/80' : 'hover:bg-slate-100/60'
                         }`}
                       >
@@ -392,8 +590,6 @@ export default function CreateBatchDrawer({
                           <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
                             <span>{crs.department}</span>
                             <span>•</span>
-                            <span className="font-semibold text-purple-700">{crs.credits || 4} Credits</span>
-                            <span>•</span>
                             <span>{crs.facultyName}</span>
                           </div>
                         </div>
@@ -404,14 +600,15 @@ export default function CreateBatchDrawer({
               </div>
             </div>
 
+            {/* Lifecycle Status */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Batch Lifecycle Status
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'ACTIVE' | 'GRADUATED' | 'INACTIVE')}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
               >
                 <option value="ACTIVE">ACTIVE (In Session)</option>
                 <option value="GRADUATED">GRADUATED (Alumni)</option>
@@ -419,23 +616,26 @@ export default function CreateBatchDrawer({
               </select>
             </div>
 
-            <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl text-[11px] text-blue-800 leading-relaxed">
-              New students admitted via single-sign-on or bulk CSV upload can be immediately associated with this cohort batch.
+            <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl text-[11px] text-blue-800 leading-relaxed flex items-start gap-2">
+              <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <span>
+                Students enrolled in this cohort will attend scheduled sessions during <strong>{batchTiming}</strong> ({selectedDays.join(', ')}).
+              </span>
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 border border-slate-200 text-slate-600 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-3.5 py-1.5 sm:px-5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Plus className="w-4 h-4" />
                 <span>{isEditMode ? 'Update Batch Cohort' : 'Save Batch Cohort'}</span>
               </button>
             </div>

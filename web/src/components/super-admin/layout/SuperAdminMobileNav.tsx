@@ -51,6 +51,10 @@ import {
   FileCheck,
   BarChart2,
   History,
+  Award,
+  ClipboardList,
+  Calendar,
+  HeartHandshake,
 } from 'lucide-react';
 import { useRbac, useAuth } from '@/context/AuthRbacContext';
 import { useCollege, OVERALL_COLLEGE_ID } from '@/context/CollegeContext';
@@ -92,6 +96,10 @@ const iconMap: Record<string, React.ElementType> = {
   ScrollText,
   Activity,
   Settings,
+  Award,
+  ClipboardList,
+  Calendar,
+  HeartHandshake,
 };
 
 export default function SuperAdminMobileNav() {
@@ -101,6 +109,11 @@ export default function SuperAdminMobileNav() {
   const { currentUser, activeRole } = useAuth();
   const { selectedCollegeId, setSelectedCollegeId, institutions, isOverall } = useCollege();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Determine which group contains the active route initially
   const activeGroupId = useMemo(() => {
@@ -153,22 +166,22 @@ export default function SuperAdminMobileNav() {
             onClick={() => setDrawerOpen(false)}
           />
 
-          <div className="fixed bottom-[64px] left-0 right-0 bg-[#0B2447] text-white rounded-t-2xl z-50 lg:hidden max-h-[75vh] flex flex-col shadow-2xl border-t border-[#1E3A8A] overflow-hidden animate-in slide-in-from-bottom duration-200 font-sans">
+          <div className="fixed bottom-0 sm:bottom-4 left-0 right-0 sm:left-4 sm:right-4 max-w-lg mx-auto bg-[#0B2447] text-white rounded-t-3xl sm:rounded-3xl z-50 lg:hidden max-h-[82vh] flex flex-col shadow-2xl border border-[#1E3A8A] overflow-hidden animate-in slide-in-from-bottom duration-200 font-sans pb-16">
             {/* Drawer Top Header */}
-            <div className="p-3.5 border-b border-[#1E3A8A] flex items-center justify-between bg-[#071730] rounded-t-2xl shrink-0">
-              <div className="flex items-center gap-2 truncate">
+            <div className="p-3.5 border-b border-[#1E3A8A] flex items-center justify-between bg-[#071730] shrink-0">
+              <div className="flex items-center gap-2.5 truncate">
                 <div className="p-1.5 rounded-lg bg-[#0052CC]/25 text-cyan-400 shrink-0">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div className="truncate">
                   <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-                  <p className="text-[10px] text-cyan-300 font-semibold truncate">Central Super Admin</p>
+                  <p className="text-[10px] text-cyan-300 font-semibold truncate">Central Super Administrator</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
-                className="p-1.5 rounded-lg bg-white/10 text-slate-300 hover:text-white cursor-pointer shrink-0"
+                className="p-1.5 rounded-xl bg-white/10 text-slate-300 hover:text-white cursor-pointer shrink-0"
                 title="Close Menu"
               >
                 <X className="w-4 h-4" />
@@ -195,8 +208,8 @@ export default function SuperAdminMobileNav() {
               </select>
             </div>
 
-            {/* Categorized Menu Groups inside Drawer (Clean 1-column list for perfect mobile fit) */}
-            <div className="p-3 overflow-y-auto space-y-2">
+            {/* Categorized Menu Groups inside Drawer */}
+            <div className="p-3 overflow-y-auto space-y-2 flex-1">
               {accessibleMenuGroups.map((group) => {
                 const isOpen = openGroupId === group.id;
                 return (
@@ -279,9 +292,9 @@ export default function SuperAdminMobileNav() {
         </>
       )}
 
-      {/* ─── Sticky Mobile Bottom Navigation Bar (5 tabs, perfect fit with safe-area) ─── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0B2447] border-t border-[#1E3A8A] z-40 lg:hidden shadow-2xl font-sans">
-        <nav className="flex items-center justify-around px-1 py-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+      {/* ─── Modern Floating Dock Mobile Bottom Navigation Bar ─── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pointer-events-none font-sans">
+        <nav className="pointer-events-auto max-w-md mx-auto bg-[#0B2447]/95 backdrop-blur-md text-white border border-[#1E3A8A]/90 rounded-2xl px-1.5 py-1.5 flex items-center justify-around shadow-[0_-8px_30px_rgba(0,0,0,0.35)]">
           {quickLinks.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -294,18 +307,19 @@ export default function SuperAdminMobileNav() {
                 key={item.route}
                 href={item.route}
                 onClick={() => setDrawerOpen(false)}
-                className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all relative flex-1 min-w-0 ${
-                  isActive ? 'text-cyan-300 font-bold' : 'text-slate-400 hover:text-slate-200'
+                className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all relative min-w-0 ${
+                  isActive
+                    ? 'text-cyan-300 bg-[#0052CC]/30 shadow-2xs font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <div
-                  className={`p-1 rounded-lg transition-transform ${
-                    isActive ? 'bg-[#0052CC]/50 text-cyan-300 scale-105' : ''
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
+                <div className="relative flex items-center justify-center">
+                  <Icon className={`w-4 h-4 mb-0.5 ${isActive ? 'text-cyan-300 scale-110' : 'text-slate-400'}`} />
+                  {isActive && (
+                    <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  )}
                 </div>
-                <span className="text-[10px] font-semibold tracking-tight truncate max-w-full mt-0.5">
+                <span className="text-[10px] font-semibold tracking-tight truncate max-w-[62px] leading-tight">
                   {item.label}
                 </span>
               </Link>
@@ -315,20 +329,23 @@ export default function SuperAdminMobileNav() {
           {/* More Menu Drawer Trigger */}
           <button
             type="button"
+            suppressHydrationWarning
             onClick={() => setDrawerOpen(!drawerOpen)}
-            className={`flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer flex-1 min-w-0 ${
-              drawerOpen ? 'text-cyan-300 font-bold' : 'text-slate-400 hover:text-slate-200'
+            className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all cursor-pointer min-w-0 ${
+              drawerOpen
+                ? 'text-cyan-300 bg-cyan-500/20 font-bold'
+                : 'text-slate-400 hover:text-white hover:bg-white/5'
             }`}
             title={drawerOpen ? 'Close Navigation Menu' : 'Open Full Navigation Menu'}
           >
-            <div
-              className={`p-1 rounded-lg transition-transform ${
-                drawerOpen ? 'bg-cyan-500/20 text-cyan-300 scale-105' : ''
-              }`}
-            >
-              {drawerOpen ? <X className="w-5 h-5 text-cyan-300" /> : <Menu className="w-5 h-5" />}
+            <div className="relative flex items-center justify-center">
+              {drawerOpen ? (
+                <X className="w-4 h-4 mb-0.5 text-cyan-300 scale-110" />
+              ) : (
+                <Menu className="w-4 h-4 mb-0.5 text-slate-400" />
+              )}
             </div>
-            <span className="text-[10px] font-semibold tracking-tight truncate max-w-full mt-0.5">
+            <span className="text-[10px] font-semibold tracking-tight truncate max-w-[62px] leading-tight">
               {drawerOpen ? 'Close' : 'More'}
             </span>
           </button>

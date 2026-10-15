@@ -22,7 +22,7 @@ export default function ClassesPage() {
   const { showSuccess } = useToast();
   const { selectedCollegeId, isOverall } = useCollege();
   const [classes, setClasses] = useState<ClassSessionItem[]>(mockClassSessions);
-  const [modeFilter, setModeFilter] = useState<'ALL' | 'ONLINE' | 'OFFLINE'>('ALL');
+  const [modeFilter, setModeFilter] = useState<'ALL' | 'ONLINE' | 'RECORDED'>('ALL');
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [editSession, setEditSession] = useState<ClassSessionItem | null>(null);
   const [deleteSession, setDeleteSession] = useState<ClassSessionItem | null>(null);
@@ -31,9 +31,9 @@ export default function ClassesPage() {
   const displayClasses = classes.filter((c) => {
     // Mode filter
     if (modeFilter !== 'ALL') {
-      const isOnline = c.deliveryMode === 'ONLINE' || c.roomOrLink?.toLowerCase().includes('studio') || c.roomOrLink?.toLowerCase().includes('zoom');
+      const isOnline = c.deliveryMode === 'ONLINE' || c.roomOrLink?.toLowerCase().includes('studio') || c.roomOrLink?.toLowerCase().includes('zoom') || c.meetingUrl?.includes('meet.google');
       if (modeFilter === 'ONLINE' && !isOnline) return false;
-      if (modeFilter === 'OFFLINE' && isOnline) return false;
+      if (modeFilter === 'RECORDED' && isOnline) return false;
     }
 
     if (isOverall) return true;
@@ -86,16 +86,16 @@ export default function ClassesPage() {
       header: 'Delivery Mode',
       className: 'min-w-[130px]',
       render: (row) => {
-        const isOnline = row.deliveryMode === 'ONLINE' || row.roomOrLink?.toLowerCase().includes('studio') || row.roomOrLink?.toLowerCase().includes('zoom');
+        const isOnline = row.deliveryMode === 'ONLINE' || row.roomOrLink?.toLowerCase().includes('studio') || row.roomOrLink?.toLowerCase().includes('zoom') || row.meetingUrl?.includes('meet.google');
         return isOnline ? (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#0052CC] border border-blue-200">
             <Wifi className="w-3 h-3 text-[#0052CC]" />
-            <span>Online Live</span>
+            <span>Live Interactive</span>
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <Building className="w-3 h-3 text-emerald-700" />
-            <span>Offline Campus</span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+            <Video className="w-3 h-3 text-indigo-700" />
+            <span>Recorded / Lab</span>
           </span>
         );
       },
@@ -179,15 +179,15 @@ export default function ClassesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold text-[#0B2447] tracking-tight">
-            Class Sessions & Lecture Slots
+            Class Sessions & Virtual Lecture Studios
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-            Real-time live lecture rooms, campus laboratory allocations, and hybrid class schedules.
+            Real-time live lecture rooms, 2-way speaking studios, and on-demand cloud masterclasses.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Online / Offline Mode Filter Segmented Control */}
+          {/* Online Live / Recorded Mode Filter Segmented Control */}
           <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200 shadow-2xs text-xs font-bold">
             <button
               onClick={() => setModeFilter('ALL')}
@@ -197,7 +197,7 @@ export default function ClassesPage() {
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              All Modes ({classes.length})
+              All Channels ({classes.length})
             </button>
             <button
               onClick={() => setModeFilter('ONLINE')}
@@ -208,30 +208,20 @@ export default function ClassesPage() {
               }`}
             >
               <Wifi className="w-3 h-3" />
-              <span>Online Live</span>
+              <span>Live Interactive</span>
             </button>
             <button
-              onClick={() => setModeFilter('OFFLINE')}
+              onClick={() => setModeFilter('RECORDED')}
               className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                modeFilter === 'OFFLINE'
-                  ? 'bg-emerald-700 text-white shadow-xs'
+                modeFilter === 'RECORDED'
+                  ? 'bg-indigo-700 text-white shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Building className="w-3 h-3" />
-              <span>Offline Campus</span>
+              <Video className="w-3 h-3" />
+              <span>Self-Paced / Lab</span>
             </button>
           </div>
-
-          <Can permission="CLASS_CREATE">
-            <button
-              onClick={openScheduleDrawer}
-              className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-start sm:self-auto"
-            >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>Schedule Lecture</span>
-            </button>
-          </Can>
         </div>
       </div>
 
@@ -242,7 +232,7 @@ export default function ClassesPage() {
         searchPlaceholder="Search class session, faculty, room..."
         searchKey={(row) => `${row.subjectName} ${row.facultyName} ${row.roomOrLink}`}
         mobileCardRender={(row) => {
-          const isOnline = row.deliveryMode === 'ONLINE' || row.roomOrLink?.toLowerCase().includes('studio') || row.roomOrLink?.toLowerCase().includes('zoom');
+          const isOnline = row.deliveryMode === 'ONLINE' || row.roomOrLink?.toLowerCase().includes('studio') || row.roomOrLink?.toLowerCase().includes('zoom') || row.meetingUrl?.includes('meet.google');
           return (
             <div className="space-y-2.5">
               <div className="flex items-start justify-between gap-2">
@@ -251,12 +241,12 @@ export default function ClassesPage() {
                     {isOnline ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#0052CC] border border-blue-200">
                         <Wifi className="w-2.5 h-2.5" />
-                        <span>Online Live</span>
+                        <span>Live Interactive</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        <Building className="w-2.5 h-2.5 text-emerald-700" />
-                        <span>Offline Campus</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                        <Video className="w-2.5 h-2.5 text-indigo-700" />
+                        <span>Self-Paced / Lab</span>
                       </span>
                     )}
                   </div>

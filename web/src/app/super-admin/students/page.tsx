@@ -308,30 +308,8 @@ export default function StudentsPage() {
         </span>
       ),
     },
-    {
-      key: 'departmentName',
-      header: 'Department',
-      render: (row) => (
-        <span
-          className="text-slate-600 text-xs truncate max-w-[130px] inline-block"
-          title={row.departmentName}
-        >
-          {row.departmentName}
-        </span>
-      ),
-    },
-    {
-      key: 'programName',
-      header: 'Program',
-      render: (row) => (
-        <span
-          className="text-[#0052CC] font-semibold text-xs truncate max-w-[130px] inline-block"
-          title={row.programName}
-        >
-          {row.programName}
-        </span>
-      ),
-    },
+
+
     {
       key: 'batchName',
       header: 'Batch',
@@ -488,66 +466,6 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* College-Wise Institutional Dashboard Bar */}
-      <div className="bg-gradient-to-r from-[#0B2447] to-[#19376D] rounded-2xl p-5 text-white shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-blue-900/60 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-              <Building2 className="w-5 h-5 text-blue-200" />
-            </div>
-            <div>
-              <span className="text-[10px] text-blue-200 uppercase tracking-wider font-semibold block">
-                College Selector / Campus Context
-              </span>
-              <h3 className="text-base font-bold text-white">{selectedCollegeName}</h3>
-            </div>
-          </div>
-
-          {/* Top College Selector Dropdown */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-blue-200 whitespace-nowrap font-medium">Switch College:</label>
-            <select
-              value={selectedCollegeId}
-              onChange={(e) => handleCollegeChange(e.target.value)}
-              className="bg-white/15 border border-white/20 text-white text-xs rounded-xl px-3 py-1.5 font-semibold focus:outline-none focus:bg-[#0B2447] cursor-pointer"
-            >
-              <option value="ALL" className="text-slate-900">🏛️ Overall (All Colleges)</option>
-              {mockInstitutions.map((inst) => (
-                <option key={inst.id} value={inst.id} className="text-slate-900">
-                  {inst.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Dynamic College Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-          <div className="bg-white/10 rounded-xl p-3 backdrop-blur-xs">
-            <span className="text-[11px] text-blue-200 block">Total Students</span>
-            <p className="text-xl sm:text-2xl font-bold text-white mt-0.5">{collegeMetrics.total}</p>
-            <span className="text-[10px] text-blue-300">Enrolled records</span>
-          </div>
-
-          <div className="bg-white/10 rounded-xl p-3 backdrop-blur-xs">
-            <span className="text-[11px] text-blue-200 block">Active Learners</span>
-            <p className="text-xl sm:text-2xl font-bold text-emerald-300 mt-0.5">{collegeMetrics.active}</p>
-            <span className="text-[10px] text-blue-300">Authorized & In-Session</span>
-          </div>
-
-          <div className="bg-white/10 rounded-xl p-3 backdrop-blur-xs">
-            <span className="text-[11px] text-blue-200 block">Active Programs</span>
-            <p className="text-xl sm:text-2xl font-bold text-white mt-0.5">{collegeMetrics.programsCount}</p>
-            <span className="text-[10px] text-blue-300">Degree pathways</span>
-          </div>
-
-          <div className="bg-white/10 rounded-xl p-3 backdrop-blur-xs">
-            <span className="text-[11px] text-blue-200 block">Batches & Cohorts</span>
-            <p className="text-xl sm:text-2xl font-bold text-white mt-0.5">{collegeMetrics.batchesCount}</p>
-            <span className="text-[10px] text-blue-300">Academic cohorts</span>
-          </div>
-        </div>
-      </div>
 
       {/* Cascading Filter Toolbar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
@@ -590,45 +508,8 @@ export default function StudentsPage() {
           />
         </div>
 
-        {/* 5-Level Cascading Hierarchy Dropdowns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
-          {/* 1. Department */}
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
-              Department
-            </label>
-            <select
-              value={selectedDeptId}
-              onChange={(e) => handleDeptChange(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
-            >
-              <option value="ALL">All Departments</option>
-              {availableDepartments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 2. Program */}
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
-              Program / Degree
-            </label>
-            <select
-              value={selectedProgramId}
-              onChange={(e) => handleProgramChange(e.target.value)}
-              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC] cursor-pointer"
-            >
-              <option value="ALL">All Programs</option>
-              {availablePrograms.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Hierarchy Dropdowns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
 
           {/* 3. Batch */}
           <div>

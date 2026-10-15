@@ -1,11 +1,13 @@
 // ============================================================================
-// ISML COLLEGE LMS — CREATE COURSE SLIDE-OVER DRAWER
-// Create Individual Teaching Course with Faculty, Credits & Course Fee Master
+// ISML COLLEGE LMS — CREATE / EDIT COURSE SLIDE-OVER DRAWER
+// Duration & Days-Based Course Delivery (3 Months, 6 Months, 1 Year, or Custom Days)
+// Primary Faculty Incharge, Substitute Tutors & Doubt Resolution Tutors
+// Pure Course Creation — Batches removed, Fees managed in Finance module
 // ============================================================================
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   BookOpen,
   X,
@@ -16,9 +18,19 @@ import {
   Award,
   Layers,
   Building2,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  UserCheck,
+  HelpCircle,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { CourseSummary } from '@/types/rbac';
-import { mockDepartments, mockPrograms, mockInstitutions, mockBatches } from '@/mock/superAdminData';
+import { mockDepartments, mockInstitutions } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 
 interface CreateCourseDrawerProps {
@@ -28,6 +40,17 @@ interface CreateCourseDrawerProps {
   editCourse?: CourseSummary | null;
   onCourseUpdated?: (course: CourseSummary) => void;
 }
+
+const PRESET_TUTORS = [
+  'Dr. Anandhakumar V.',
+  'Mme. Claire Fontaine',
+  'Herr Wolfgang Meyer',
+  'Sensei Kenji Takahashi',
+  'Prof. Rajesh Raman',
+  'Ms. Ananya Sharma (TA)',
+  'Mr. Karthik Sundaram (TA)',
+  'Dr. Priya Subramanian',
+];
 
 export default function CreateCourseDrawer({
   isOpen,
@@ -45,18 +68,51 @@ export default function CreateCourseDrawer({
   const [collegeId, setCollegeId] = useState(mockInstitutions[0]?.id || 'inst-01');
   const [collegeName, setCollegeName] = useState(mockInstitutions[0]?.name || 'Loyola College');
   const [department, setDepartment] = useState(mockDepartments[0].name);
-  const [program, setProgram] = useState(mockPrograms[0].name);
-  const [semester, setSemester] = useState(1);
-  const [credits, setCredits] = useState(4);
-  const [facultyName, setFacultyName] = useState('Dr. Anandhakumar V.');
-  const [courseFee, setCourseFee] = useState(12500);
-  const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
+  const [academicYear, setAcademicYear] = useState('2026–2027');
+
+  // Faculty Leads & Substitute Support Tutors
+  const [primaryFaculty, setPrimaryFaculty] = useState('Dr. Anandhakumar V.');
+  const [substituteTutors, setSubstituteTutors] = useState<string[]>(['Ms. Ananya Sharma (TA)']);
+  const [doubtSupportTutor, setDoubtSupportTutor] = useState('Mr. Karthik Sundaram (TA)');
+  const [newSubTutorInput, setNewSubTutorInput] = useState('');
+
   const [status, setStatus] = useState<'PUBLISHED' | 'DRAFT'>('PUBLISHED');
 
-  // Filter batches for selected college
-  const availableBatches = mockBatches.filter(
-    (b) => !b.institutionId || b.institutionId === collegeId
-  );
+  // Duration & Day Count Configuration (Replacing strict Semester Term)
+  // Options: 3_MONTHS (90 days), 6_MONTHS (180 days), 1_YEAR (365 days), CUSTOM
+  const [durationType, setDurationType] = useState<'3_MONTHS' | '6_MONTHS' | '1_YEAR' | 'CUSTOM'>('3_MONTHS');
+  const [customDays, setCustomDays] = useState<number>(45);
+
+  // Computed days count & label
+  const effectiveDays = useMemo(() => {
+    switch (durationType) {
+      case '3_MONTHS':
+        return 90;
+      case '6_MONTHS':
+        return 180;
+      case '1_YEAR':
+        return 365;
+      case 'CUSTOM':
+        return customDays || 30;
+      default:
+        return 90;
+    }
+  }, [durationType, customDays]);
+
+  const durationLabel = useMemo(() => {
+    switch (durationType) {
+      case '3_MONTHS':
+        return '3 Months (90 Days Fast-Track)';
+      case '6_MONTHS':
+        return '6 Months (180 Days Career Track)';
+      case '1_YEAR':
+        return '1 Year (365 Days Professional Mastery)';
+      case 'CUSTOM':
+        return `${effectiveDays} Days (Custom Track)`;
+      default:
+        return `${effectiveDays} Days`;
+    }
+  }, [durationType, effectiveDays]);
 
   useEffect(() => {
     if (isOpen) {
@@ -66,23 +122,44 @@ export default function CreateCourseDrawer({
         setCollegeId(editCourse.collegeId || mockInstitutions[0]?.id || 'inst-01');
         setCollegeName(editCourse.collegeName || mockInstitutions[0]?.name || 'Loyola College');
         setDepartment(editCourse.department);
-        setProgram(editCourse.program);
-        setSemester(editCourse.semester);
-        setCredits(editCourse.credits ?? 4);
-        setFacultyName(editCourse.facultyName);
-        setCourseFee(editCourse.courseFee || 12500);
-        setSelectedBatchIds(editCourse.batchIds || []);
+        setAcademicYear(editCourse.academicYear || '2026–2027');
+        setPrimaryFaculty(editCourse.facultyName || 'Dr. Anandhakumar V.');
+        setSubstituteTutors(editCourse.substituteTutors || ['Ms. Ananya Sharma (TA)']);
+        setDoubtSupportTutor(editCourse.doubtSupportTutor || 'Mr. Karthik Sundaram (TA)');
         setStatus(editCourse.status as 'PUBLISHED' | 'DRAFT');
+
+        // Restore Duration
+        if (editCourse.durationType === '6_MONTHS') {
+          setDurationType('6_MONTHS');
+        } else if (editCourse.durationType === '1_YEAR') {
+          setDurationType('1_YEAR');
+        } else if (editCourse.durationType === 'CUSTOM' || editCourse.durationDays) {
+          if (editCourse.durationDays === 90) {
+            setDurationType('3_MONTHS');
+          } else if (editCourse.durationDays === 180) {
+            setDurationType('6_MONTHS');
+          } else if (editCourse.durationDays === 365) {
+            setDurationType('1_YEAR');
+          } else {
+            setDurationType('CUSTOM');
+            setCustomDays(editCourse.durationDays || 45);
+          }
+        } else {
+          setDurationType('3_MONTHS');
+        }
       } else {
         setName('');
         setCode('');
         setCollegeId(mockInstitutions[0]?.id || 'inst-01');
         setCollegeName(mockInstitutions[0]?.name || 'Loyola College');
-        setSemester(1);
-        setCredits(4);
-        setCourseFee(12500);
-        setSelectedBatchIds([]);
+        setDepartment(mockDepartments[0].name);
+        setAcademicYear('2026–2027');
+        setPrimaryFaculty('Dr. Anandhakumar V.');
+        setSubstituteTutors(['Ms. Ananya Sharma (TA)']);
+        setDoubtSupportTutor('Mr. Karthik Sundaram (TA)');
         setStatus('PUBLISHED');
+        setDurationType('3_MONTHS');
+        setCustomDays(45);
       }
     }
   }, [isOpen, editCourse]);
@@ -102,6 +179,18 @@ export default function CreateCourseDrawer({
     };
   }, [isOpen, onClose]);
 
+  const handleAddSubTutor = () => {
+    if (!newSubTutorInput.trim()) return;
+    if (!substituteTutors.includes(newSubTutorInput.trim())) {
+      setSubstituteTutors((prev) => [...prev, newSubTutorInput.trim()]);
+    }
+    setNewSubTutorInput('');
+  };
+
+  const handleRemoveSubTutor = (index: number) => {
+    setSubstituteTutors((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -112,9 +201,10 @@ export default function CreateCourseDrawer({
       showError('Please enter course code.');
       return;
     }
-
-    const matchedBatches = mockBatches.filter((b) => selectedBatchIds.includes(b.id));
-    const batchNames = matchedBatches.map((b) => b.name);
+    if (!primaryFaculty.trim()) {
+      showError('Please assign primary faculty incharge.');
+      return;
+    }
 
     if (isEditMode && editCourse) {
       const updatedCourse: CourseSummary = {
@@ -124,19 +214,22 @@ export default function CreateCourseDrawer({
         collegeId,
         collegeName,
         department,
-        program,
-        semester,
-        credits,
-        facultyName,
-        courseFee,
-        batchIds: selectedBatchIds,
-        batchNames,
+        academicYear: academicYear.trim(),
+        program: durationLabel,
+        semester: 1,
+        duration: durationLabel,
+        durationDays: effectiveDays,
+        durationType,
+        facultyName: primaryFaculty,
+        substituteTutors,
+        doubtSupportTutor,
+        courseFee: editCourse.courseFee,
         status,
       };
       if (onCourseUpdated) {
         onCourseUpdated(updatedCourse);
       }
-      showSuccess(`Course "${name}" updated successfully.`);
+      showSuccess(`Course "${name}" (${durationLabel} • AY ${academicYear}) updated successfully.`);
       onClose();
       return;
     }
@@ -148,20 +241,25 @@ export default function CreateCourseDrawer({
       collegeId,
       collegeName,
       department,
-      program,
-      semester,
-      credits,
-      facultyName,
+      academicYear: academicYear.trim(),
+      program: durationLabel,
+      semester: 1,
+      duration: durationLabel,
+      durationDays: effectiveDays,
+      durationType,
+      facultyName: primaryFaculty,
+      substituteTutors,
+      doubtSupportTutor,
       enrolledStudents: 0,
       completionRate: 0,
-      courseFee,
-      batchIds: selectedBatchIds,
-      batchNames,
+      courseFee: 0,
+      batchIds: [],
+      batchNames: [],
       status,
     };
 
     onCourseCreated(newCourse);
-    showSuccess(`Course "${name}" created with ₹${courseFee.toLocaleString('en-IN')} fee.`);
+    showSuccess(`Course "${name}" created successfully for AY ${academicYear} (${durationLabel}).`);
     onClose();
   };
 
@@ -186,7 +284,7 @@ export default function CreateCourseDrawer({
                 {isEditMode ? 'Edit Teaching Course' : 'Create Teaching Course'}
               </h2>
               <p className="text-[11px] sm:text-xs text-blue-200 mt-0.5">
-                {isEditMode ? 'Modify syllabus, credits & tuition fee' : 'Define subject syllabus, credits & tuition fee'}
+                Define duration days (3M, 6M, 1Y or Custom), primary lead & substitute tutors
               </p>
             </div>
           </div>
@@ -200,7 +298,7 @@ export default function CreateCourseDrawer({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
             {/* College Scoping */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -223,21 +321,22 @@ export default function CreateCourseDrawer({
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Course Title <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Distributed Cloud Architecture & Kubernetes"
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                required
-              />
-            </div>
+            {/* Course Title & Code Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Course Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. French A1 Intensive Certification"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  required
+                />
+              </div>
 
-            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Course Code <span className="text-rose-500">*</span>
@@ -246,159 +345,249 @@ export default function CreateCourseDrawer({
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. CS-401"
+                  placeholder="e.g. FR-A1-101"
                   className="w-full px-3 py-2 font-mono uppercase font-bold border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                   required
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Academic Credits
-                </label>
-                <select
-                  value={credits}
-                  onChange={(e) => setCredits(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                >
-                  <option value={1}>1 Credit</option>
-                  <option value={2}>2 Credits</option>
-                  <option value={3}>3 Credits</option>
-                  <option value={4}>4 Credits (Core)</option>
-                  <option value={5}>5 Credits</option>
-                </select>
-              </div>
             </div>
 
-            {/* Mapped Cohort Batches */}
+            {/* Academic Year Selection */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-700">
-                  Map to Student Batches / Cohorts
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#0052CC]" />
+                <span>Academic Year Term <span className="text-rose-500">*</span></span>
+              </label>
+              <select
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+              >
+                <option value="2026–2027">2026–2027 (Active Term)</option>
+                <option value="2025–2026">2025–2026</option>
+                <option value="2027–2028">2027–2028</option>
+                <option value="2028–2029">2028–2029</option>
+              </select>
+            </div>
+
+            {/* ─── DURATION & DAYS COUNT ─── */}
+            <div className="p-3.5 bg-gradient-to-br from-blue-50/70 to-indigo-50/40 border border-blue-200/80 rounded-2xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold text-[#0052CC] flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#0052CC]" />
+                  Course Duration Track & Days Count <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-[10px] text-[#0052CC] font-bold">
-                  {selectedBatchIds.length} Batches Selected
+                <span className="text-[10px] font-mono font-bold bg-blue-100 text-[#0052CC] px-2 py-0.5 rounded-full">
+                  {effectiveDays} Days Total
                 </span>
               </div>
-              <div className="space-y-1 max-h-36 overflow-y-auto p-2 border border-slate-200 rounded-xl bg-slate-50/70">
-                {availableBatches.map((b) => {
-                  const isChecked = selectedBatchIds.includes(b.id);
-                  return (
-                    <label
-                      key={b.id}
-                      className={`flex items-center gap-2.5 p-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-                        isChecked ? 'bg-blue-50 text-[#0052CC] font-bold' : 'hover:bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          setSelectedBatchIds((prev) =>
-                            isChecked ? prev.filter((id) => id !== b.id) : [...prev, b.id]
-                          );
-                        }}
-                        className="rounded text-[#0052CC] focus:ring-[#0052CC]"
-                      />
-                      <span className="truncate">{b.name}</span>
-                      <span className="text-[10px] text-slate-400 font-mono ml-auto">
-                        Sem {b.currentSemesterNumber}
-                      </span>
-                    </label>
-                  );
-                })}
-                {availableBatches.length === 0 && (
-                  <p className="text-[11px] text-slate-400 p-2 text-center">
-                    No batches found under selected college.
+
+              {/* 4 Preset Duration Pills */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDurationType('3_MONTHS')}
+                  className={`p-2 rounded-xl text-center border transition-all cursor-pointer ${
+                    durationType === '3_MONTHS'
+                      ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="text-xs font-black">3 Months</div>
+                  <div className={`text-[10px] ${durationType === '3_MONTHS' ? 'text-blue-100' : 'text-slate-400'}`}>
+                    90 Days
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDurationType('6_MONTHS')}
+                  className={`p-2 rounded-xl text-center border transition-all cursor-pointer ${
+                    durationType === '6_MONTHS'
+                      ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="text-xs font-black">6 Months</div>
+                  <div className={`text-[10px] ${durationType === '6_MONTHS' ? 'text-blue-100' : 'text-slate-400'}`}>
+                    180 Days
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDurationType('1_YEAR')}
+                  className={`p-2 rounded-xl text-center border transition-all cursor-pointer ${
+                    durationType === '1_YEAR'
+                      ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="text-xs font-black">1 Year</div>
+                  <div className={`text-[10px] ${durationType === '1_YEAR' ? 'text-blue-100' : 'text-slate-400'}`}>
+                    365 Days
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDurationType('CUSTOM')}
+                  className={`p-2 rounded-xl text-center border transition-all cursor-pointer ${
+                    durationType === 'CUSTOM'
+                      ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-xs'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  <div className="text-xs font-black">Custom</div>
+                  <div className={`text-[10px] ${durationType === 'CUSTOM' ? 'text-blue-100' : 'text-slate-400'}`}>
+                    {customDays || 'Any'} Days
+                  </div>
+                </button>
+              </div>
+
+              {/* Custom Days Input if CUSTOM selected */}
+              {durationType === 'CUSTOM' && (
+                <div className="pt-2 animate-in fade-in duration-200">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Enter Exact Number of Days
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={1}
+                      max={730}
+                      value={customDays}
+                      onChange={(e) => setCustomDays(Math.max(1, Number(e.target.value)))}
+                      placeholder="e.g. 45, 60, 120"
+                      className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                    />
+                    <span className="absolute right-3 top-2 text-[11px] font-bold text-slate-400">
+                      Days
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                <Info className="w-3 h-3 text-[#0052CC]" />
+                Students complete syllabus based on this {effectiveDays}-day timeframe rather than college semesters.
+              </p>
+            </div>
+
+
+
+            {/* ─── PRIMARY FACULTY INCHARGE ─── */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Primary Faculty Incharge <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  list="tutors-list"
+                  value={primaryFaculty}
+                  onChange={(e) => setPrimaryFaculty(e.target.value)}
+                  placeholder="e.g. Dr. Anandhakumar V."
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  required
+                />
+                <datalist id="tutors-list">
+                  {PRESET_TUTORS.map((t) => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
+
+            {/* ─── SUBSTITUTE TUTORS & DOUBT CLEARING SUPPORT ─── */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Substitute Tutors & Doubt Support</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Assigned tutors available to take classes when lead faculty is away, and assist students with doubts.
                   </p>
+                </div>
+              </div>
+
+              {/* Dedicated Doubt Resolving Tutor */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <HelpCircle className="w-3 h-3 text-[#0052CC]" />
+                  <span>Doubt Resolution / Teaching Assistant (TA)</span>
+                </label>
+                <input
+                  type="text"
+                  list="tutors-list"
+                  value={doubtSupportTutor}
+                  onChange={(e) => setDoubtSupportTutor(e.target.value)}
+                  placeholder="e.g. Mr. Karthik Sundaram (TA)"
+                  className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                />
+              </div>
+
+              {/* Substitute Tutors List */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-700">
+                  Substitute Tutors (Takes class in absence of lead)
+                </label>
+
+                {substituteTutors.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {substituteTutors.map((tutor, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-indigo-200 text-indigo-800 text-xs font-semibold rounded-lg shadow-2xs"
+                      >
+                        <UserCheck className="w-3 h-3 text-indigo-500" />
+                        <span>{tutor}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSubTutor(idx)}
+                          className="text-slate-400 hover:text-rose-600 ml-0.5 cursor-pointer"
+                          title="Remove tutor"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-400 italic">No substitute tutors added yet.</p>
                 )}
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Department
-                </label>
-                <select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                >
-                  {mockDepartments.map((d) => (
-                    <option key={d.id} value={d.name}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Degree Program
-                </label>
-                <select
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                >
-                  {mockPrograms.map((p) => (
-                    <option key={p.id} value={p.name}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Semester Term
-                </label>
-                <select
-                  value={semester}
-                  onChange={(e) => setSemester(Number(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                    <option key={s} value={s}>
-                      Semester {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Course Fee (₹)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-slate-400 text-xs font-bold">₹</span>
+                {/* Add New Substitute Tutor Input */}
+                <div className="flex items-center gap-2 pt-1">
                   <input
-                    type="number"
-                    value={courseFee}
-                    onChange={(e) => setCourseFee(Number(e.target.value))}
-                    step={500}
-                    className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                    type="text"
+                    list="tutors-list"
+                    value={newSubTutorInput}
+                    onChange={(e) => setNewSubTutorInput(e.target.value)}
+                    placeholder="Add substitute tutor name..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSubTutor();
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                   />
+                  <button
+                    type="button"
+                    onClick={handleAddSubTutor}
+                    className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Faculty Incharge
-              </label>
-              <input
-                type="text"
-                value={facultyName}
-                onChange={(e) => setFacultyName(e.target.value)}
-                placeholder="e.g. Dr. Anandhakumar V."
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-              />
-            </div>
-
+            {/* Publication Status */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 Initial Publication Status
@@ -414,6 +603,7 @@ export default function CreateCourseDrawer({
             </div>
           </div>
 
+          {/* Footer Actions */}
           <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
             <button
               type="button"

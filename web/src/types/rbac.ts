@@ -181,8 +181,11 @@ export type MenuId =
   | 'ADMIN_INSTITUTIONS'
   | 'ADMIN_USERS'
   | 'ADMIN_STUDENTS'
+  | 'ADMIN_PARENTS'
   | 'ADMIN_ROLES'
   | 'ACADEMIC_STRUCTURE'
+  | 'ACADEMIC_CURRICULUM'
+  | 'ACADEMIC_CALENDAR'
   | 'ACADEMIC_DEPARTMENTS'
   | 'ACADEMIC_PROGRAMS'
   | 'ACADEMIC_BATCHES'
@@ -190,6 +193,9 @@ export type MenuId =
   | 'ACADEMIC_SUBJECTS'
   | 'ACADEMIC_MODULES'
   | 'ACADEMIC_TOPICS'
+  | 'ACADEMIC_FACULTY'
+  | 'ACADEMIC_ASSIGNMENTS'
+  | 'ACADEMIC_CERTIFICATES'
   | 'LEARNING_COURSES'
   | 'LEARNING_RESOURCES'
   | 'LEARNING_CLASSES'
@@ -370,6 +376,10 @@ export interface ParentUser {
     collegeName: string;
     attendancePercentage: number;
     feePendingAmount?: number;
+    courseId?: string;
+    courseName?: string;
+    batchId?: string;
+    batchName?: string;
   }[];
   portalLastLogin?: string;
   credentialsDelivered: boolean;
@@ -452,6 +462,10 @@ export interface FeeStructure {
   submittedAt: string;
   approvedBy?: string;
   approvedAt?: string;
+  courseStructureType?: 'DURATION_BASED' | 'SEMESTER_BASED';
+  durationType?: '3_MONTHS' | '6_MONTHS' | '1_YEAR' | 'CUSTOM';
+  durationMonths?: number;
+  courseTrackName?: string;
 }
 
 export interface ScholarshipDiscount {
@@ -557,6 +571,7 @@ export interface Batch {
   name: string;
   admissionYear: number;
   graduationYear: number;
+  academicYear?: string;
   currentSemesterNumber: number;
   sectionsCount: number;
   studentsCount: number;
@@ -566,6 +581,11 @@ export interface Batch {
   institutionName?: string;
   courseIds?: string[];
   courseNames?: string[];
+  batchTiming?: string; // e.g. "07:00 AM - 08:30 AM" or "06:00 PM - 07:30 PM"
+  scheduleDays?: string[]; // e.g. ["MON", "WED", "FRI"]
+  assignedFacultyName?: string;
+  assignedStaffNames?: string[];
+  durationDays?: number;
 }
 
 export interface Semester {
@@ -583,8 +603,10 @@ export interface Semester {
 
 export interface Subject {
   id: string;
-  programId: string;
-  programName: string;
+  programId?: string;
+  programName?: string;
+  courseId?: string;
+  courseName?: string;
   semesterNumber: number;
   name: string;
   code: string;
@@ -593,13 +615,30 @@ export interface Subject {
   facultyName: string;
   facultyEmail: string;
   modulesCount: number;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED';
+}
+
+export interface AcademicLevel {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  levelCode: string; // e.g. A1, A2, B1, B2 or N5, N4, N3 or TOPIK I, TOPIK II
+  name: string; // e.g. "A1 Beginner Foundation"
+  description?: string;
+  targetCefrOrJlpt?: string; // e.g. "CEFR A1" | "JLPT N5" | "TOPIK Level 1"
+  estimatedHours?: number;
+  modulesCount?: number;
+  status: 'ACTIVE' | 'DRAFT';
 }
 
 export interface AcademicModule {
   id: string;
   subjectId: string;
   subjectName: string;
+  levelId?: string;
+  levelCode?: string;
+  courseId?: string;
+  courseName?: string;
   moduleNumber: number;
   title: string;
   description: string;
@@ -608,16 +647,34 @@ export interface AcademicModule {
   status: 'ACTIVE' | 'DRAFT';
 }
 
+export interface TopicResource {
+  id: string;
+  topicId: string;
+  title: string;
+  type: 'PDF' | 'DOC' | 'LINK' | 'VIDEO' | 'AUDIO';
+  url: string;
+  fileSize?: string;
+  description?: string;
+  uploadedAt: string;
+  isExternalLink?: boolean;
+}
+
 export interface AcademicTopic {
   id: string;
   moduleId: string;
   moduleTitle: string;
+  levelId?: string;
+  levelCode?: string;
+  subjectId?: string;
   subjectName: string;
+  courseId?: string;
+  courseName?: string;
   topicNumber: number;
   title: string;
   learningObjective: string;
   skillMapped: string;
   resourcesCount: number;
+  resources?: TopicResource[];
   status: 'ACTIVE' | 'DRAFT';
 }
 
@@ -633,12 +690,18 @@ export interface CourseSummary {
   enrolledStudents: number;
   status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED';
   completionRate: number;
+  academicYear?: string;
   courseFee?: number;
   credits?: number;
   collegeId?: string;
   collegeName?: string;
   batchIds?: string[];
   batchNames?: string[];
+  duration?: string;
+  durationDays?: number;
+  durationType?: '3_MONTHS' | '6_MONTHS' | '1_YEAR' | 'CUSTOM' | string;
+  substituteTutors?: string[];
+  doubtSupportTutor?: string;
 }
 
 export interface ResourceItem {
@@ -686,19 +749,57 @@ export interface TimetableSlot {
   semester: number;
 }
 
+export interface AssessmentQuestionItem {
+  id: number;
+  questionText: string;
+  section: 'LISTENING' | 'SPEAKING' | 'READING' | 'WRITING' | 'GRAMMAR';
+  questionType:
+    | 'MCQ'
+    | 'SHORT_ANSWER'
+    | 'LONG_ESSAY'
+    | 'GRAMMAR_FILL'
+    | 'ORAL_AUDIO'
+    | 'FILE_UPLOAD';
+  marks: 2 | 5 | 10;
+  contextPrompt?: string;
+  audioPromptUrl?: string;
+  referenceFileUrl?: string;
+  referenceFileName?: string;
+  questionAttachmentUrl?: string; // Audio or Doc uploaded BY Academic Manager for the question itself
+  questionAttachmentName?: string;
+  questionAttachmentType?: 'AUDIO' | 'DOCUMENT' | 'IMAGE';
+  options?: string[]; // For MCQ (e.g. A, B, C, D)
+  correctAnswer?: string; // Ideal key / benchmark answer
+  sampleModelAnswer?: string; // Detailed model answer for Long Essay/Short answer
+  wordLimit?: number; // Word limit for short/long answer (e.g., 50 words, 250 words)
+  allowedFileTypes?: string[]; // e.g. ['.pdf', '.docx', '.mp3', '.jpg']
+  rubricNotes?: string;
+}
+
 export interface AssessmentItem {
   id: string;
   title: string;
+  code?: string;
   subjectName: string;
   programName: string;
+  courseId?: string;
+  courseName?: string;
   semester: number;
   batchName: string;
+  batchId?: string;
   facultyName: string;
   type: 'MID_TERM' | 'FINAL_EXAM' | 'QUIZ' | 'ASSIGNMENT';
   totalMarks: number;
   dueDate: string;
+  durationMins?: number;
   submissionsCount: number;
-  status: 'PUBLISHED' | 'DRAFT' | 'CLOSED';
+  status: 'PUBLISHED' | 'DRAFT' | 'CLOSED' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  approvalStatus?: 'PENDING_ADMIN_APPROVAL' | 'APPROVED_BY_ADMIN' | 'REJECTED';
+  submittedToAdminAt?: string;
+  reviewedByAdminAt?: string;
+  adminReviewRemarks?: string;
+  questionsCount?: number;
+  questions?: AssessmentQuestionItem[];
 }
 
 export interface AttendanceRecord {

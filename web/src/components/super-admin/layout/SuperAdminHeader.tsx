@@ -37,7 +37,7 @@ export default function SuperAdminHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-3 sm:px-6 py-2.5 shadow-2xs font-sans transition-all">
+      <header className="fixed lg:sticky top-0 left-0 right-0 lg:left-auto lg:right-auto z-50 bg-white/98 backdrop-blur-md border-b border-slate-200 px-3 sm:px-6 py-2.5 shadow-2xs font-sans transition-all w-full">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
           {/* ─── Left: Brand Logo & College Scope ─── */}
           <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
@@ -46,7 +46,7 @@ export default function SuperAdminHeader() {
               className="flex items-center gap-2 shrink-0 group focus:outline-none"
             >
               <div className="relative w-7 h-7 sm:w-8 sm:h-8 shrink-0 transition-transform group-hover:scale-105">
-                <Image src="/logo.png" alt="ISML Logo" fill className="object-contain" priority />
+                <Image src="/logo.png" alt="ISML Logo" fill sizes="(max-width: 640px) 28px, 32px" className="object-contain" priority />
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="font-extrabold text-xs sm:text-sm text-[#0B2447] tracking-tight whitespace-nowrap">

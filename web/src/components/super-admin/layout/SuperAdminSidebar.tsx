@@ -52,6 +52,10 @@ import {
   FileCheck,
   BarChart2,
   History,
+  Award,
+  ClipboardList,
+  Calendar,
+  HeartHandshake,
 } from 'lucide-react';
 import { useRbac, useAuth } from '@/context/AuthRbacContext';
 import { useCollege } from '@/context/CollegeContext';
@@ -94,6 +98,10 @@ const iconMap: Record<string, React.ElementType> = {
   ScrollText,
   Activity,
   Settings,
+  Award,
+  ClipboardList,
+  Calendar,
+  HeartHandshake,
 };
 
 export default function SuperAdminSidebar() {
@@ -139,7 +147,7 @@ export default function SuperAdminSidebar() {
       <div className="px-4 py-3 bg-[#071730] border-b border-[#1E3A8A] flex items-center justify-between shrink-0">
         <Link href="/super-admin/dashboard" className="flex items-center gap-2.5">
           <div className="relative w-7 h-7 shrink-0">
-            <Image src="/logo.png" alt="ISML Logo" fill className="object-contain" priority />
+            <Image src="/logo.png" alt="ISML Logo" fill sizes="28px" className="object-contain" priority />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="font-extrabold text-sm text-white tracking-tight">ISML LMS</span>

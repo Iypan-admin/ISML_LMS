@@ -102,22 +102,9 @@ export default function ModulesPage() {
       header: 'Actions',
       className: 'text-right',
       render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          <button
-            onClick={() => openEditDrawer(row)}
-            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-            title="Edit Module"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setDeleteModule(row)}
-            className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Delete Module"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+          Audited
+        </span>
       ),
     },
   ];
@@ -131,22 +118,12 @@ export default function ModulesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold text-[#0B2447] tracking-tight">
-            Curriculum Modules
+            Curriculum Modules Oversight
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
             Syllabus units, estimated lecture hours, and micro-topic containers.
           </p>
         </div>
-
-        <Can permission="MODULE_CREATE">
-          <button
-            onClick={openCreateDrawer}
-            className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Create Module</span>
-          </button>
-        </Can>
       </div>
 
       <DataTable
@@ -169,45 +146,10 @@ export default function ModulesPage() {
 
             <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px] text-slate-600">
               <span>{row.estimatedHours} Hours • {row.topicsCount} Topics</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => openEditDrawer(row)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <Edit2 className="w-3 h-3" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={() => setDeleteModule(row)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Delete</span>
-                </button>
-              </div>
+              <span className="text-[10px] font-bold text-slate-400">Read-Only</span>
             </div>
           </div>
         )}
-      />
-
-      <CreateModuleDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => {
-          setIsDrawerOpen(false);
-          setEditModule(null);
-        }}
-        onModuleCreated={handleModuleCreated}
-        editModule={editModule}
-        onModuleUpdated={handleModuleUpdated}
-      />
-
-      <DeleteConfirmDrawer
-        isOpen={!!deleteModule}
-        onClose={() => setDeleteModule(null)}
-        onConfirm={handleModuleDeleted}
-        entityType="Curriculum Module Unit"
-        entityName={deleteModule?.title || ''}
-        description="Deleting this unit module will detach child learning topics and lecture hours from the syllabus."
       />
     </div>
   );

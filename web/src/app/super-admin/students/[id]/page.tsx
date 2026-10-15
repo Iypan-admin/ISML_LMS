@@ -283,7 +283,6 @@ export default function StudentDetailPage() {
               <span className="text-xl font-bold text-[#0B2447]">
                 {student.enrolledCoursesCount}
               </span>
-              <span className="text-[10px] text-slate-500 font-medium">(15 Total Credits)</span>
             </div>
           </div>
 
@@ -349,13 +348,7 @@ export default function StudentDetailPage() {
               <span className="font-mono text-[11px] text-slate-500 mt-0.5 block">{student.collegeId}</span>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                Department
-              </span>
-              <p className="font-bold text-[#0B2447] text-sm mt-1">{student.departmentName}</p>
-              <span className="font-mono text-[11px] text-slate-500 mt-0.5 block">{student.departmentId}</span>
-            </div>
+
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
@@ -421,7 +414,7 @@ export default function StudentDetailPage() {
                     <span className="font-bold text-slate-900">{c.title}</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Faculty: {c.faculty} • Credits: {c.credits}
+                    Faculty: {c.faculty}
                   </p>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">

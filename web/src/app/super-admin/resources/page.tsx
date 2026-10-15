@@ -27,6 +27,7 @@ import { ResourceItem } from '@/types/rbac';
 import { mockResources } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 import UploadResourceDrawer from '@/components/super-admin/resources/UploadResourceDrawer';
+import ViewResourceDetailDrawer from '@/components/super-admin/resources/ViewResourceDetailDrawer';
 import DeleteConfirmDrawer from '@/components/common/DeleteConfirmDrawer';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import { useCollege } from '@/context/CollegeContext';
@@ -35,6 +36,7 @@ export default function ResourcesPage() {
   const { selectedCollegeId, isOverall } = useCollege();
   const [resources, setResources] = useState<ResourceItem[]>(mockResources);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [viewResource, setViewResource] = useState<ResourceItem | null>(null);
   const [editResource, setEditResource] = useState<ResourceItem | null>(null);
   const [deleteResource, setDeleteResource] = useState<ResourceItem | null>(null);
   const { showSuccess, showInfo } = useToast();
@@ -140,6 +142,14 @@ export default function ResourcesPage() {
       className: 'text-right',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={() => setViewResource(row)}
+            className="p-1.5 text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+            title="View Details & Controls"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+
           <Can permission="RESOURCE_APPROVE">
             {row.status === 'PENDING_REVIEW' && (
               <button
@@ -206,19 +216,9 @@ export default function ResourcesPage() {
             Digital Resource Repository
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-            Curated textbooks, lecture handouts, audio pronunciation tracks, and videos.
+            Central monitoring of digital learning assets, textbooks, lecture handouts, audio tracks, and videos across institutions.
           </p>
         </div>
-
-        <Can permission="RESOURCE_CREATE">
-          <button
-            onClick={openUploadDrawer}
-            className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-start sm:self-auto"
-          >
-            <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Upload Resource</span>
-          </button>
-        </Can>
       </div>
 
       <DataTable
@@ -274,6 +274,13 @@ export default function ResourcesPage() {
             </div>
 
             <div className="flex items-center justify-end gap-1.5 pt-1.5 border-t border-slate-100">
+              <button
+                onClick={() => setViewResource(row)}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#0052CC] bg-blue-50 hover:bg-blue-100 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <Eye className="w-3 h-3" />
+                <span>View</span>
+              </button>
               {row.status === 'PENDING_REVIEW' && (
                 <button
                   onClick={() => handleApprove(row.id)}
@@ -292,7 +299,7 @@ export default function ResourcesPage() {
               )}
               <button
                 onClick={() => openEditDrawer(row)}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center gap-1 transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Edit2 className="w-3 h-3" />
                 <span>Edit</span>
@@ -309,6 +316,30 @@ export default function ResourcesPage() {
         )}
       />
 
+      <ViewResourceDetailDrawer
+        isOpen={!!viewResource}
+        onClose={() => setViewResource(null)}
+        resource={viewResource}
+        onApprove={(id) => {
+          handleApprove(id);
+          setViewResource((prev) => (prev ? { ...prev, status: 'APPROVED' } : null));
+        }}
+        onPublish={(id) => {
+          handlePublish(id);
+          setViewResource((prev) => (prev ? { ...prev, status: 'PUBLISHED' } : null));
+        }}
+        onArchive={(id) => {
+          handleArchive(id);
+          setViewResource((prev) => (prev ? { ...prev, status: 'ARCHIVED' } : null));
+        }}
+        onEdit={(res) => {
+          openEditDrawer(res);
+        }}
+        onDelete={(res) => {
+          setDeleteResource(res);
+        }}
+      />
+
       <UploadResourceDrawer
         isOpen={isUploadOpen}
         onClose={() => {
@@ -317,7 +348,12 @@ export default function ResourcesPage() {
         }}
         onResourceUploaded={handleResourceUploaded}
         editResource={editResource}
-        onResourceUpdated={handleResourceUpdated}
+        onResourceUpdated={(updated) => {
+          handleResourceUpdated(updated);
+          if (viewResource?.id === updated.id) {
+            setViewResource(updated);
+          }
+        }}
       />
 
       <DeleteConfirmDrawer

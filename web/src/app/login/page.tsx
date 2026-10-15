@@ -8,15 +8,13 @@ import { currentStudent } from '@/mock/students';
 
 const platformRoles = [
   { id: 'STUDENT', name: 'Student', desc: 'Bharathi M (Learning Portal)', isAvailable: true, credentials: { id: currentStudent.rollNo, pwd: 'student2026pass' } },
+  { id: 'PARENT', name: 'Parent / Guardian (Multi-Ward)', desc: 'Dr. Meenakshi (Attendance, Grades, Fees & Classes)', isAvailable: true, credentials: { id: 'parent@isml.edu', pwd: 'parent2026pass' } },
   { id: 'SUPER_ADMIN', name: 'Super Admin', desc: 'Full College LMS & RBAC Portal', isAvailable: true, credentials: { id: 'superadmin@isml.edu', pwd: 'admin2026pass' } },
+  { id: 'ACADEMIC_COORD', name: 'Academic Coordinator', desc: 'Course & Batch Setup, Timetable & Attendance', isAvailable: true, credentials: { id: 'academic@isml.edu', pwd: 'academic2026pass' } },
+  { id: 'FINANCE_MANAGER', name: 'Finance Manager', desc: 'College Fees, Ledgers & Accounts', isAvailable: true, credentials: { id: 'finance@isml.edu', pwd: 'finance2026pass' } },
+  { id: 'TEACHER', name: 'Faculty / Tutor (Master Console)', desc: 'Multi-Role Classes, Attendance, Doubts & Marks', isAvailable: true, credentials: { id: 'faculty@isml.edu', pwd: 'tutor2026pass' } },
+  { id: 'COLLEGE_ADMIN', name: 'College Admin', desc: 'Loyola College (Enrollment, Bulk Fees & Monitoring)', isAvailable: true, credentials: { id: 'collegeadmin@isml.edu', pwd: 'college2026pass' } },
   { id: 'MANAGER', name: 'Manager', desc: 'Internal Team & User Mgmt', isAvailable: false },
-  { id: 'FINANCE_MANAGER', name: 'Finance Manager', desc: 'College Fees & Accounts', isAvailable: false },
-  { id: 'ACADEMIC_COORD', name: 'Academic Coord', desc: 'Course & Resource Monitoring', isAvailable: false },
-  { id: 'TEACHER', name: 'Main Teacher', desc: 'Classes, Exams & Marks', isAvailable: false },
-  { id: 'SUB_TEACHER', name: 'Substitute Teacher', desc: 'Backup Class Mgmt', isAvailable: false },
-  { id: 'DOUBT_TEACHER', name: 'Doubt Teacher', desc: 'Student Doubt Resolution', isAvailable: false },
-  { id: 'ASST_DOUBT', name: 'Asst Doubt Teacher', desc: 'Doubt Support Staff', isAvailable: false },
-  { id: 'COLLEGE_ADMIN', name: 'College Admin', desc: 'College Student Reg', isAvailable: false },
 ];
 
 export default function LoginPage() {
@@ -38,16 +36,27 @@ export default function LoginPage() {
       setPassword(role.credentials.pwd);
       setActiveNotice(null);
     } else {
-      setActiveNotice(`${role.name} portal is currently under active development. Current access is enabled for Student and Super Admin roles.`);
+      setActiveNotice(`${role.name} portal is currently under active development.`);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const targetPath = selectedRole === 'SUPER_ADMIN' || studentId.toLowerCase().includes('admin')
-      ? '/super-admin/dashboard'
-      : '/dashboard';
+    let targetPath = '/dashboard';
+    if (selectedRole === 'PARENT' || studentId.toLowerCase().includes('parent')) {
+      targetPath = '/parent/dashboard';
+    } else if (selectedRole === 'COLLEGE_ADMIN' || studentId.toLowerCase().includes('college')) {
+      targetPath = '/college-admin/dashboard';
+    } else if (selectedRole === 'ACADEMIC_COORD' || studentId.toLowerCase().includes('academic') || studentId.toLowerCase().includes('coordinator')) {
+      targetPath = '/academic-manager/dashboard';
+    } else if (selectedRole === 'SUPER_ADMIN' || studentId.toLowerCase().includes('admin')) {
+      targetPath = '/super-admin/dashboard';
+    } else if (selectedRole === 'FINANCE_MANAGER' || studentId.toLowerCase().includes('finance')) {
+      targetPath = '/finance-manager/dashboard';
+    } else if (selectedRole === 'TEACHER' || studentId.toLowerCase().includes('tutor') || studentId.toLowerCase().includes('faculty') || studentId.toLowerCase().includes('teacher')) {
+      targetPath = '/tutor/dashboard';
+    }
     setTimeout(() => router.push(targetPath), 750);
   };
 

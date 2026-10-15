@@ -28,6 +28,7 @@ import {
   UserCheck,
   UserX,
   Trash2,
+  HeartHandshake,
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import DataTable, { Column } from '@/components/common/DataTable';
@@ -86,7 +87,8 @@ export default function UsersPage() {
     const active = users.filter((u) => u.status === 'ACTIVE').length;
     const inactive = users.filter((u) => u.status === 'INACTIVE' || u.status === 'SUSPENDED').length;
     const students = users.filter((u) => u.roleName.toLowerCase().includes('student')).length;
-    return { total, active, inactive, students };
+    const parents = users.filter((u) => u.roleId === 'role-parent' || u.roleName.toLowerCase().includes('parent')).length;
+    return { total, active, inactive, students, parents };
   }, [users]);
 
   // Filtered dataset
@@ -352,7 +354,7 @@ export default function UsersPage() {
       </div>
 
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
         {/* Card 1: Total Users */}
         <div className="bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between hover:shadow-xs transition-shadow min-h-[94px] sm:min-h-[110px]">
           <div className="flex items-center justify-between">
@@ -412,6 +414,29 @@ export default function UsersPage() {
               <span>Student Hub</span>
               <ChevronRight className="w-3 h-3 shrink-0" />
             </Link>
+          </div>
+        </div>
+
+        {/* Card 5: Parents / Guardians */}
+        <div 
+          onClick={() => setRoleFilter(roleFilter === 'role-parent' ? 'ALL' : 'role-parent')}
+          className={`bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all cursor-pointer min-h-[94px] sm:min-h-[110px] flex flex-col justify-between ${
+            roleFilter === 'role-parent'
+              ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-300 shadow-sm'
+              : 'border-slate-200/90 shadow-2xs hover:shadow-xs hover:border-amber-200'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-semibold text-slate-500">Parents & Guardians</span>
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <HeartHandshake className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+          </div>
+          <div className="mt-1.5 sm:mt-2">
+            <p className="text-xl sm:text-2xl font-black text-amber-700 tracking-tight">{metrics.parents}</p>
+            <p className="text-[10px] sm:text-[11px] text-amber-600 font-medium mt-0.5 truncate">
+              {roleFilter === 'role-parent' ? '✓ Filter applied' : 'Click to filter'}
+            </p>
           </div>
         </div>
       </div>

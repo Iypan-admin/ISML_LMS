@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Layers, Plus, Edit2, Trash2, Users, BookOpen, Building2 } from 'lucide-react';
+import { Layers, Plus, Edit2, Trash2, Users, BookOpen, Building2, Eye } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -13,8 +13,6 @@ import StatusToggleSwitch from '@/components/common/StatusToggleSwitch';
 import { Can } from '@/context/AuthRbacContext';
 import { Batch } from '@/types/rbac';
 import { mockBatches, mockPrograms, mockDepartments, mockStudents, mockCourses } from '@/mock/superAdminData';
-import CreateBatchDrawer from '@/components/super-admin/academic/CreateBatchDrawer';
-import DeleteConfirmDrawer from '@/components/common/DeleteConfirmDrawer';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import ViewEnrolledStudentsDrawer from '@/components/super-admin/academic/ViewEnrolledStudentsDrawer';
 import { useCollege } from '@/context/CollegeContext';
@@ -24,9 +22,6 @@ export default function BatchesPage() {
   const { showSuccess, showInfo } = useToast();
   const { selectedCollegeId, isOverall } = useCollege();
   const [batches, setBatches] = useState<Batch[]>(mockBatches);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editBatch, setEditBatch] = useState<Batch | null>(null);
-  const [deleteBatch, setDeleteBatch] = useState<Batch | null>(null);
   const [studentsDrawerBatch, setStudentsDrawerBatch] = useState<Batch | null>(null);
 
   // Filter batches based on selected college or overall
@@ -50,30 +45,7 @@ export default function BatchesPage() {
     }
   };
 
-  const handleBatchCreated = (newBatch: Batch) => {
-    setBatches((prev) => [newBatch, ...prev]);
-  };
 
-  const handleBatchUpdated = (updatedBatch: Batch) => {
-    setBatches((prev) => prev.map((b) => (b.id === updatedBatch.id ? updatedBatch : b)));
-  };
-
-  const handleBatchDeleted = () => {
-    if (!deleteBatch) return;
-    setBatches((prev) => prev.filter((b) => b.id !== deleteBatch.id));
-    showSuccess(`Batch cohort "${deleteBatch.name}" deleted successfully.`);
-    setDeleteBatch(null);
-  };
-
-  const openCreateDrawer = () => {
-    setEditBatch(null);
-    setIsDrawerOpen(true);
-  };
-
-  const openEditDrawer = (batch: Batch) => {
-    setEditBatch(batch);
-    setIsDrawerOpen(true);
-  };
 
   const columns: Column<Batch>[] = [
     {
@@ -99,21 +71,27 @@ export default function BatchesPage() {
     },
     {
       key: 'admissionYear',
-      header: 'Academic Years',
+      header: 'Academic Year',
       render: (row) => (
-        <span className="text-xs font-semibold text-slate-700">
-          {row.admissionYear} – {row.graduationYear}
+        <span className="text-xs font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+          {row.academicYear || `${row.admissionYear}–${row.graduationYear}`}
         </span>
       ),
     },
     {
-      key: 'currentSemesterNumber',
-      header: 'Current Semester',
-      sortable: true,
+      key: 'batchTiming',
+      header: 'Class Timing & Staff',
+      className: 'min-w-[170px]',
       render: (row) => (
-        <span className="font-semibold text-xs text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-          Semester {row.currentSemesterNumber}
-        </span>
+        <div className="space-y-0.5">
+          <p className="font-bold text-slate-900 text-xs flex items-center gap-1">
+            <span className="text-indigo-600">⏰</span>
+            <span>{row.batchTiming ? row.batchTiming.split(' (')[0] : '09:00 AM – 11:00 AM'}</span>
+          </p>
+          <p className="text-[10px] text-slate-500 font-medium">
+            Staff: <span className="font-semibold text-slate-700">{row.assignedFacultyName || 'Dr. Anandhakumar V.'}</span>
+          </p>
+        </div>
       ),
     },
     {
@@ -169,23 +147,17 @@ export default function BatchesPage() {
     },
     {
       key: 'actions',
-      header: '',
-      className: 'text-right min-w-[70px]',
+      header: 'Actions',
+      className: 'text-right min-w-[100px]',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
           <button
-            onClick={() => openEditDrawer(row)}
-            className="p-1.5 text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-            title="Edit Batch"
+            onClick={() => setStudentsDrawerBatch(row)}
+            className="px-2.5 py-1 text-slate-700 hover:text-[#0052CC] bg-blue-50/70 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-blue-200"
+            title="Inspect Full Cohort, Staffs & Students"
           >
-            <Edit2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => setDeleteBatch(row)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Delete Batch"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Eye className="w-3.5 h-3.5 text-[#0052CC]" />
+            <span>Inspect Cohort</span>
           </button>
         </div>
       ),
@@ -218,22 +190,18 @@ export default function BatchesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold text-[#0B2447] tracking-tight">
-            Batches & Cohorts
+            Batches & Cohorts Monitoring
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-            Student cohort management, admission cycles, linked courses, and graduation tracking.
+            Institutional oversight of student cohorts, admission cycles, timetable hours, faculty assignments, and enrolled learners.
           </p>
         </div>
 
-        <Can permission="BATCH_CREATE">
-          <button
-            onClick={openCreateDrawer}
-            className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Create Batch Cohort</span>
-          </button>
-        </Can>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg border border-slate-200">
+            Institutional Audit Mode
+          </span>
+        </div>
       </div>
 
       <DataTable
@@ -292,23 +260,16 @@ export default function BatchesPage() {
                 onClick={() => setStudentsDrawerBatch(row)}
                 className="text-[11px] text-[#0052CC] font-bold hover:underline flex items-center gap-1 cursor-pointer"
               >
-                <Users className="w-3 h-3" />
-                <span>{row.studentsCount} Students</span>
+                <Eye className="w-3.5 h-3.5" />
+                <span>View ({row.studentsCount} Students)</span>
               </button>
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => openEditDrawer(row)}
+                  onClick={() => setStudentsDrawerBatch(row)}
                   className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <Edit2 className="w-3 h-3" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={() => setDeleteBatch(row)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Delete</span>
+                  <Eye className="w-3 h-3" />
+                  <span>Inspect</span>
                 </button>
               </div>
             </div>
@@ -316,32 +277,24 @@ export default function BatchesPage() {
         )}
       />
 
-      <CreateBatchDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => {
-          setIsDrawerOpen(false);
-          setEditBatch(null);
-        }}
-        onBatchCreated={handleBatchCreated}
-        editBatch={editBatch}
-        onBatchUpdated={handleBatchUpdated}
-      />
-
       <ViewEnrolledStudentsDrawer
         isOpen={!!studentsDrawerBatch}
         onClose={() => setStudentsDrawerBatch(null)}
         title={studentsDrawerBatch ? `${studentsDrawerBatch.name}` : 'Cohort Learners'}
-        subtitle={`Campus: ${studentsDrawerBatch?.institutionName || 'All Campuses'} • ${studentsDrawerBatch?.programName || ''}`}
+        subtitle={`Campus: ${studentsDrawerBatch?.institutionName || 'All Campuses'} • Timing: ${studentsDrawerBatch?.batchTiming || '09:00 AM - 11:00 AM'}`}
         students={enrolledLearnersForDrawer}
-      />
-
-      <DeleteConfirmDrawer
-        isOpen={!!deleteBatch}
-        onClose={() => setDeleteBatch(null)}
-        onConfirm={handleBatchDeleted}
-        entityType="Batch Cohort"
-        entityName={deleteBatch?.name || ''}
-        description="Deleting this batch will detach student roster assignments and academic timeline records."
+        staffInfo={
+          studentsDrawerBatch
+            ? {
+                facultyName: studentsDrawerBatch.assignedFacultyName || 'Dr. Anandhakumar V.',
+                substituteTutors: studentsDrawerBatch.assignedStaffNames || ['Ms. Ananya Sharma (TA)'],
+                doubtTutor: 'Mr. Karthik Sundaram (TA)',
+                batchTiming: studentsDrawerBatch.batchTiming || '09:00 AM – 11:00 AM (Morning Session)',
+                scheduleDays: studentsDrawerBatch.scheduleDays || ['MON', 'WED', 'FRI'],
+                courseNames: studentsDrawerBatch.courseNames || [],
+              }
+            : undefined
+        }
       />
     </div>
   );

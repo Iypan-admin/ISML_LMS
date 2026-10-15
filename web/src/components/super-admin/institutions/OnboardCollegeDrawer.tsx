@@ -204,28 +204,28 @@ export default function OnboardCollegeDrawer({
         onClick={onClose}
       />
 
-      {/* Slide-over Container */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-xl md:max-w-2xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out animate-in slide-in-from-right">
+      {/* Slide-over Container: full screen width on mobile, right-drawer on desktop */}
+      <div className="fixed inset-0 sm:inset-y-0 sm:right-0 sm:left-auto w-full sm:w-[92vw] sm:max-w-xl md:sm:max-w-2xl h-[100dvh] flex font-sans">
+        <div className="w-full h-full bg-white shadow-2xl flex flex-col border-l border-slate-200 overflow-x-hidden transform transition-transform duration-300 ease-in-out animate-in slide-in-from-right">
           {/* Header Bar */}
-          <div className="px-5 py-4 bg-[#0B2447] text-white flex items-center justify-between shrink-0 border-b border-[#1E3A8A]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                <Building2 className="w-5 h-5 text-blue-200" />
+          <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-[#0B2447] text-white flex items-center justify-between shrink-0 border-b border-[#1E3A8A]">
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
               </div>
-              <div>
-                <h2 className="text-base font-bold text-white tracking-tight">
+              <div className="min-w-0">
+                <h2 className="text-sm sm:text-base font-bold text-white tracking-tight truncate">
                   {currentScreen === 'FORM'
                     ? isEditMode
                       ? 'Edit Institutional Profile'
                       : 'Onboard Affiliated College'
                     : 'College Onboarded Successfully'}
                 </h2>
-                <p className="text-[11px] text-blue-200">
+                <p className="text-[10px] sm:text-[11px] text-blue-200 truncate mt-0.5">
                   {currentScreen === 'FORM'
                     ? isEditMode
-                      ? 'Update college profile, accreditation details & capacity settings'
-                      : 'Institutional multi-tenant workspace & accreditation provisioning'
+                      ? 'Update college profile, accreditation & capacity'
+                      : 'Institutional multi-tenant workspace provisioning'
                     : 'Tenant created & Campus Admin invitation dispatched'}
                 </p>
               </div>
@@ -233,7 +233,7 @@ export default function OnboardCollegeDrawer({
 
             <button
               onClick={onClose}
-              className="p-1.5 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
               title="Close panel (ESC)"
             >
               <X className="w-5 h-5" />

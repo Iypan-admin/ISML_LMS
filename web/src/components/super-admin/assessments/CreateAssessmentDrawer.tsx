@@ -38,7 +38,7 @@ export default function CreateAssessmentDrawer({
   const [facultyName, setFacultyName] = useState('Dr. R. Ramanathan, Ph.D.');
   const [totalMarks, setTotalMarks] = useState(100);
   const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState<'PUBLISHED' | 'DRAFT' | 'CLOSED'>('PUBLISHED');
+  const [status, setStatus] = useState<AssessmentItem['status']>('PUBLISHED');
 
   useEffect(() => {
     if (isOpen) {

@@ -178,7 +178,7 @@ export default function ScheduleSessionDrawer({
                 {isEditMode ? 'Edit Lecture / Period Slot' : 'Schedule Lecture / Period'}
               </h2>
               <p className="text-[11px] sm:text-xs text-blue-200 mt-0.5">
-                {isEditMode ? 'Update timetable slot and hall allocation' : 'Allocate timetable slot, physical hall or live studio'}
+                {isEditMode ? 'Update timetable slot and virtual studio channel' : 'Allocate timetable slot, live broadcast room or recorded masterclass'}
               </p>
             </div>
           </div>
@@ -274,10 +274,10 @@ export default function ScheduleSessionDrawer({
               </div>
             </div>
 
-            {/* ─── Delivery Mode Selection (ONLINE / OFFLINE) ─── */}
+            {/* ─── Delivery Mode Selection (ONLINE / RECORDED) ─── */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Lecture Delivery Mode <span className="text-rose-500">*</span>
+                Virtual Delivery Format <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -293,8 +293,8 @@ export default function ScheduleSessionDrawer({
                     <Wifi className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="block text-xs font-bold">Online Live Class</span>
-                    <span className="block text-[10px] text-slate-500">Virtual studio / Webinar</span>
+                    <span className="block text-xs font-bold">Live Interactive</span>
+                    <span className="block text-[10px] text-slate-500">Virtual studio / Google Meet</span>
                   </div>
                 </button>
 
@@ -303,16 +303,16 @@ export default function ScheduleSessionDrawer({
                   onClick={() => setDeliveryMode('OFFLINE')}
                   className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
                     deliveryMode === 'OFFLINE'
-                      ? 'border-emerald-600 bg-emerald-50/70 text-emerald-800 ring-2 ring-emerald-200'
+                      ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-200'
                       : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${deliveryMode === 'OFFLINE' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                    <Building className="w-4 h-4" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${deliveryMode === 'OFFLINE' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <Video className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="block text-xs font-bold">Offline Classroom</span>
-                    <span className="block text-[10px] text-slate-500">Physical hall / Campus lab</span>
+                    <span className="block text-xs font-bold">Self-Paced / Lab</span>
+                    <span className="block text-[10px] text-slate-500">LSRW lab / Masterclass</span>
                   </div>
                 </button>
               </div>
@@ -321,7 +321,7 @@ export default function ScheduleSessionDrawer({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {deliveryMode === 'ONLINE' ? 'Live Stream / Meeting Link' : 'Campus Hall / Room No.'}
+                  {deliveryMode === 'ONLINE' ? 'Live Stream / Meeting Link' : 'Virtual Lab Studio / Access ID'}
                 </label>
                 {deliveryMode === 'ONLINE' ? (
                   <div className="relative">
@@ -337,13 +337,13 @@ export default function ScheduleSessionDrawer({
                   </div>
                 ) : (
                   <div className="relative">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Video className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={venueRoom}
                       onChange={(e) => setVenueRoom(e.target.value)}
-                      placeholder="e.g. Computing Lab 2 or Hall 204"
-                      className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                      placeholder="e.g. Digital Audio Lab Studio 1"
+                      className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                       required
                     />
                   </div>

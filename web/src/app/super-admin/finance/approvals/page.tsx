@@ -34,15 +34,23 @@ import {
   RejectRequestDialog,
   RequestChangesDialog,
 } from '@/components/common/ApprovalDialogs';
+import { financeProposalStore } from '@/services/financeProposalStore';
 
 export default function FinanceApprovalsPage() {
   const { hasPermission } = useRBAC();
   const { showSuccess, showError, showInfo } = useToast();
   const { selectedCollegeId, isOverall } = useCollege();
 
-  const [financeRequests, setFinanceRequests] = useState<ApprovalRequest[]>(
-    mockApprovalRequests.filter((r) => r.module === 'Finance')
+  const [financeRequests, setFinanceRequests] = useState<ApprovalRequest[]>(() =>
+    financeProposalStore.getFinanceOnlyRequests()
   );
+
+  React.useEffect(() => {
+    return financeProposalStore.subscribe(() => {
+      setFinanceRequests(financeProposalStore.getFinanceOnlyRequests());
+    });
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // Drawer & Dialog State
@@ -88,26 +96,7 @@ export default function FinanceApprovalsPage() {
     if (!targetActionRequest) return;
     const reqId = targetActionRequest.id;
 
-    setFinanceRequests((prev) =>
-      prev.map((r) =>
-        r.id === reqId
-          ? {
-              ...r,
-              status: 'APPROVED' as RequestStatus,
-              history: [
-                ...r.history,
-                {
-                  step: 'Authorized by Super Admin',
-                  userName: 'Super Administrator',
-                  role: 'Super Administrator',
-                  timestamp: new Date().toISOString(),
-                  comment: comment || 'Fee schedule authorized for billing.',
-                },
-              ],
-            }
-          : r
-      )
-    );
+    financeProposalStore.updateStatus(reqId, 'APPROVED', comment || 'Fee proposal authorized for billing.');
 
     if (selectedRequest && selectedRequest.id === reqId) {
       setSelectedRequest((prev) => (prev ? { ...prev, status: 'APPROVED' } : null));
@@ -122,27 +111,7 @@ export default function FinanceApprovalsPage() {
     if (!targetActionRequest) return;
     const reqId = targetActionRequest.id;
 
-    setFinanceRequests((prev) =>
-      prev.map((r) =>
-        r.id === reqId
-          ? {
-              ...r,
-              status: 'REJECTED' as RequestStatus,
-              reviewComments: reason,
-              history: [
-                ...r.history,
-                {
-                  step: 'Rejected by Super Admin',
-                  userName: 'Super Administrator',
-                  role: 'Super Administrator',
-                  timestamp: new Date().toISOString(),
-                  comment: reason,
-                },
-              ],
-            }
-          : r
-      )
-    );
+    financeProposalStore.updateStatus(reqId, 'REJECTED', reason);
 
     if (selectedRequest && selectedRequest.id === reqId) {
       setSelectedRequest((prev) => (prev ? { ...prev, status: 'REJECTED', reviewComments: reason } : null));
@@ -150,34 +119,14 @@ export default function FinanceApprovalsPage() {
 
     setRejectDialogOpen(false);
     setTargetActionRequest(null);
-    showError(`Finance proposal ${reqId} rejected. Justification recorded.`);
+    showSuccess(`Finance proposal ${reqId} rejected.`);
   };
 
   const handleConfirmRequestChanges = (instructions: string) => {
     if (!targetActionRequest) return;
     const reqId = targetActionRequest.id;
 
-    setFinanceRequests((prev) =>
-      prev.map((r) =>
-        r.id === reqId
-          ? {
-              ...r,
-              status: 'CHANGES_REQUIRED' as RequestStatus,
-              reviewComments: instructions,
-              history: [
-                ...r.history,
-                {
-                  step: 'Changes Requested',
-                  userName: 'Super Administrator',
-                  role: 'Super Administrator',
-                  timestamp: new Date().toISOString(),
-                  comment: instructions,
-                },
-              ],
-            }
-          : r
-      )
-    );
+    financeProposalStore.updateStatus(reqId, 'CHANGES_REQUIRED', instructions);
 
     if (selectedRequest && selectedRequest.id === reqId) {
       setSelectedRequest((prev) => (prev ? { ...prev, status: 'CHANGES_REQUIRED', reviewComments: instructions } : null));
@@ -185,7 +134,7 @@ export default function FinanceApprovalsPage() {
 
     setChangesDialogOpen(false);
     setTargetActionRequest(null);
-    showInfo(`Returned ${reqId} to Finance Manager for revision.`);
+    showInfo(`Revision instructions dispatched for proposal ${reqId}.`);
   };
 
   return (
@@ -208,7 +157,7 @@ export default function FinanceApprovalsPage() {
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Review fee revisions and scholarship policies submitted by Finance Managers before student enrollment activation.
+            Review fee schedules and tuition rate revisions submitted by Finance Managers before student enrollment activation.
           </p>
         </div>
 
@@ -278,7 +227,7 @@ export default function FinanceApprovalsPage() {
                       <div className="text-[10px] text-slate-500">{req.submittedBy.role}</div>
                     </td>
 
-                    <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                    <td className="py-3 px-4 text-slate-500 whitespace-nowrap" suppressHydrationWarning>
                       {new Date(req.submittedDate).toLocaleDateString()}
                     </td>
 

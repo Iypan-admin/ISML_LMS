@@ -38,12 +38,12 @@ export default function FinanceAuditPage() {
     {
       id: 'AUD-FIN-002',
       requestId: 'REQ-000128',
-      entityName: 'Institutional Merit Scholarship Policy',
-      action: 'DISCOUNT_POLICY_APPROVED',
+      entityName: 'Course Fee Schedule: AI & Neural Foundations',
+      action: 'FEE_STRUCTURE_APPROVED',
       performer: 'Super Admin',
       role: 'Super Administrator',
       timestamp: '2026-10-05T12:30:00Z',
-      changeSummary: 'Authorized 25% Tuition Fee Waiver for top 5% semester CGPA cohort students.',
+      changeSummary: 'Authorized fee schedule revision for AI & Neural Foundations in Python (₹36,500).',
       status: 'APPROVED',
     },
     {

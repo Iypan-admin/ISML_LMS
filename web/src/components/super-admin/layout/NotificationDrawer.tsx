@@ -50,7 +50,7 @@ const INITIAL_NOTIFICATIONS: ExtendedNotification[] = [
   {
     id: 'notif-04',
     title: 'Faculty Session Rescheduled',
-    message: 'Prof. Ramesh shifted Data Structures Lab from Offline Lab 3 to Hybrid Online Studio.',
+    message: 'Prof. Ramesh shifted JLPT N4 Grammar from Virtual Studio 1 to Interactive Audio Lab.',
     type: 'ACADEMIC',
     audience: 'ALL_FACULTY',
     sentBy: 'Academic Coordinator',

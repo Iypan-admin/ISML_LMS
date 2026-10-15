@@ -54,14 +54,31 @@ export default function Sidebar() {
   if (pathname === '/login') return null;
 
   return (
-    <aside className="hidden lg:flex flex-col w-72 bg-[#0B2447] text-white border-r border-[#1E3A8A] h-screen sticky top-0 z-40 transition-all duration-300 shadow-xl overflow-hidden shrink-0">
+    <aside className="hidden lg:flex flex-col w-72 bg-[#0B2447] text-white border-r border-[#1E3A8A] fixed left-0 top-0 bottom-0 z-40 shadow-xl overflow-hidden font-sans">
+      {/* Brand Logo & Name Header */}
+      <div className="px-4 py-3 bg-[#071730] border-b border-[#1E3A8A] flex items-center justify-between shrink-0">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="relative w-7 h-7 shrink-0">
+            <Image src="/logo.png" alt="ISML Logo" fill sizes="28px" className="object-contain" priority />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold text-sm text-white tracking-tight">ISML LMS</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-[#0052CC] text-white tracking-wider">
+              STUDENT
+            </span>
+          </div>
+        </Link>
+      </div>
+
       {/* College Institution Badge */}
-      <div className="px-4 py-3 bg-[#0052CC]/15 border-b border-[#1E3A8A] flex items-center justify-between">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+      <div className="px-4 py-2.5 bg-[#071730]/60 border-b border-[#1E3A8A] flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div className="p-1.5 rounded-lg bg-[#0052CC]/20 border border-cyan-500/30 text-cyan-400 shrink-0">
+            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+          </div>
           <div className="truncate">
-            <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Your Institution</p>
-            <p className="text-xs font-bold text-slate-100 truncate">{currentStudent.collegeName}</p>
+            <p className="text-[10px] text-cyan-400 uppercase tracking-wider font-extrabold">Enrolled Campus</p>
+            <p className="text-xs font-bold text-slate-100 truncate" title={currentStudent.collegeName}>{currentStudent.collegeName}</p>
           </div>
         </div>
       </div>
@@ -99,14 +116,14 @@ export default function Sidebar() {
       </div>
 
       {/* Bottom Profile Summary */}
-      <div className="p-3 border-t border-[#1E3A8A] bg-[#071730] flex items-center justify-between gap-2">
+      <div className="p-3 border-t border-[#1E3A8A] bg-[#071730] flex items-center justify-between gap-2 shrink-0">
         <Link href="/profile" className="flex items-center gap-2.5 truncate group">
           <div className="relative w-8 h-8 rounded-full overflow-hidden border border-cyan-400/40 shrink-0">
-            <Image src={currentStudent.avatarUrl} alt={currentStudent.name} fill className="object-cover" />
+            <Image src={currentStudent.avatarUrl} alt={currentStudent.name} fill sizes="32px" className="object-cover" />
           </div>
           <div className="truncate">
             <p className="text-xs font-bold text-slate-200 group-hover:text-cyan-300 truncate">{currentStudent.name}</p>
-            <p className="text-[10px] text-slate-400 truncate">{currentStudent.rollNo}</p>
+            <p className="text-[10px] text-slate-400 truncate font-mono">{currentStudent.rollNo}</p>
           </div>
         </Link>
         <div className="relative">

@@ -17,12 +17,24 @@
   --foreground: #0F172A;
 }
 
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure nextjs portal / dev tools do not trigger horizontal scrolling */
+nextjs-portal {
+  max-width: 100vw !important;
+  overflow: hidden !important;
 }
 
 /* Custom Scrollbars */

@@ -1,6 +1,6 @@
 // ============================================================================
-// ISML COLLEGE LMS — HYBRID SCHEDULE & CLASSROOM MANAGEMENT
-// Online Live Virtual Broadcasts & Offline Campus Classroom Scheduling
+// ISML COLLEGE LMS — ONLINE SCHEDULE & VIRTUAL STUDIO MANAGEMENT
+// Online Live Virtual Broadcasts & Digital LSRW Interactive Studios
 // ============================================================================
 
 "use client";
@@ -13,10 +13,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Wifi,
-  Building,
   Video,
   Radio,
-  MapPin,
+  Headphones,
+  Sparkles,
   Layers,
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
@@ -29,21 +29,21 @@ export default function ScheduleManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0B2447] tracking-tight">
-            Hybrid Schedule & Studio Management
+            Online Schedule & Virtual Studio Management
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Configure Online Virtual Classrooms, Offline Physical Lecture Halls, and Weekly Timetables.
+            Configure Live Virtual Classrooms, LSRW Audio-Interactive Studios, and Weekly Online Timetables.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-50 text-[#0052CC] border border-blue-200">
             <Wifi className="w-3.5 h-3.5" />
-            <span>Online Studio Active</span>
+            <span>Live Interactive Studios</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <Building className="w-3.5 h-3.5" />
-            <span>Offline Campus Halls</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+            <Video className="w-3.5 h-3.5" />
+            <span>Cloud Recorded Masterclasses</span>
           </span>
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function ScheduleManagementPage() {
                 <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition-transform" />
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Filter and allocate hybrid timetable periods by Department, Cohort, Online Live & Offline Classroom.
+                Filter and allocate weekly online lecture periods by Department, Language Cohort, and Virtual Studio.
               </p>
             </div>
           </div>
@@ -90,13 +90,13 @@ export default function ScheduleManagementPage() {
                 <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 transition-transform" />
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Manage today's ongoing classes, Zoom / Google Meet broadcast links, and physical campus laboratory slots.
+                Manage today's ongoing online sessions, Google Meet broadcast rooms, and self-paced LSRW workshop slots.
               </p>
             </div>
           </div>
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-purple-700">
             <span>Manage Classes</span>
-            <span className="bg-purple-50 px-2 py-0.5 rounded text-[10px]">Online + Offline</span>
+            <span className="bg-purple-50 px-2 py-0.5 rounded text-[10px]">100% Online</span>
           </div>
         </Link>
 
@@ -109,7 +109,7 @@ export default function ScheduleManagementPage() {
             <div>
               <h3 className="text-sm font-bold text-[#0B2447]">Lecture Blocks & Intervals</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Standardized 60-minute period allocations, morning bell schedules, and language lab studio intervals.
+                Standardized 60-minute period allocations, live pronunciation drills, and digital language lab intervals.
               </p>
             </div>
           </div>
@@ -120,58 +120,58 @@ export default function ScheduleManagementPage() {
         </div>
       </div>
 
-      {/* Online vs Offline Infrastructure Overview Card */}
+      {/* Online Infrastructure Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-        {/* Online Facilities */}
+        {/* Live Interactive Broadcast Studios */}
         <div className="p-4 bg-gradient-to-br from-blue-50/50 to-white rounded-2xl border border-blue-200/80 shadow-2xs space-y-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#0052CC] text-white flex items-center justify-center">
               <Wifi className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0B2447]">Online Digital Studios</h4>
-              <p className="text-[10px] text-slate-500">Virtual learning and interactive webinars</p>
+              <h4 className="text-xs font-bold text-[#0B2447]">Live Interactive Virtual Studios</h4>
+              <p className="text-[10px] text-slate-500">Real-time video broadcasts and 2-way student speaking practice</p>
             </div>
           </div>
           <ul className="text-xs space-y-1.5 text-slate-600 pl-2">
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" />
-              <span>ISML Live Studio A & B (Integrated Video Meeting Links)</span>
+              <span>ISML Live Studio A, B & C (HD Google Meet / LiveKit Broadcasts)</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" />
-              <span>Google Meet / Zoom Single-Click Access for Enrolled Batches</span>
+              <span>Single-Click Secure Access for Enrolled Foreign Language Batches</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" />
-              <span>Automated Attendance Capturing on Broadcast Entry</span>
+              <span>Automated Real-Time Attendance Ledger Sync upon Room Entry</span>
             </li>
           </ul>
         </div>
 
-        {/* Offline Facilities */}
-        <div className="p-4 bg-gradient-to-br from-emerald-50/50 to-white rounded-2xl border border-emerald-200/80 shadow-2xs space-y-3">
+        {/* Digital LSRW & Recorded Studio Labs */}
+        <div className="p-4 bg-gradient-to-br from-indigo-50/50 to-white rounded-2xl border border-indigo-200/80 shadow-2xs space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center">
-              <Building className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg bg-indigo-700 text-white flex items-center justify-center">
+              <Headphones className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-[#0B2447]">Offline Campus Venues</h4>
-              <p className="text-[10px] text-slate-500">Physical lecture halls and specialized labs</p>
+              <h4 className="text-xs font-bold text-[#0B2447]">Digital LSRW & Cloud Playback Studios</h4>
+              <p className="text-[10px] text-slate-500">Listening audio labs, speaking assessments, and recorded lectures</p>
             </div>
           </div>
           <ul className="text-xs space-y-1.5 text-slate-600 pl-2">
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              <span>Computing Lab 1, 2 & Hall 204 (Loyola Campus)</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+              <span>Native Audio Listening Booths & Whisper Speech AI Scoring</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              <span>Physical Seating Allocation & Room Capacity Safeguards</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+              <span>On-Demand Cloud Masterclass Archive with LSRW Practice Sheets</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              <span>Conflict-Free Room Scheduling Across Cohort Sections</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+              <span>Conflict-Free Virtual Scheduling Across All Language Cohorts</span>
             </li>
           </ul>
         </div>

@@ -143,7 +143,7 @@ export default function DoubtsPage() {
 
         {/* Conversation Feed */}
         <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3.5 bg-slate-50/60 font-sans">
-          {activeThread.messages.map((m) => {
+          {activeThread.messages.map((m: DoubtThread['messages'][number]) => {
             const isStudent = m.sender === 'STUDENT';
             const isAI = m.sender === 'AI_ASSISTANT';
             const isTutor = m.sender === 'TUTOR';

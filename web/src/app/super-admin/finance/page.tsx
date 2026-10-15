@@ -32,7 +32,6 @@ import { useCollege } from '@/context/CollegeContext';
 import {
   mockFeeStructures,
   mockFeeComponents,
-  mockScholarships,
   mockApprovalRequests,
 } from '@/mock/superAdminData';
 
@@ -182,33 +181,33 @@ export default function FinanceDashboardPage() {
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052CC] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                 <Receipt className="w-5 h-5" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">Program Fee Schedules</h3>
+              <h3 className="text-sm font-bold text-slate-900">Fee Schedules & Structures</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Inspect active term fees, semester-wise breakdowns, tuition line items, and batch-wise fee templates.
+                Oversee active course tuition packages, 3/6/12-month certification tracks, and batch schedules across campus programs.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#0052CC]">
-              <span>Manage Schedules ({mockFeeStructures.length})</span>
+              <span>Manage Fee Schedules</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>
 
           <Link
-            href="/super-admin/finance/course-fees"
+            href="/super-admin/finance/approvals"
             className="p-5 bg-white rounded-2xl border border-slate-200/90 hover:border-emerald-400 hover:shadow-md transition-all group flex flex-col justify-between relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/30 rounded-full blur-2xl -mr-6 -mt-6 pointer-events-none" />
             <div>
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                <Coins className="w-5 h-5" />
+                <ShieldCheck className="w-5 h-5" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">Course & Credit Pricing</h3>
+              <h3 className="text-sm font-bold text-slate-900">Treasury & Compliance</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Oversee credit-hour tuition, lab surcharges, elective seat premiums, and exam fees.
+                Audit trail, dual-authorization enforcement, and approval verification for campus finance managers.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-700">
-              <span>View Course Fees</span>
+              <span>View Audit & Compliance</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </Link>

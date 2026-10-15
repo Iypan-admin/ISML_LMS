@@ -171,12 +171,12 @@ export default function SuperAdminDashboardPage() {
           iconColor="text-emerald-600"
         />
 
-        {/* Total Programs */}
+        {/* Active Courses */}
         <StatCard
-          title="Total Programs"
-          value={mockPrograms.length}
-          icon={GraduationCap}
-          subtext="Active degree tracks"
+          title="Active Courses"
+          value={mockCourses.length}
+          icon={BookOpen}
+          subtext="Language & tech catalog"
           iconColor="text-indigo-600"
         />
 
@@ -222,11 +222,11 @@ export default function SuperAdminDashboardPage() {
               {mockApprovalRequests.slice(0, 4).map((req) => (
                 <div
                   key={req.id}
-                  className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                  className="p-3 sm:p-4 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 min-w-0"
                 >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-[11px] font-bold text-[#0052CC]">
+                  <div className="space-y-1.5 min-w-0 flex-1 w-full">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                      <span className="font-mono text-[11px] font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded">
                         {req.id}
                       </span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700 font-semibold">
@@ -234,20 +234,23 @@ export default function SuperAdminDashboardPage() {
                       </span>
                       <StatusBadge status={req.status} />
                     </div>
-                    <h3 className="text-xs font-bold text-slate-900 truncate">
-                      {req.requestType}: {req.entityName}
+
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug break-words">
+                      <span className="text-[#0052CC] font-extrabold mr-1">{req.requestType}:</span>
+                      <span>{req.entityName}</span>
                     </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Submitted by <strong>{req.submittedBy.name}</strong> ({req.submittedBy.role}) • {new Date(req.submittedDate).toLocaleDateString()}
+
+                    <p className="text-[11px] text-slate-500 break-words leading-relaxed">
+                      Submitted by <strong className="text-slate-700">{req.submittedBy.name}</strong> ({req.submittedBy.role}) • <span suppressHydrationWarning>{new Date(req.submittedDate).toLocaleDateString()}</span>
                     </p>
                   </div>
 
-                  <div className="shrink-0 flex items-center gap-2">
+                  <div className="shrink-0 flex items-center justify-end w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
                     <Link
                       href="/super-admin/approvals"
-                      className="px-3 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs"
+                      className="w-full sm:w-auto text-center px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-sm"
                     >
-                      Review
+                      Review Request
                     </Link>
                   </div>
                 </div>
@@ -343,10 +346,10 @@ export default function SuperAdminDashboardPage() {
 
             <div className="space-y-3">
               {mockAuditLogs.slice(0, 3).map((log) => (
-                <div key={log.id} className="text-xs border-l-2 border-[#0052CC] pl-3 py-0.5 space-y-0.5">
-                  <p className="font-bold text-[#0B2447]">{log.action}</p>
-                  <p className="text-[11px] text-slate-600 truncate">{log.details}</p>
-                  <p className="text-[10px] text-slate-400">
+                <div key={log.id} className="text-xs border-l-2 border-[#0052CC] pl-3 py-1 space-y-0.5">
+                  <p className="font-bold text-[#0B2447] break-words">{log.action}</p>
+                  <p className="text-[11px] text-slate-600 break-words leading-relaxed">{log.details}</p>
+                  <p className="text-[10px] text-slate-400" suppressHydrationWarning>
                     By {log.userName} • {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>

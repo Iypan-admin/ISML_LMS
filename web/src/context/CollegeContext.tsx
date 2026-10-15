@@ -25,18 +25,27 @@ interface CollegeContextType {
 const CollegeContext = createContext<CollegeContextType | undefined>(undefined);
 
 export function CollegeProvider({ children }: { children: React.ReactNode }) {
-  const [selectedCollegeId, setSelectedCollegeIdState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
+  // Always initialize with OVERALL_COLLEGE_ID so server SSR matches initial client render
+  const [selectedCollegeId, setSelectedCollegeIdState] = useState<string>(OVERALL_COLLEGE_ID);
+
+  // Sync saved localStorage on mount without causing hydration mismatch
+  useEffect(() => {
+    try {
       const saved = localStorage.getItem('isml_superadmin_college_scope');
-      return saved || OVERALL_COLLEGE_ID;
+      if (saved && saved !== OVERALL_COLLEGE_ID) {
+        setSelectedCollegeIdState(saved);
+      }
+    } catch {
+      // Ignore localStorage access errors
     }
-    return OVERALL_COLLEGE_ID;
-  });
+  }, []);
 
   const setSelectedCollegeId = (id: string) => {
     setSelectedCollegeIdState(id);
-    if (typeof window !== 'undefined') {
+    try {
       localStorage.setItem('isml_superadmin_college_scope', id);
+    } catch {
+      // Ignore
     }
   };
 

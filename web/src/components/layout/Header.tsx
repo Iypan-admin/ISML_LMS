@@ -60,15 +60,20 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-xs">
-        {/* Left: Brand Logo & Search */}
+      <header className="fixed lg:sticky top-0 left-0 right-0 lg:left-auto lg:right-auto z-50 bg-white/98 backdrop-blur-md border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-2xs w-full transition-all">
+        {/* Left: Mobile Brand Logo & Search */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="relative w-11 h-11 shrink-0">
-              <Image src="/logo.png" alt="ISML Logo" fill className="object-contain" />
+          <Link href="/dashboard" className="flex items-center gap-2 lg:hidden">
+            <div className="relative w-8 h-8 shrink-0">
+              <Image src="/logo.png" alt="ISML Logo" fill sizes="32px" className="object-contain" priority />
             </div>
-            <span className="font-extrabold text-sm text-[#0B2447] hidden xs:inline">ISML LMS</span>
-          </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="font-extrabold text-sm text-[#0B2447] tracking-tight">ISML LMS</span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-[#0052CC] text-white tracking-wider">
+                STUDENT
+              </span>
+            </div>
+          </Link>
 
           {/* Global Search Bar */}
           <div className="hidden sm:flex items-center bg-slate-100 border border-slate-200 rounded-lg px-3 py-1.5 w-64 md:w-80 focus-within:ring-2 focus-within:ring-[#0052CC] focus-within:bg-white transition-all">

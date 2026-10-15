@@ -384,10 +384,6 @@ export default function ProgramDetailDrawer({
                     </div>
 
                     <div className="flex items-center gap-4 shrink-0">
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 block uppercase">Credits</span>
-                        <span className="font-bold text-[#0052CC]">{sub.credits} Credits</span>
-                      </div>
                       <button
                         type="button"
                         onClick={() => {

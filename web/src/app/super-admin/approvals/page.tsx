@@ -35,13 +35,24 @@ import {
   RejectRequestDialog,
   RequestChangesDialog,
 } from '@/components/common/ApprovalDialogs';
+import { financeProposalStore } from '@/services/financeProposalStore';
+import { assessmentStore } from '@/services/assessmentStore';
 
 export default function ApprovalCenterPage() {
   const { hasPermission } = useRBAC();
   const { showSuccess, showError, showInfo } = useToast();
 
-  // State
-  const [requests, setRequests] = useState<ApprovalRequest[]>(mockApprovalRequests);
+  // State linked to shared store
+  const [requests, setRequests] = useState<ApprovalRequest[]>(() =>
+    financeProposalStore.getRequests()
+  );
+
+  React.useEffect(() => {
+    return financeProposalStore.subscribe(() => {
+      setRequests(financeProposalStore.getRequests());
+    });
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModule, setSelectedModule] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
@@ -141,6 +152,15 @@ export default function ApprovalCenterPage() {
         return r;
       })
     );
+
+    // If this request is an Online Assessment Approval, update assessmentStore directly
+    if (targetActionRequest.requestType === 'ONLINE_ASSESSMENT_APPROVAL') {
+      const allAsms = assessmentStore.getAssessments();
+      const matchAsm = allAsms.find((a) => targetActionRequest.entityName.includes(a.title));
+      if (matchAsm) {
+        assessmentStore.approveAssessment(matchAsm.id, 'Approved by Super Admin in Executive Approval Center.');
+      }
+    }
 
     // Update opened drawer if matches
     if (selectedRequest && selectedRequest.id === reqId) {

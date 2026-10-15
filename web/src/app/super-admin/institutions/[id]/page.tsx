@@ -760,8 +760,8 @@ export default function InstitutionDetailPage() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold uppercase">Credits</span>
-                      <span className="font-bold text-slate-800">{c.credits || 4} Credits</span>
+                      <span className="text-[10px] text-slate-400 block font-semibold uppercase">Track</span>
+                      <span className="font-bold text-slate-800">{c.duration || 'Semester'}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 block font-semibold uppercase">Faculty</span>

@@ -112,7 +112,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-0.5">
-                <span className="text-slate-500 font-medium">Physical Campus</span>
+                <span className="text-slate-500 font-medium">Study Hub & Campus</span>
                 <p className="font-bold text-slate-800">{currentStudent.campusName}</p>
               </div>
 
