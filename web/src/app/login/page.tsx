@@ -14,7 +14,6 @@ const platformRoles = [
   { id: 'FINANCE_MANAGER', name: 'Finance Manager', desc: 'College Fees, Ledgers & Accounts', isAvailable: true, credentials: { id: 'finance@isml.edu', pwd: 'finance2026pass' } },
   { id: 'TEACHER', name: 'Faculty / Tutor (Master Console)', desc: 'Multi-Role Classes, Attendance, Doubts & Marks', isAvailable: true, credentials: { id: 'faculty@isml.edu', pwd: 'tutor2026pass' } },
   { id: 'COLLEGE_ADMIN', name: 'College Admin', desc: 'Loyola College (Enrollment, Bulk Fees & Monitoring)', isAvailable: true, credentials: { id: 'collegeadmin@isml.edu', pwd: 'college2026pass' } },
-  { id: 'MANAGER', name: 'Manager', desc: 'Internal Team & User Mgmt', isAvailable: false },
 ];
 
 export default function LoginPage() {
