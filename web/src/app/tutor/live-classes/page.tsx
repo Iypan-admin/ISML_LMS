@@ -46,24 +46,12 @@ export default function TutorLiveClassesPage() {
           let startDate = item.scheduledStartTime ? new Date(item.scheduledStartTime) : new Date();
           let endDate = item.scheduledEndTime ? new Date(item.scheduledEndTime) : new Date(startDate.getTime() + (item.durationMinutes || 60) * 60000);
           let duration = item.durationMinutes || 60;
-          let timeSlotFormatted = '';
+          let timeSlotFormatted = item.timeSlot ? item.timeSlot.replace('–', '-') : '';
 
-          if (matchingAlloc && matchingAlloc.scheduleSlots && matchingAlloc.scheduleSlots.length > 0) {
+          if (!timeSlotFormatted && matchingAlloc && matchingAlloc.scheduleSlots && matchingAlloc.scheduleSlots.length > 0) {
             const timeMatch = matchingAlloc.scheduleSlots[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
             if (timeMatch) {
               timeSlotFormatted = `${timeMatch[1]} – ${timeMatch[2]}`;
-              const parseMinutes = (t: string) => {
-                const [time, meridiem] = t.trim().split(/\s+/);
-                const [h, m] = time.split(':').map(Number);
-                let hours = h % 12;
-                if (meridiem.toUpperCase() === 'PM') hours += 12;
-                return hours * 60 + m;
-              };
-              const sMins = parseMinutes(timeMatch[1]);
-              const eMins = parseMinutes(timeMatch[2]);
-              if (eMins > sMins) {
-                duration = eMins - sMins;
-              }
             }
           }
 
@@ -115,19 +103,17 @@ export default function TutorLiveClassesPage() {
             }
           }
 
-          // Check if this class is for today's scheduled batch
-          const isTodaySession = item.isScheduledToday || isToday || item.id?.includes('today');
-          const isEnded = item.status === 'ENDED' || item.status === 'COMPLETED' || isPastDate;
-          const isUpcoming = item.status === 'UPCOMING' || isFutureDate;
-          const isBroadcastingNow = isTodaySession && !isEnded && !isUpcoming;
-
-          const computedStatus = isBroadcastingNow
-            ? 'LIVE_NOW'
-            : isEnded
-            ? 'COMPLETED'
-            : isUpcoming
-            ? 'UPCOMING'
-            : 'TODAY';
+          // Trust the API's status directly: LIVE / BROADCASTING, COMPLETED, TODAY, or UPCOMING
+          let computedStatus = 'UPCOMING';
+          if (item.status === 'LIVE' || item.isBroadcastingNow) {
+            computedStatus = 'LIVE_NOW';
+          } else if (item.status === 'COMPLETED' || item.status === 'ENDED') {
+            computedStatus = 'COMPLETED';
+          } else if (item.status === 'TODAY' || isToday) {
+            computedStatus = 'TODAY';
+          } else {
+            computedStatus = 'UPCOMING';
+          }
 
           return {
             id: item.id,

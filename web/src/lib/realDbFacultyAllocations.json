@@ -17,7 +17,7 @@
     "batchName": "Morning Batch",
     "languageFamily": "FRENCH",
     "scheduleSlots": [
-      "Mon, Wed, Fri 09:00 AM – 10:30 AM"
+      "Mon, Wed, Fri 12:00 AM - 1:00:AM"
     ],
     "status": "ACTIVE",
     "effectiveFrom": "2026-11-12",
@@ -41,7 +41,7 @@
     "batchName": "Evening Batch",
     "languageFamily": "FRENCH",
     "scheduleSlots": [
-      "Tue, Thu, Sat, Mon, Wed, Fri 06:30 PM - 09:00 PM"
+      "Thu, Tue, Sat, Mon, Wed, Fri 09:30 PM - 11:59 PM"
     ],
     "status": "ACTIVE",
     "effectiveFrom": "2026-11-12",

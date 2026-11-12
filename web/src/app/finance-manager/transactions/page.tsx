@@ -53,6 +53,18 @@ export default function TransactionsPage() {
 
   const [transactions, setTransactions] = useState<TransactionRecord[]>(realDbTransactions as any[]);
   const mockStudentFees = (realDbStudentFees as any[]);
+
+  // Fetch live transactions from DB on mount and sync
+  useEffect(() => {
+    fetch('/api/portals/transactions')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setTransactions(res.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('ALL');
   const [channelFilter, setChannelFilter] = useState<string>('ALL');
@@ -122,6 +134,12 @@ export default function TransactionsPage() {
 
   const handleCreatedTx = (newTx: TransactionRecord) => {
     setTransactions((prev) => [newTx, ...prev]);
+    // Persist to realDbTransactions via POST
+    fetch('/api/portals/transactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTx),
+    }).catch(() => {});
   };
 
   const handleSubmitToSuperAdmin = (txId: string, notes: string) => {

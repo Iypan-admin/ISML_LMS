@@ -277,24 +277,44 @@ export default function PublicRegistrationPage() {
           ],
         });
 
-        // Dispatch Institutional Onboarding Request to Super Admin
-        fetch('https://ismllms-production.up.railway.app/api/portals/institutions/request', {
+        const institutionalPayload = {
+          category,
+          type: category,
+          code: isCollege ? activeCollege.code : activeSchool.code,
+          name: instName,
+          institutionName: instName,
+          adminName: signatoryName,
+          adminEmail: adminOfficialEmail,
+          adminMobile: adminPhone,
+          studentsTarget: batchCount,
+          batchProgramTrack,
+          batchDepartment,
+          mouRefNumber,
+        };
+
+        // 1. Send directly to Super Admin Approval Center (/super-admin/approvals)
+        fetch('/api/portals/approvals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            category,
-            type: category,
-            code: isCollege ? activeCollege.code : activeSchool.code,
-            name: instName,
+            id: `appr-inst-${Date.now()}`,
+            requestType: 'INSTITUTION_CREATION',
+            module: 'Institutions',
+            title: `Institutional Onboarding: ${instName} (${category})`,
+            description: `Public MoU Batch intake for ${instName} submitted by ${signatoryName}. Target: ${batchCount} students.`,
+            entityType: 'INSTITUTION',
+            priority: 'HIGH',
+            institutionId: instId,
             institutionName: instName,
-            adminName: signatoryName,
-            adminEmail: adminOfficialEmail,
-            adminMobile: adminPhone,
-            studentsTarget: batchCount,
-            batchProgramTrack,
-            batchDepartment,
-            mouRefNumber,
+            submittedPayload: institutionalPayload,
           }),
+        }).catch(() => null);
+
+        // 2. Dispatch Institutional Onboarding Request to Super Admin API
+        fetch('https://ismllms-production.up.railway.app/api/portals/institutions/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(institutionalPayload),
         }).catch(() => null);
 
         setIsSubmitting(false);
@@ -374,23 +394,56 @@ export default function PublicRegistrationPage() {
         });
 
         // Dispatch student registration request to Super Admin
-        fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
+        const studentRegPayload = {
+          applicationNumber: newApp.applicationNumber,
+          fullName: newApp.fullName,
+          firstName: (fullName || 'Direct Applicant').split(' ')[0],
+          lastName: (fullName || '').split(' ').slice(1).join(' ') || 'Student',
+          email: newApp.email,
+          phone: newApp.phone,
+          mobileNumber: newApp.phone,
+          category,
+          institutionId: instId,
+          institutionName: instName,
+          course: selectedLang,
+          courseName: selectedLang,
+          targetLanguage: selectedLang.toUpperCase(),
+          amountPaid: net,
+          admissionType: isCollege ? 'COLLEGE_STUDENT' : 'SCHOOL_STUDENT',
+          rollNo: rollNo || `REG-${Date.now().toString().slice(-4)}`,
+          department: deptOrGrade || 'Department of Languages',
+        };
+
+        // 1. Send directly to Super Admin Approval Center (/super-admin/approvals)
+        fetch('/api/portals/approvals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            applicationNumber: newApp.applicationNumber,
-            fullName: newApp.fullName,
-            email: newApp.email,
-            phone: newApp.phone,
-            mobileNumber: newApp.phone,
-            category,
+            id: `appr-std-${Date.now()}`,
+            requestType: 'STUDENT_ADMISSION',
+            module: 'Admissions',
+            title: `New Student Registration: ${newApp.fullName} (${selectedLang})`,
+            description: `Public registration received from ${newApp.fullName} for ${selectedLang} at ${instName}. Tuition fee ₹${net.toLocaleString()} initiated.`,
+            entityType: 'STUDENT',
+            priority: 'HIGH',
             institutionId: instId,
             institutionName: instName,
-            course: selectedLang,
-            targetLanguage: selectedLang.toUpperCase(),
-            amountPaid: net,
-            admissionType: isCollege ? 'COLLEGE_STUDENT' : 'SCHOOL_STUDENT',
+            submittedPayload: studentRegPayload,
           }),
+        }).catch(() => null);
+
+        // 2. Dispatch to local Admissions API
+        fetch('/api/portals/admissions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(studentRegPayload),
+        }).catch(() => null);
+
+        // 3. Dispatch to remote backend if online
+        fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(studentRegPayload),
         }).catch(() => null);
 
         setIsSubmitting(false);

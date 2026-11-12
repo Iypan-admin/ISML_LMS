@@ -144,6 +144,49 @@ export async function POST(
         }
       }
 
+      // If approved and requestType is STUDENT_ADMISSION, add approved student directly into realDbStudents.json
+      if (body.action === 'APPROVED' && (approvals[idx].requestType === 'STUDENT_ADMISSION' || approvals[idx].entityType === 'STUDENT')) {
+        try {
+          const sp = approvals[idx].submittedPayload;
+          if (sp) {
+            const studentPaths = [
+              path.join(process.cwd(), 'src', 'lib', 'realDbStudents.json'),
+              path.join(process.cwd(), 'web', 'src', 'lib', 'realDbStudents.json'),
+            ];
+            const newStudent = {
+              id: `std-${Date.now()}`,
+              name: sp.fullName || `${sp.firstName || ''} ${sp.lastName || ''}`.trim() || 'New Student',
+              email: sp.email || `student.${Date.now()}@isml.edu`,
+              phone: sp.phone || sp.mobileNumber || '+91 98765 43210',
+              institutionId: sp.institutionId || '521323cd-00da-49a6-98ed-6b7918d181b4',
+              institutionName: sp.institutionName || 'The American College',
+              courseId: sp.courseId || '905803ab-58d8-447b-8e07-94226eaab99a',
+              courseName: sp.course || sp.courseName || 'French Language Program',
+              targetLanguage: sp.targetLanguage || 'FRENCH',
+              rollNo: sp.rollNo || `REG-${Date.now().toString().slice(-4)}`,
+              admissionStatus: 'ENROLLED',
+              status: 'ACTIVE',
+              enrolledAt: new Date().toISOString(),
+              amountPaid: sp.amountPaid || 0,
+            };
+
+            for (const stPath of studentPaths) {
+              if (fs.existsSync(stPath)) {
+                try {
+                  const students = JSON.parse(fs.readFileSync(stPath, 'utf8'));
+                  if (Array.isArray(students)) {
+                    students.unshift(newStudent);
+                    fs.writeFileSync(stPath, JSON.stringify(students, null, 2), 'utf8');
+                  }
+                } catch {}
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Error activating student in DB:', err);
+        }
+      }
+
       // If approved and entityType is FeeStructure, activate fee structure and update course fee in DB
       if (body.action === 'APPROVED' && (approvals[idx].entityType === 'FeeStructure' || approvals[idx].requestType === 'FEE_SCHEDULE_CREATION' || approvals[idx].requestType === 'Fee Schedule Revision')) {
         try {

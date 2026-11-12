@@ -229,27 +229,65 @@ export default function SchoolRegistrationPage() {
       });
 
       // Sync with backend & Super Admin Approval Center
-      fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
+      const studentPayload = {
+        applicationNumber: newApp.applicationNumber,
+        fullName: newApp.fullName,
+        firstName: (studentName || 'School Pupil').split(' ')[0] || 'Pupil',
+        lastName: (studentName || '').split(' ').slice(1).join(' ') || 'Student',
+        email: parentEmail || 'parent@school.edu',
+        phone: parentEmergencyPhone || '+91 94441 88990',
+        mobileNumber: parentEmergencyPhone || '+91 94441 88990',
+        category: 'SCHOOL',
+        institutionId: enrollmentMode === 'INSTITUTION_PARTNER' ? currentPartner.id : 'ind-school',
+        institutionName: schoolNameResolved,
+        course: `${selectedTrack.name} (${gradeClass})`,
+        courseName: `${selectedTrack.name} (${gradeClass})`,
+        targetLanguage: selectedTrack.name.toUpperCase(),
+        targetLevel: 'A1_1',
+        amountPaid: amountToChargeNow,
+        admissionType: 'SCHOOL_STUDENT',
+        rollNo: `SCH-${Date.now().toString().slice(-4)}`,
+        department: gradeClass || 'K-12 Foreign Languages',
+      };
+
+      // 1. Send directly to Super Admin Approval Center (/super-admin/approvals)
+      fetch('/api/portals/approvals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          applicationNumber: newApp.applicationNumber,
-          fullName: newApp.fullName,
-          firstName: (studentName || 'School Pupil').split(' ')[0] || 'Pupil',
-          lastName: (studentName || '').split(' ').slice(1).join(' ') || 'Student',
-          email: parentEmail || 'parent@school.edu',
-          phone: parentEmergencyPhone || '+91 94441 88990',
-          mobileNumber: parentEmergencyPhone || '+91 94441 88990',
-          category: 'SCHOOL',
+          id: `appr-std-${Date.now()}`,
+          requestType: 'STUDENT_ADMISSION',
+          module: 'Admissions',
+          title: `New School Admission: ${newApp.fullName} (${selectedTrack.name})`,
+          description: `Public registration received from ${newApp.fullName} for ${selectedTrack.name} at ${schoolNameResolved}. Amount: ₹${amountToChargeNow.toLocaleString()}.`,
+          entityType: 'STUDENT',
+          priority: 'HIGH',
           institutionId: enrollmentMode === 'INSTITUTION_PARTNER' ? currentPartner.id : 'ind-school',
           institutionName: schoolNameResolved,
-          course: `${selectedTrack.name} (${gradeClass})`,
-          targetLanguage: selectedTrack.name.toUpperCase(),
-          targetLevel: 'A1_1',
-          amountPaid: amountToChargeNow,
-          admissionType: 'SCHOOL_STUDENT',
+          submittedPayload: studentPayload,
         }),
       }).catch(() => null);
+
+      // 2. Dispatch to local Admissions API
+      fetch('/api/portals/admissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentPayload),
+      }).catch(() => null);
+
+      // 3. Dispatch to remote backend if online
+      fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentPayload),
+      }).catch(() => null);
+
+      // Trigger audio chime event for real-time super admin update
+      try {
+        window.dispatchEvent(new CustomEvent('isml-realtime-event', {
+          detail: { type: 'STUDENT_ADMISSION', name: newApp.fullName }
+        }));
+      } catch {}
 
       setIsProcessingPayment(false);
       setSubmittedAppNumber(newApp.applicationNumber);

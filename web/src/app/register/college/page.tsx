@@ -255,26 +255,54 @@ export default function CollegeRegistrationPage() {
       });
 
       // Sync with backend & Super Admin Approval Center
-      fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
+      const studentPayload = {
+        applicationNumber: newApp.applicationNumber,
+        fullName: newApp.fullName,
+        firstName: fullName.split(' ')[0] || 'College',
+        lastName: fullName.split(' ').slice(1).join(' ') || 'Student',
+        email: email || 'student@college.edu',
+        phone: phone || '+91 98840 00000',
+        mobileNumber: phone || '+91 98840 00000',
+        category: 'COLLEGE',
+        institutionId: enrollmentMode === 'INSTITUTION_PARTNER' ? currentPartner.id : 'ind-college',
+        institutionName: collegeNameResolved,
+        course: `${selectedLangData.lang} ${selectedLangData.level}`,
+        targetLanguage: selectedLangData.lang.toUpperCase(),
+        targetLevel: selectedLangData.level,
+        amountPaid: amountToChargeNow,
+        admissionType: 'COLLEGE_STUDENT',
+      };
+
+      // 1. Post to Super Admin Approvals Hub
+      fetch('/api/portals/approvals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          applicationNumber: newApp.applicationNumber,
-          fullName: newApp.fullName,
-          firstName: fullName.split(' ')[0] || 'College',
-          lastName: fullName.split(' ').slice(1).join(' ') || 'Student',
-          email: email || 'student@college.edu',
-          phone: phone || '+91 98840 00000',
-          mobileNumber: phone || '+91 98840 00000',
-          category: 'COLLEGE',
+          id: `appr-std-${Date.now()}`,
+          requestType: 'STUDENT_ADMISSION',
+          module: 'Admissions',
+          title: `College Admission: ${newApp.fullName} (${selectedLangData.lang})`,
+          description: `Applicant ${newApp.fullName} registered for ${selectedLangData.lang} at ${collegeNameResolved}. Fee ₹${amountToChargeNow.toLocaleString()} collected.`,
+          entityType: 'STUDENT',
+          priority: 'HIGH',
           institutionId: enrollmentMode === 'INSTITUTION_PARTNER' ? currentPartner.id : 'ind-college',
           institutionName: collegeNameResolved,
-          course: `${selectedLangData.lang} ${selectedLangData.level}`,
-          targetLanguage: selectedLangData.lang.toUpperCase(),
-          targetLevel: selectedLangData.level,
-          amountPaid: amountToChargeNow,
-          admissionType: 'COLLEGE_STUDENT',
+          submittedPayload: studentPayload,
         }),
+      }).catch(() => null);
+
+      // 2. Post to Local Admissions
+      fetch('/api/portals/admissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentPayload),
+      }).catch(() => null);
+
+      // 3. Post to Remote API if online
+      fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentPayload),
       }).catch(() => null);
 
       setIsProcessingPayment(false);

@@ -3,6 +3,7 @@
 
 import React, { Suspense, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck, Lock, User, ArrowRight, Eye, EyeOff, CheckCircle2, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { authApi } from '@/lib/api';
@@ -429,6 +430,17 @@ function LoginPageContent() {
                 </>
               )}
             </button>
+
+            {/* Direct Link to Registration / Sign Up */}
+            <div className="pt-2 text-center border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs text-slate-500 font-medium">
+              <span>New student or institution?</span>
+              <Link
+                href="/register"
+                className="font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+              >
+                Sign Up / Register Here →
+              </Link>
+            </div>
           </form>
         </div>
       </main>

@@ -1,5 +1,25 @@
 [
   {
+    "id": "slot-1794503779616-0",
+    "day": "FRIDAY",
+    "timeSlot": "12:00 AM - 1:00:AM",
+    "subjectName": "Sample Course",
+    "subjectCode": "SAMPLE-CRS-101",
+    "facultyName": "Joy JK",
+    "batchName": "Morning Batch",
+    "sessionFormat": "GROUP_WEBINAR",
+    "room": "Live Class Studio",
+    "deliveryMode": "ONLINE",
+    "meetingUrl": "https://live.isml.edu/live-class/isml-slot-1794503779616",
+    "department": "Department of Foreign Languages",
+    "program": "Sample Course",
+    "semester": 1,
+    "recurrenceType": "WEEKLY",
+    "specificDate": "2026-10-14",
+    "cycleIntervalWeeks": 2,
+    "maxAttendees": 10
+  },
+  {
     "id": "slot-1794501905482-0",
     "day": "THURSDAY",
     "timeSlot": "09:00 AM – 10:30 AM",
@@ -182,7 +202,7 @@
   {
     "id": "slot-1794487590084-1",
     "day": "THURSDAY",
-    "timeSlot": "06:30 PM - 09:00 PM",
+    "timeSlot": "09:30 PM - 11:59 PM",
     "subjectName": "Sample Course",
     "subjectCode": "SAMPLE-CRS-101",
     "facultyName": "Joy JK",

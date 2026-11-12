@@ -1071,6 +1071,26 @@ export default function LiveClassesPage() {
 
   return (
     <div className="space-y-6 pb-8 font-sans">
+      {/* ─── RUNNING THEME BANNER: 10 HOURS FREE ACCESS UNLOCKED ─── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0B2447] via-[#0052CC] to-[#1E3A8A] text-white shadow-md border border-blue-400/30 p-2.5 sm:p-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <span className="shrink-0 px-2.5 py-1 rounded-xl bg-cyan-400/20 text-cyan-300 border border-cyan-400/30 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+            <span>🎁</span>
+            <span>10 HRS FREE PASS</span>
+          </span>
+
+          <div className="overflow-hidden flex-1 relative h-6 flex items-center">
+            <div className="animate-marquee text-xs font-semibold text-white tracking-wide flex items-center gap-8">
+              <span>🚀 <strong>10 Hours of Free Live Webinar Access Active!</strong> Attend interactive classes, ask doubts, and use whiteboard with Zero upfront fee.</span>
+              <span className="text-cyan-300/60">•</span>
+              <span>⚡ Free Live Pass Remaining: <strong>9 Hours 15 Mins</strong>. Direct access unlocked for all new learners!</span>
+              <span className="text-cyan-300/60">•</span>
+              <span>🎓 Certified Native Faculty • Interactive Whiteboard • Zero Payment Barrier.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Page Header */}
       <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 text-slate-900 p-4 sm:p-6 rounded-2xl shadow-xs space-y-2 border border-blue-200">
         <div className="flex items-center gap-2 text-xs font-mono text-[#0052CC]">
