@@ -43,15 +43,15 @@ async function bootstrap() {
 
   const port = process.env.PORT || 4000;
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 ISML LMS Enterprise Backend running securely on http://localhost:${port}`);
-  console.log(`🔐 Pre-seeded 8-Portal Credentials available at: http://localhost:${port}/api/auth/seed-credentials`);
+  console.log(`🚀 ISML LMS Enterprise Backend running securely on port ${port}`);
+
 
   // Instant Background Warmup: Pre-fetch critical queries so the VERY FIRST request is instant (0ms delay)
   setTimeout(() => {
-    fetch(`http://localhost:${port}/api/portals/institutions`).catch(() => {});
-    fetch(`http://localhost:${port}/api/portals/admissions`).catch(() => {});
-    fetch(`http://localhost:${port}/api/portals/courses`).catch(() => {});
-    fetch(`http://localhost:${port}/api/portals/batches`).catch(() => {});
+    fetch(`http://127.0.0.1:${port}/api/portals/institutions`).catch(() => {});
+    fetch(`http://127.0.0.1:${port}/api/portals/admissions`).catch(() => {});
+    fetch(`http://127.0.0.1:${port}/api/portals/courses`).catch(() => {});
+    fetch(`http://127.0.0.1:${port}/api/portals/batches`).catch(() => {});
   }, 100);
 }
 bootstrap();
