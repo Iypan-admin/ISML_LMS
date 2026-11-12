@@ -360,8 +360,6 @@ export default function ProposeFeeStructureDrawer({
 
   if (!isOpen) return null;
 
-  const selectedProgram = mockPrograms.find((p) => p.id === programId) || mockPrograms[0];
-
   const handleSubmitForApproval = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -376,21 +374,6 @@ export default function ProposeFeeStructureDrawer({
       );
       return;
     }
-
-    const courseNamesList = mockCourses
-      .filter((c) => selectedCourseIds.includes(c.id))
-      .map((c) => c.name);
-
-    const durationLabel =
-      courseStructureType === 'DURATION_BASED'
-        ? durationType === '3_MONTHS'
-          ? '3 Months (Intensive Track)'
-          : durationType === '6_MONTHS'
-          ? '6 Months (Diploma Track)'
-          : durationType === '1_YEAR'
-          ? '1 Year (Mastery Track)'
-          : `${customDurationMonths} Months (Custom)`
-        : `Semester ${semesterNumber}`;
 
     const emiSummaryText = isEmiEnabled
       ? `Custom ${installments.length} Installments: [${installments.map((i) => `${i.title}: ₹${i.amount.toLocaleString()}`).join(', ')}]. Grace: ${gracePeriodDays} days.`

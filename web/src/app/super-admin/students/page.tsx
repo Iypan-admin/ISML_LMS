@@ -133,22 +133,6 @@ export default function StudentsPage() {
     setSelectedSemester(0);
   };
 
-  // ─── COLLEGE-WISE METRICS ───
-  const collegeMetrics = useMemo(() => {
-    const total = filteredStudents.length;
-    const active = filteredStudents.filter((s) => s.status === 'ACTIVE').length;
-    const programsCount = new Set(filteredStudents.map((s) => s.programId)).size;
-    const batchesCount = new Set(filteredStudents.map((s) => s.batchId)).size;
-    const avgAttendance =
-      total > 0
-        ? Math.round(
-            (filteredStudents.reduce((acc, s) => acc + s.attendancePercentage, 0) / total) * 10
-          ) / 10
-        : 0;
-
-    return { total, active, programsCount, batchesCount, avgAttendance };
-  }, [filteredStudents]);
-
   // ─── FILTERED STUDENT LIST ───
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -197,6 +181,22 @@ export default function StudentsPage() {
     selectedStatus,
     searchQuery,
   ]);
+
+  // ─── COLLEGE-WISE METRICS ───
+  const collegeMetrics = useMemo(() => {
+    const total = filteredStudents.length;
+    const active = filteredStudents.filter((s) => s.status === 'ACTIVE').length;
+    const programsCount = new Set(filteredStudents.map((s) => s.programId)).size;
+    const batchesCount = new Set(filteredStudents.map((s) => s.batchId)).size;
+    const avgAttendance =
+      total > 0
+        ? Math.round(
+            (filteredStudents.reduce((acc, s) => acc + s.attendancePercentage, 0) / total) * 10
+          ) / 10
+        : 0;
+
+    return { total, active, programsCount, batchesCount, avgAttendance };
+  }, [filteredStudents]);
 
   // Handlers
   const handleStudentCreated = (newUser: SuperAdminUser) => {
