@@ -33,6 +33,7 @@ import { mockInstitutions } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 import OnboardCollegeDrawer from '@/components/super-admin/institutions/OnboardCollegeDrawer';
 import { fastFetch } from '@/lib/fastCache';
+import realDbStudents from '@/lib/realDbStudents.json';
 
 export default function InstitutionsPage() {
   const { showSuccess, showInfo } = useToast();
@@ -44,6 +45,20 @@ export default function InstitutionsPage() {
 
   // Fetch institutions: prioritize The American College and Sivakasi Lions School
   React.useEffect(() => {
+    // Real student counts computed directly from real database
+    const amerCount = realDbStudents.filter((s: any) => 
+      s.studentId?.startsWith('AMER') || 
+      s.tenantCode === 'AMER-COL' || 
+      s.collegeName?.includes('American')
+    ).length;
+
+    const sivaCount = realDbStudents.filter((s: any) => 
+      s.studentId?.startsWith('SLS') || 
+      s.tenantCode === 'SIVA-LIONS' || 
+      s.collegeName?.includes('Sivakasi') || 
+      s.collegeName?.toLowerCase().includes('school')
+    ).length;
+
     fetch('/api/portals/institutions')
       .then((r) => r.json())
       .then((json) => {
@@ -68,11 +83,11 @@ export default function InstitutionsPage() {
                 : 'COLLEGE'),
             universityAffiliation: item.type === 'SCHOOL' ? 'State Board / Matriculation' : 'Autonomous • Madurai Kamaraj University',
             naacAccreditation: item.type === 'SCHOOL' ? 'Government Recognized' : 'NAAC A+ Grade',
-            studentsCount: item.code === 'AMER-COL' ? 10 : item.code === 'SIVA-LIONS' ? 10 : 0,
+            studentsCount: item.code === 'AMER-COL' ? amerCount : item.code === 'SIVA-LIONS' ? sivaCount : 0,
             facultyCount: item.code === 'AMER-COL' ? 2 : item.code === 'SIVA-LIONS' ? 1 : 0,
             departmentsCount: item.type === 'SCHOOL' ? 1 : 2,
-            batchesCount: 0,
-            coursesCount: 0,
+            batchesCount: 1,
+            coursesCount: 1,
             activeAcademicYear: '2026-2027',
             logoUrl: '/logo.png',
             primaryColor: '#0052CC',

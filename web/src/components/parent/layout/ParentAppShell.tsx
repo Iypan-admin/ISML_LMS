@@ -266,13 +266,21 @@ export function ParentSidebar({ onCloseMobile }: { onCloseMobile?: () => void })
           <p className="text-[10px] text-slate-400">ISML Parent Helpline:</p>
           <p className="text-xs font-bold text-white tracking-wide">+91 44 2235 7000</p>
         </div>
-        <Link
-          href="/login"
-          className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors"
+        <button
+          onClick={() => {
+            try {
+              localStorage.removeItem('isml_user');
+              localStorage.removeItem('isml_admin_user');
+              localStorage.removeItem('isml_student_profile');
+              sessionStorage.clear();
+            } catch {}
+            window.location.href = '/login';
+          }}
+          className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
           title="Sign Out"
         >
           <LogOut className="w-4 h-4" />
-        </Link>
+        </button>
       </div>
     </aside>
   );

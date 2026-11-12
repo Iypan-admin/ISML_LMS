@@ -217,13 +217,20 @@ export function TutorSidebar({ activeFacultyId }: { activeFacultyId?: string }) 
             <p className="text-[10px] text-slate-400 truncate">{currentFaculty.email}</p>
           </div>
         </div>
-        <Link
-          href="/login"
-          className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors"
+        <button
+          onClick={() => {
+            try {
+              localStorage.removeItem('isml_user');
+              localStorage.removeItem('isml_admin_user');
+              sessionStorage.clear();
+            } catch {}
+            window.location.href = '/login';
+          }}
+          className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
           title="Sign Out"
         >
           <LogOut className="w-4 h-4" />
-        </Link>
+        </button>
       </div>
     </aside>
   );
@@ -318,13 +325,20 @@ export function TutorHeader({ activeFacultyId }: { activeFacultyId?: string }) {
                     Switch to Super Admin
                   </Link>
                   <div className="border-t border-slate-100 my-1" />
-                  <Link
-                    href="/login"
-                    className="block px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold"
-                    onClick={() => setShowProfileMenu(false)}
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      try {
+                        localStorage.removeItem('isml_user');
+                        localStorage.removeItem('isml_admin_user');
+                        sessionStorage.clear();
+                      } catch {}
+                      window.location.href = '/login';
+                    }}
+                    className="w-full text-left block px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold cursor-pointer"
                   >
                     Sign Out
-                  </Link>
+                  </button>
                 </div>
               </>
             )}

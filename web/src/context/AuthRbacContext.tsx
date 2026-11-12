@@ -180,8 +180,16 @@ export function AuthRbacProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    router.push('/login');
-  }, [router]);
+    try {
+      localStorage.removeItem('isml_user');
+      localStorage.removeItem('isml_admin_user');
+      localStorage.removeItem('isml_student_profile');
+      localStorage.removeItem('isml_token');
+      localStorage.removeItem('isml_role');
+      sessionStorage.clear();
+    } catch {}
+    window.location.href = '/login';
+  }, []);
 
   const value = useMemo(
     () => ({

@@ -249,7 +249,16 @@ export default function Sidebar() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => {
+                    setShowSignOutModal(false);
+                    try {
+                      localStorage.removeItem('isml_user');
+                      localStorage.removeItem('isml_student_profile');
+                      localStorage.removeItem('isml_token');
+                      sessionStorage.clear();
+                    } catch {}
+                    window.location.href = '/login';
+                  }}
                   className="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1"
                 >
                   <LogOut className="w-3 h-3" />
