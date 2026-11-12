@@ -6,7 +6,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   UserCheck,
   UserCog,
@@ -27,7 +27,9 @@ import {
   CheckCheck,
   Layers,
   Calendar,
-  BookOpen
+  BookOpen,
+  UserPlus,
+  Trash2
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
@@ -41,6 +43,7 @@ import {
   TutorRoleType
 } from '@/mock/facultyAssignments';
 import AssignTutorDrawer from '@/components/academic-manager/AssignTutorDrawer';
+import { fastFetch } from '@/lib/fastCache';
 
 interface FacultyPageProps {
   portalRole?: 'super-admin' | 'academic-manager';
@@ -56,10 +59,29 @@ export default function AcademicManagerFacultyUnifiedPage({
   const [activeTab, setActiveTab] = useState<'DIRECTORY' | 'ALLOCATIONS'>('DIRECTORY');
 
   // Faculty Directory State
-  const [facultyList, setFacultyList] = useState<FacultyMember[]>(mockFacultyMembers);
+  const [facultyList, setFacultyList] = useState<FacultyMember[]>([]);
   const [facultySearch, setFacultySearch] = useState('');
   const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string>('ALL');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<'ALL' | TutorRoleType>('ALL');
+
+  // Create Tutor Drawer Control
+  const [isCreateTutorOpen, setIsCreateTutorOpen] = useState(false);
+
+  // Fetch Live Faculty from backend with 0ms fast cache
+  const fetchFaculty = async () => {
+    fastFetch('/api/portals/faculty', (json) => {
+      if (json) {
+        if (json.data) setFacultyList(json.data);
+        if (json.allocations) setAllocations(json.allocations);
+      }
+    });
+  };
+
+  useEffect(() => {
+    fetchFaculty();
+    const interval = setInterval(fetchFaculty, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleToggleFacultyStatus = (facultyId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'ACTIVE' ? 'ON_LEAVE' : 'ACTIVE';
@@ -73,8 +95,19 @@ export default function AcademicManagerFacultyUnifiedPage({
     }
   };
 
+  const handleDeleteFaculty = async (facultyId: string, facultyName: string) => {
+    if (!confirm(`Are you sure you want to remove tutor ${facultyName}?`)) return;
+    try {
+      await fetch(`http://localhost:4000/api/portals/faculty/${facultyId}/delete`, { method: 'POST' });
+      setFacultyList((prev) => prev.filter((f) => f.id !== facultyId));
+      showSuccess(`Tutor ${facultyName} removed.`);
+    } catch (e) {
+      showInfo(`Could not remove tutor`);
+    }
+  };
+
   // Allocations State
-  const [allocations, setAllocations] = useState<FacultyAllocationItem[]>(mockFacultyAllocations);
+  const [allocations, setAllocations] = useState<FacultyAllocationItem[]>([]);
   const [allocSearch, setAllocSearch] = useState('');
   const [allocRoleFilter, setAllocRoleFilter] = useState<'ALL' | TutorRoleType>('ALL');
   const [allocLangFilter, setAllocLangFilter] = useState<string>('ALL');
@@ -158,16 +191,6 @@ export default function AcademicManagerFacultyUnifiedPage({
 
         {!isSuperAdmin && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setDrawerDefaultRole('SUBSTITUTE_TUTOR');
-                setIsAssignDrawerOpen(true);
-              }}
-              className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Assign Standby</span>
-            </button>
             <button
               onClick={() => {
                 setDrawerDefaultRole('LEAD_TRAINER');
@@ -347,11 +370,12 @@ export default function AcademicManagerFacultyUnifiedPage({
                         showLabels={false}
                       />
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        (faculty as any).status === 'PENDING_APPROVAL' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
                         faculty.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                         faculty.status === 'AVAILABLE' ? 'bg-cyan-50 text-cyan-700 border border-cyan-200' :
-                        'bg-amber-50 text-amber-700 border border-amber-200'
+                        'bg-slate-100 text-slate-700 border border-slate-300'
                       }`}>
-                        {faculty.status}
+                        {(faculty as any).status === 'PENDING_APPROVAL' ? 'PENDING APPROVAL ⏳' : faculty.status}
                       </span>
                     </div>
                   </div>
@@ -411,26 +435,15 @@ export default function AcademicManagerFacultyUnifiedPage({
                 {/* Quick Actions */}
                 <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                   {!isSuperAdmin ? (
-                    <>
-                      <button
-                        onClick={() => {
-                          setDrawerDefaultRole('SUBSTITUTE_TUTOR');
-                          setIsAssignDrawerOpen(true);
-                        }}
-                        className="flex-1 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold border border-amber-200 transition-colors cursor-pointer text-center"
-                      >
-                        Assign Standby
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDrawerDefaultRole('LEAD_TRAINER');
-                          setIsAssignDrawerOpen(true);
-                        }}
-                        className="flex-1 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0052CC] rounded-xl text-xs font-bold border border-blue-200 transition-colors cursor-pointer text-center"
-                      >
-                        Assign Batch
-                      </button>
-                    </>
+                    <button
+                      onClick={() => {
+                        setDrawerDefaultRole('LEAD_TRAINER');
+                        setIsAssignDrawerOpen(true);
+                      }}
+                      className="w-full py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0052CC] rounded-xl text-xs font-bold border border-blue-200 transition-colors cursor-pointer text-center"
+                    >
+                      Assign Batch
+                    </button>
                   ) : (
                     <div className="w-full flex items-center justify-between text-xs py-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">

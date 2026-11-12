@@ -1,0 +1,48 @@
+[
+  {
+    "id": "alloc-joy-01",
+    "facultyId": "fac-201834",
+    "facultyName": "Joy JK",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    "tutorRole": "LEAD_TRAINER",
+    "institutionType": "COLLEGE",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "institutionName": "The American College",
+    "courseId": "b9585673-9327-43d8-bef4-9d261fe0bb3e",
+    "courseName": "testtt",
+    "subjectCode": "ET",
+    "subjectName": "testtt",
+    "batchId": "batch-4168",
+    "batchName": "MRNG BATCH",
+    "languageFamily": "FRENCH",
+    "scheduleSlots": [
+      "MON, WED, FRI, TUE, THU, SAT 07:30 PM - 11:00 PM"
+    ],
+    "status": "ACTIVE",
+    "effectiveFrom": "2026-10-14",
+    "notes": "Lead Master Trainer assigned for cohort MRNG BATCH (testtt)."
+  },
+  {
+    "id": "alloc-antoine-01",
+    "facultyId": "fac-218604",
+    "facultyName": "Prof. Antoine Martin",
+    "avatarUrl": "/avatars/default.png",
+    "tutorRole": "LEAD_TRAINER",
+    "institutionType": "COLLEGE",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "institutionName": "The American College",
+    "courseId": "b9585673-9327-43d8-bef4-9d261fe0bb3e",
+    "courseName": "testtt",
+    "subjectCode": "ET",
+    "subjectName": "testtt",
+    "batchId": "batch-4168",
+    "batchName": "MRNG BATCH",
+    "languageFamily": "FRENCH",
+    "scheduleSlots": [
+      "MON, WED, FRI 09:00 AM - 10:30 AM"
+    ],
+    "status": "ACTIVE",
+    "effectiveFrom": "2026-10-14",
+    "notes": "Allocated trainer"
+  }
+]

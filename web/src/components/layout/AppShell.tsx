@@ -13,7 +13,7 @@ import { CollegeProvider } from "@/context/CollegeContext";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage = pathname === "/login" || pathname === "/register" || pathname.startsWith("/register/");
 
   if (isAuthPage) {
     return <div className="min-h-screen w-full">{children}</div>;
@@ -41,6 +41,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (pathname.startsWith("/finance-manager")) {
     return <FinanceManagerAppShell>{children}</FinanceManagerAppShell>;
+  }
+
+  if (pathname.startsWith("/sales-manager")) {
+    return <>{children}</>;
+  }
+
+  if (pathname.startsWith("/school-admin")) {
+    return <>{children}</>;
   }
 
   return (

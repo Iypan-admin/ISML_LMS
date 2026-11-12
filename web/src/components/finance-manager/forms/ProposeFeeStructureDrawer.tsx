@@ -111,7 +111,7 @@ export default function ProposeFeeStructureDrawer({
     return mockBatches.filter((b) => b.programId === programId);
   }, [programId, drawerCollegeId]);
 
-  const [batchId, setBatchId] = useState(availableBatches[0]?.id || mockBatches[0].id);
+  const [batchId, setBatchId] = useState(availableBatches[0]?.id || mockBatches[0]?.id || 'batch-01');
 
   useEffect(() => {
     if (availableBatches.length > 0) {
@@ -131,7 +131,7 @@ export default function ProposeFeeStructureDrawer({
       return mockCourses.filter((c) => bCourseIds.includes(c.id));
     }
     return mockCourses.filter(
-      (c) => c.program === selectedBatch.programName || c.semester === selectedBatch.currentSemesterNumber
+      (c) => c.program === selectedBatch?.programName || c.semester === selectedBatch?.currentSemesterNumber
     );
   }, [selectedBatch]);
 

@@ -28,29 +28,13 @@ export default function ParentTutorConnectPage() {
   const { showSuccess } = useToast();
 
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      id: 'msg-01',
-      sender: 'Lead Tutor: Jay (fac-jay)',
-      isParent: false,
-      timestamp: 'Yesterday, 06:15 PM',
-      text: `Hello Dr. Meenakshi. Bharathi performed exceptionally well in yesterday's oral dialogue assessment on Passé Composé. She scored 22.5/25. Please encourage her to maintain this momentum!`,
-    },
-    {
-      id: 'msg-02',
-      sender: parent.name,
-      isParent: true,
-      timestamp: 'Yesterday, 07:30 PM',
-      text: `Thank you so much Prof. Jay. We are very proud of her progress in French! Will there be any mock listening drills scheduled this Sunday?`,
-    },
-    {
-      id: 'msg-03',
-      sender: 'Lead Tutor: Jay (fac-jay)',
-      isParent: false,
-      timestamp: 'Today, 08:45 AM',
-      text: `Yes, we have a DELF A1 audio clinic this Friday from 05:30 PM to 06:30 PM on LiveKit Studio. Bharathi has already been enrolled.`,
-    },
-  ]);
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    sender: string;
+    isParent: boolean;
+    timestamp: string;
+    text: string;
+  }>>([]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,26 +135,36 @@ export default function ParentTutorConnectPage() {
 
         {/* Messages Stream */}
         <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/30">
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex flex-col ${m.isParent ? 'items-end' : 'items-start'}`}
-            >
-              <div className="flex items-center gap-2 mb-1 text-[10px] text-slate-400">
-                <span className="font-bold text-slate-600">{m.sender}</span>
-                <span>• {m.timestamp}</span>
-              </div>
-              <div
-                className={`p-3.5 rounded-2xl text-xs max-w-lg leading-relaxed ${
-                  m.isParent
-                    ? 'bg-[#0052CC] text-white rounded-tr-xs shadow-xs'
-                    : 'bg-white text-slate-800 border border-slate-200 rounded-tl-xs shadow-2xs'
-                }`}
-              >
-                {m.text}
-              </div>
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-2">
+              <MessageSquare className="w-10 h-10 text-slate-300 mx-auto" />
+              <p className="text-xs font-bold text-slate-700">No Consultation Messages Yet</p>
+              <p className="text-[11px] text-slate-500 max-w-sm">
+                Have questions about your ward's curriculum, attendance, or exam feedback? Send a direct message below to start a conversation with the lead faculty.
+              </p>
             </div>
-          ))}
+          ) : (
+            messages.map((m) => (
+              <div
+                key={m.id}
+                className={`flex flex-col ${m.isParent ? 'items-end' : 'items-start'}`}
+              >
+                <div className="flex items-center gap-2 mb-1 text-[10px] text-slate-400">
+                  <span className="font-bold text-slate-600">{m.sender}</span>
+                  <span>• {m.timestamp}</span>
+                </div>
+                <div
+                  className={`p-3.5 rounded-2xl text-xs max-w-lg leading-relaxed ${
+                    m.isParent
+                      ? 'bg-[#0052CC] text-white rounded-tr-xs shadow-xs'
+                      : 'bg-white text-slate-800 border border-slate-200 rounded-tl-xs shadow-2xs'
+                  }`}
+                >
+                  {m.text}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Input Bar */}

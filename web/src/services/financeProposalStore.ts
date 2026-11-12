@@ -4,10 +4,9 @@
 // ============================================================================
 
 import { ApprovalRequest, RequestStatus } from '@/types/rbac';
-import { mockApprovalRequests } from '@/mock/superAdminData';
 
-// In-memory global store that persists within the user's browser session
-let globalFinanceRequests: ApprovalRequest[] = [...mockApprovalRequests];
+// In-memory global store that persists within the user's browser session (strictly DB only, zero mock data)
+let globalFinanceRequests: ApprovalRequest[] = [];
 
 // Listeners for reactive updates across components
 type Listener = () => void;

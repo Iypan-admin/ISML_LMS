@@ -6,7 +6,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Video,
@@ -27,16 +27,189 @@ import { useTutor } from '@/context/TutorContext';
 import { useToast } from '@/context/ToastContext';
 import { mockLiveClasses, LiveClass } from '@/mock/liveClasses';
 import LiveWebinarStudioModal from '@/components/tutor/LiveWebinarStudioModal';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function TutorLiveClassesPage() {
   const { showSuccess, showInfo } = useToast();
   const { currentFaculty, myAllocations, canStartLiveClassForBatch } = useTutor();
-  const [classes, setClasses] = useState<LiveClass[]>(mockLiveClasses);
+  const [classes, setClasses] = useState<LiveClass[]>([]);
+  useEffect(() => {
+    // 1. Fetch live classes from backend
+    fastFetch('http://localhost:4000/api/live-classes', (json) => {
+      if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+        const mapped: LiveClass[] = json.data.map((item: any) => {
+          // Check if tutor allocation overrides slot timing
+          const matchingAlloc = myAllocations.find(
+            (a) => a.batchName?.toLowerCase().trim() === item.batchName?.toLowerCase().trim()
+          );
+
+          let startDate = item.scheduledStartTime ? new Date(item.scheduledStartTime) : new Date();
+          let endDate = item.scheduledEndTime ? new Date(item.scheduledEndTime) : new Date(startDate.getTime() + (item.durationMinutes || 60) * 60000);
+          let duration = item.durationMinutes || 60;
+          let timeSlotFormatted = '';
+
+          if (matchingAlloc && matchingAlloc.scheduleSlots && matchingAlloc.scheduleSlots.length > 0) {
+            const timeMatch = matchingAlloc.scheduleSlots[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+            if (timeMatch) {
+              timeSlotFormatted = `${timeMatch[1]} – ${timeMatch[2]}`;
+              const parseMinutes = (t: string) => {
+                const [time, meridiem] = t.trim().split(/\s+/);
+                const [h, m] = time.split(':').map(Number);
+                let hours = h % 12;
+                if (meridiem.toUpperCase() === 'PM') hours += 12;
+                return hours * 60 + m;
+              };
+              const sMins = parseMinutes(timeMatch[1]);
+              const eMins = parseMinutes(timeMatch[2]);
+              if (eMins > sMins) {
+                duration = eMins - sMins;
+              }
+            }
+          }
+
+          const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const formatDate = (d: Date) => d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+          const formattedTimeSlot = timeSlotFormatted || `${formatTime(startDate)} – ${formatTime(endDate)}`;
+          const formattedDate = formatDate(startDate);
+
+          // Real-time slot status check: enable button if scheduled slot is currently active!
+          let isTimeSlotActive = false;
+          if (matchingAlloc && matchingAlloc.scheduleSlots && matchingAlloc.scheduleSlots.length > 0) {
+            const now = new Date();
+            const currentDay = now.getDay();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const daysMap: Record<string, number> = {
+              SUN: 0, SUNDAY: 0, MON: 1, MONDAY: 1, TUE: 2, TUESDAY: 2,
+              WED: 3, WEDNESDAY: 3, THU: 4, THURSDAY: 4, FRI: 5, FRIDAY: 5, SAT: 6, SATURDAY: 6,
+            };
+
+            for (const slotStr of matchingAlloc.scheduleSlots) {
+              const parts = slotStr.split(/\d/);
+              const daysPart = parts[0] || '';
+              const matchedDays = Object.keys(daysMap).filter((d) => new RegExp(`\\b${d}\\b`, 'i').test(daysPart));
+              if (matchedDays.some((d) => daysMap[d] === currentDay)) {
+                const timeMatch = slotStr.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+                if (timeMatch) {
+                  const parseMinutes = (t: string) => {
+                    const [time, meridiem] = t.trim().split(/\s+/);
+                    const [h, m] = time.split(':').map(Number);
+                    let hours = h % 12;
+                    if (meridiem.toUpperCase() === 'PM') hours += 12;
+                    return hours * 60 + m;
+                  };
+                  const startMinutes = parseMinutes(timeMatch[1]);
+                  const endMinutes = parseMinutes(timeMatch[2]);
+                  // Active from 15 mins before start until end time
+                  if (currentMinutes >= startMinutes - 15 && currentMinutes <= endMinutes) {
+                    isTimeSlotActive = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
+          const isBroadcastingNow = item.status === 'LIVE' || isTimeSlotActive;
+
+          return {
+            id: item.id,
+            topic: item.title || 'Live Interactive Class',
+            tutorName: item.tutorName || 'Lead Trainer',
+            tutorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+            tutorTitle: 'Certified Faculty',
+            status: isBroadcastingNow ? 'LIVE_NOW' : item.status === 'ENDED' ? 'COMPLETED' : 'TODAY',
+            date: formattedDate,
+            timeSlot: formattedTimeSlot,
+            durationMins: duration,
+            batchCode: item.batchName || 'BAT-01',
+            batchName: item.batchName || 'General Batch',
+            moduleName: item.courseName || 'Language Certification',
+            roomToken: item.roomName || item.id,
+            attendeesCount: item.enrolledStudentsCount || 0,
+            recordingAvailable: false,
+          };
+        });
+        setClasses(mapped);
+      }
+    });
+  }, [myAllocations]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'LIVE_NOW' | 'TODAY'>('ALL');
   const [activeWebinar, setActiveWebinar] = useState<LiveClass | null>(null);
 
+  // Restore active webinar on client mount from localStorage / sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('isml_tutor_liveclass_active') || sessionStorage.getItem('isml_tutor_liveclass_active');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.id) {
+            setActiveWebinar(parsed);
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
+  const handleStartClass = (cls: LiveClass) => {
+    setActiveWebinar(cls);
+    if (typeof window !== 'undefined') {
+      try {
+        const val = JSON.stringify(cls);
+        localStorage.setItem('isml_tutor_liveclass_active', val);
+        sessionStorage.setItem('isml_tutor_liveclass_active', val);
+      } catch {}
+    }
+  };
+
+  const handleJoinAsAssistant = (cls: LiveClass) => {
+    setActiveWebinar(cls);
+    if (typeof window !== 'undefined') {
+      try {
+        const val = JSON.stringify(cls);
+        localStorage.setItem('isml_tutor_liveclass_active', val);
+        sessionStorage.setItem('isml_tutor_liveclass_active', val);
+      } catch {}
+    }
+  };
+
+  const handleCloseWebinar = () => {
+    setActiveWebinar(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('isml_tutor_liveclass_active');
+        sessionStorage.removeItem('isml_tutor_liveclass_active');
+      } catch {}
+    }
+  };
+
   const filteredClasses = classes.filter((c) => {
+    // Purge mock/stale test session entries
+    if (c.id === 'live-class-french-01' || c.topic.includes('live-class-french-01')) {
+      return false;
+    }
+
+    // Strictly isolate only the batches allocated to this tutor (e.g. MRNG BATCH)
+    const isAllocated = myAllocations.some(
+      (a) =>
+        (a.batchName && c.batchName && a.batchName.toLowerCase().trim() === c.batchName.toLowerCase().trim()) ||
+        (a.courseName && c.moduleName && a.courseName.toLowerCase().trim() === c.moduleName.toLowerCase().trim()) ||
+        (a.subjectName && c.topic.toLowerCase().includes(a.subjectName.toLowerCase()))
+    );
+
+    if (!isAllocated && myAllocations.length > 0) return false;
+
+    // Filter to ensure course matching
+    if (myAllocations.length > 0) {
+      const activeCourses = myAllocations.map(a => a.courseName?.toLowerCase().trim() || a.subjectName?.toLowerCase().trim());
+      const classTopic = c.topic.toLowerCase();
+      const classMod = c.moduleName?.toLowerCase() || '';
+      const matchesActiveCourse = activeCourses.some(cr => cr && (classTopic.includes(cr) || classMod.includes(cr)));
+      if (!matchesActiveCourse) return false;
+    }
+
     if (statusFilter === 'LIVE_NOW' && c.status !== 'LIVE_NOW') return false;
     if (statusFilter === 'TODAY' && c.status !== 'TODAY') return false;
     if (searchQuery) {
@@ -46,13 +219,23 @@ export default function TutorLiveClassesPage() {
     return true;
   });
 
-  const handleStartClass = (cls: LiveClass) => {
-    setActiveWebinar(cls);
-  };
-
-  const handleJoinAsAssistant = (cls: LiveClass) => {
-    setActiveWebinar(cls);
-  };
+  // If Tutor is inside active webinar studio, render ONLY the full-screen Studio Classroom Modal!
+  // This completely eliminates any background dashboard/timetable flash during page refresh.
+  if (activeWebinar) {
+    return (
+      <LiveWebinarStudioModal
+        isOpen={true}
+        onClose={handleCloseWebinar}
+        classId={activeWebinar.id}
+        sessionTitle={activeWebinar.topic}
+        batchName={activeWebinar.batchName}
+        subjectCode={activeWebinar.batchCode}
+        tutorName={currentFaculty.name}
+        isHost={currentFaculty.assignedRoles.includes('LEAD_TRAINER')}
+        onEndSession={handleCloseWebinar}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -146,15 +329,19 @@ export default function TutorLiveClassesPage() {
                 <h3 className="text-sm font-bold text-slate-900 leading-snug">{cls.topic}</h3>
                 <p className="text-xs text-slate-500 font-medium">{cls.batchName}</p>
 
-                <div className="pt-2 flex items-center gap-3 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <div className="pt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                  <span className="flex items-center gap-1 font-semibold text-slate-800">
+                    <Clock className="w-3.5 h-3.5 text-[#0052CC]" />
                     <span>{cls.timeSlot}</span>
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{cls.attendeesCount || 48} Enrolled Learners</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-500">
+                    Date: <strong>{cls.date}</strong> ({cls.durationMins} Mins)
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 text-[#0052CC] font-bold border border-blue-200/60 text-[11px]">
+                    <Users className="w-3.5 h-3.5 text-[#0052CC]" />
+                    <span>{cls.attendeesCount || 10} Verified Students (The American College)</span>
                   </span>
                 </div>
               </div>
@@ -170,8 +357,8 @@ export default function TutorLiveClassesPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Strict Live Time Enforcement: Only enable when status is LIVE_NOW */}
-                  {cls.status === 'LIVE_NOW' ? (
+                  {/* Strict Live Time Enforcement: Enable if LIVE_NOW OR if tutor is LEAD_TRAINER for this cohort */}
+                  {cls.status === 'LIVE_NOW' || isLead || isSubstitute ? (
                     isLead || isSubstitute ? (
                       /* Main Tutor / Host who starts the lecture */
                       <button
@@ -209,22 +396,6 @@ export default function TutorLiveClassesPage() {
           );
         })}
       </div>
-
-      {/* Full Live Webinar Classroom Modal */}
-      {activeWebinar && (
-        <LiveWebinarStudioModal
-          isOpen={Boolean(activeWebinar)}
-          onClose={() => setActiveWebinar(null)}
-          sessionTitle={activeWebinar.topic}
-          batchName={activeWebinar.batchName}
-          subjectCode={activeWebinar.batchCode}
-          tutorName={currentFaculty.name}
-          isHost={currentFaculty.assignedRoles.includes('LEAD_TRAINER')}
-          onEndSession={() => {
-            setActiveWebinar(null);
-          }}
-        />
-      )}
     </div>
   );
 }

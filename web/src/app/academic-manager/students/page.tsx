@@ -117,13 +117,6 @@ export default function AcademicManagerStudentsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/academic-manager/parents"
-            className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-indigo-200 cursor-pointer shadow-2xs"
-          >
-            <HeartHandshake className="w-4 h-4 text-indigo-600" />
-            <span>View Parents & Guardians</span>
-          </Link>
           <button
             onClick={() => showSuccess('Exporting student directory CSV report...')}
             className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-200 cursor-pointer shadow-2xs"

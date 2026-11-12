@@ -60,6 +60,7 @@ export default function AssignTutorDrawer({
 
   // Determine Language Family
   const languageFamily = useMemo<'FRENCH' | 'JAPANESE' | 'KOREAN' | 'SPANISH' | 'GERMAN'>(() => {
+    if (!selectedSubject || !selectedSubject.code) return 'FRENCH';
     if (selectedSubject.code.startsWith('JA')) return 'JAPANESE';
     if (selectedSubject.code.startsWith('KO')) return 'KOREAN';
     if (selectedSubject.code.startsWith('ES')) return 'SPANISH';
@@ -67,15 +68,53 @@ export default function AssignTutorDrawer({
     return 'FRENCH';
   }, [selectedSubject]);
 
-  // Filter available faculty matching language or capable
-  const eligibleFaculty = useMemo(() => {
-    const list = mockFacultyMembers.filter(f => f.primaryLanguage === languageFamily);
-    return list.length > 0 ? list : mockFacultyMembers;
-  }, [languageFamily]);
+  const [institutionType, setInstitutionType] = useState<'COLLEGE' | 'SCHOOL'>('COLLEGE');
+  const [institutionId, setInstitutionId] = useState<string>('521323cd-00da-49a6-98ed-6b7918d181b4');
+  const [institutionName, setInstitutionName] = useState<string>('The American College');
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string>(eligibleFaculty[0]?.id || 'fac-01');
+  const institutionOptions = [
+    { id: '521323cd-00da-49a6-98ed-6b7918d181b4', name: 'The American College', code: 'AMER-COL', type: 'COLLEGE' as const },
+    { id: 'inst-01', name: 'Loyola College of Arts & Science', code: 'LOYOLA-CHE', type: 'COLLEGE' as const },
+    { id: 'c37b62d5-6ca4-47cb-bed7-899ad75a3144', name: 'Sivakasi Lions Matriculation Higher Secondary School', code: 'SLMHSS', type: 'SCHOOL' as const },
+  ];
+
+  const [facultyList, setFacultyList] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch('/api/portals/faculty')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json && json.data) {
+          setFacultyList(json.data);
+          if (json.data.length > 0) {
+            setSelectedFacultyId(json.data[0].id);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const eligibleFaculty = useMemo(() => {
+    if (facultyList.length > 0) {
+      const filtered = facultyList.filter(f => f.primaryLanguage === languageFamily);
+      return filtered.length > 0 ? filtered : facultyList;
+    }
+    return [
+      {
+        id: 'fac-joy-jk',
+        name: 'Joy Jk (Foreign Language Faculty)',
+        qualification: 'M.A. French Linguistics • Sorbonne CEFR C2 Certified Trainer',
+        nativeCountry: 'India & France Affiliate',
+        allocatedHours: 18,
+        weeklyHoursLimit: 24,
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      }
+    ];
+  }, [facultyList, languageFamily]);
+
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>('fac-joy-jk');
   const selectedFaculty = useMemo(() => {
-    return eligibleFaculty.find(f => f.id === selectedFacultyId) || eligibleFaculty[0] || mockFacultyMembers[0];
+    return eligibleFaculty.find(f => f.id === selectedFacultyId) || eligibleFaculty[0];
   }, [eligibleFaculty, selectedFacultyId]);
 
   // Sync selected faculty when language changes
@@ -135,7 +174,7 @@ export default function AssignTutorDrawer({
     // Also check if the TARGET BATCH already has another Lead Trainer in this same slot
     if (tutorRole === 'LEAD_TRAINER') {
       const batchClash = mockFacultyAllocations.find(alloc =>
-        alloc.batchId === selectedBatch.id &&
+        alloc.batchId === selectedBatch?.id &&
         alloc.tutorRole === 'LEAD_TRAINER' &&
         alloc.scheduleSlots.some(s => s.toLowerCase().includes(scheduleSlot.toLowerCase()))
       );
@@ -144,8 +183,8 @@ export default function AssignTutorDrawer({
         return {
           type: 'BATCH_OCCUPIED' as const,
           severity: 'HIGH' as const,
-          title: `Cohort Room / Timetable Overlap: ${selectedBatch.name}`,
-          message: `Cohort "${selectedBatch.name}" already has another lead session scheduled with ${batchClash.facultyName} during "${scheduleSlot}".`,
+          title: `Cohort Room / Timetable Overlap: ${selectedBatch?.name || 'Batch'}`,
+          message: `Cohort "${selectedBatch?.name || 'Batch'}" already has another lead session scheduled with ${batchClash.facultyName} during "${scheduleSlot}".`,
           conflictingBatch: batchClash.batchName,
           conflictingRole: 'Lead Trainer'
         };
@@ -160,27 +199,57 @@ export default function AssignTutorDrawer({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const facultyId = selectedFaculty?.id || selectedFacultyId || 'fac-01';
+    const facultyName = selectedFaculty?.name || 'Assigned Faculty';
+    const avatarUrl = selectedFaculty?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    const batchName = selectedBatch?.name || 'Batch Cohort';
+
     const newAlloc: FacultyAllocationItem = {
       id: `alloc-${Date.now().toString().slice(-4)}`,
-      facultyId: selectedFaculty.id,
-      facultyName: selectedFaculty.name,
-      avatarUrl: selectedFaculty.avatarUrl,
+      facultyId,
+      facultyName,
+      avatarUrl,
       tutorRole,
-      courseId: selectedCourse.id,
-      courseName: selectedCourse.name,
-      subjectCode: selectedSubject.code,
-      subjectName: selectedSubject.name,
-      batchId: selectedBatch.id,
-      batchName: selectedBatch.name,
+      institutionType,
+      institutionId,
+      institutionName,
+      courseId: selectedCourse?.id || 'crs-01',
+      courseName: selectedCourse?.name || 'Course Track',
+      subjectCode: selectedSubject?.code || 'FR-101',
+      subjectName: selectedSubject?.name || 'Foreign Language',
+      batchId: selectedBatch?.id || 'batch-01',
+      batchName,
       languageFamily,
       scheduleSlots: [scheduleSlot || 'Flexible Live Support'],
       status: tutorRole === 'SUBSTITUTE_TUTOR' ? 'SUBSTITUTE_STANDBY' : 'ACTIVE',
       effectiveFrom: effectiveDate,
-      notes: notes || `Assigned as ${tutorRole.replace(/_/g, ' ')} for ${selectedBatch.name}.`
+      notes: notes || `Assigned to ${institutionName} as ${tutorRole.replace(/_/g, ' ')} for ${batchName}.`
     };
 
     onAllocationCreated(newAlloc);
-    showSuccess(`${selectedFaculty.name} assigned as ${tutorRole.replace(/_/g, ' ')} for ${selectedBatch.name}!`);
+
+    // Synchronize to backend database / route
+    fetch('/api/portals/faculty', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'ASSIGN',
+        facultyId,
+        facultyName,
+        institutionType,
+        institutionId,
+        institutionName,
+        courseId: selectedCourse?.id || 'crs-01',
+        courseName: selectedCourse?.name || 'Course Track',
+        batchId: selectedBatch?.id || 'batch-01',
+        batchName,
+        tutorRole,
+        scheduleSlots: [scheduleSlot || 'Flexible Live Support'],
+        notes: notes || `Assigned to ${institutionName} as ${tutorRole.replace(/_/g, ' ')} for ${batchName}.`,
+      }),
+    }).catch((err) => console.log('Assign sync note:', err));
+
+    showSuccess(`${facultyName} assigned to ${institutionName} as ${tutorRole.replace(/_/g, ' ')} for ${batchName}!`);
     onClose();
   };
 
@@ -327,19 +396,96 @@ export default function AssignTutorDrawer({
                   onChange={(e) => setSelectedFacultyId(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  {eligibleFaculty.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name} — {f.qualification} ({f.nativeCountry})
-                    </option>
-                  ))}
+                  {eligibleFaculty.length === 0 ? (
+                    <option value="">No registered faculty found</option>
+                  ) : (
+                    eligibleFaculty.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name} — {f.qualification} ({f.nativeCountry})
+                      </option>
+                    ))
+                  )}
                 </select>
                 <span className="text-[10px] text-slate-500 mt-1 block">
-                  Weekly Allocated Load: <strong>{selectedFaculty.allocatedHours} hrs</strong> / {selectedFaculty.weeklyHoursLimit} hrs max
+                  Weekly Allocated Load: <strong>{selectedFaculty?.allocatedHours || 0} hrs</strong> / {selectedFaculty?.weeklyHoursLimit || 20} hrs max
                 </span>
               </div>
             </div>
 
-            {/* Step 3: Target Course & Student Batch Cohort */}
+            {/* Step 3: Target Institution (College or School Scope) */}
+            <div className="p-3.5 bg-blue-50/50 rounded-2xl border border-blue-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#0052CC] uppercase tracking-wider block">
+                  Step 3: Target Institution (College or School Scope) <span className="text-rose-500">*</span>
+                </span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-900">
+                  {institutionType} SCOPE
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInstitutionType('COLLEGE');
+                    setInstitutionId('521323cd-00da-49a6-98ed-6b7918d181b4');
+                    setInstitutionName('The American College');
+                  }}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    institutionType === 'COLLEGE'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>College Campus</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInstitutionType('SCHOOL');
+                    setInstitutionId('c37b62d5-6ca4-47cb-bed7-899ad75a3144');
+                    setInstitutionName('Sivakasi Lions Matriculation Higher Secondary School');
+                  }}
+                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    institutionType === 'SCHOOL'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>K-12 School</span>
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Select Specific Campus <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={institutionId}
+                  onChange={(e) => {
+                    const inst = institutionOptions.find((i) => i.id === e.target.value);
+                    if (inst) {
+                      setInstitutionId(inst.id);
+                      setInstitutionName(inst.name);
+                      setInstitutionType(inst.type);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                >
+                  {institutionOptions
+                    .filter((i) => i.type === institutionType)
+                    .map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.name} ({opt.code})
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Step 4: Target Course & Student Batch Cohort */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -444,14 +590,14 @@ export default function AssignTutorDrawer({
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : selectedFaculty ? (
               <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs text-emerald-800">
                 <CheckCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>
                   <strong>Timetable Conflict Check Passed:</strong> {selectedFaculty.name} is completely free during {scheduleSlot}.
                 </span>
               </div>
-            )}
+            ) : null}
 
             {/* Special Instructions / Notes */}
             <div>
@@ -471,7 +617,7 @@ export default function AssignTutorDrawer({
           {/* Drawer Actions */}
           <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
             <span className="text-[11px] text-slate-500 font-medium truncate max-w-[200px]">
-              Allocating: <strong>{selectedFaculty.name}</strong>
+              Allocating: <strong>{selectedFaculty?.name || 'Faculty Member'}</strong>
             </span>
             <div className="flex items-center gap-2.5">
               <button

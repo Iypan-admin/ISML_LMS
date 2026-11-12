@@ -23,7 +23,20 @@ import {
 import { mockInstitutions, mockCourses, mockBatches } from '@/mock/superAdminData';
 
 export default function CollegeAdminCoursesPage() {
-  const currentCollege = mockInstitutions[0];
+  const currentCollege = mockInstitutions[0] || {
+    id: 'inst-default',
+    name: 'Affiliated College Campus',
+    code: 'COLLEGE',
+    address: 'Campus Address',
+    phone: '',
+    email: '',
+    website: '',
+    status: 'ACTIVE' as const,
+    type: 'COLLEGE' as const,
+    affiliation: 'Autonomous',
+    contactEmail: 'admin@college.edu',
+    contactPhone: '+91 98401 00000',
+  };
   const courses = mockCourses.filter((c) => c.collegeId === currentCollege.id || !c.collegeId);
   const [searchQuery, setSearchQuery] = useState('');
 

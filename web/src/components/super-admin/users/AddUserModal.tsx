@@ -59,7 +59,7 @@ export default function AddUserModal({
   const [programId, setProgramId] = useState<string>(mockPrograms[0]?.id || 'prog-bsc-cs');
   const [batchId, setBatchId] = useState<string>(mockBatches[0]?.id || 'batch-2026-cs');
   const [semesterNumber, setSemesterNumber] = useState<number>(1);
-  const [subjectsAssigned, setSubjectsAssigned] = useState<string>('CS-101, CS-102');
+  const [subjectsAssigned, setSubjectsAssigned] = useState<string>('');
 
   // Success Confirmation State
   const [createdUserResult, setCreatedUserResult] = useState<SuperAdminUser | null>(null);

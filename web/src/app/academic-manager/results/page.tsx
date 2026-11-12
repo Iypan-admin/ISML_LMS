@@ -1,16 +1,16 @@
 // ============================================================================
 // ISML COLLEGE LMS — ACADEMIC MANAGER: RESULTS & PROGRESS
 // (/academic-manager/results)
-// Comprehensive Batch-wise & Student-wise Assessment & Assignment Mark Lists
+// Real Assignment & Assessment Submissions Marks, Batches & Student Transcripts
+// Zero mock data: dynamically computes from assignmentStore
 // ============================================================================
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   TrendingUp,
-  Download,
   Award,
   Users,
   CheckCircle2,
@@ -19,38 +19,92 @@ import {
   Filter,
   FileText,
   ClipboardList,
-  Sparkles,
-  ChevronRight,
   Eye,
   GraduationCap,
   BookOpen,
-  ExternalLink,
   X,
   Printer,
   FileSpreadsheet,
-  Layers,
-  ArrowUpRight,
   UserCheck
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import { useToast } from '@/context/ToastContext';
-import {
-  mockStudentMarksLedger,
-  StudentMarkEntry
-} from '@/mock/results';
+import { StudentMarkEntry } from '@/mock/results';
+import { assignmentStore, SharedAssignment } from '@/services/assignmentStore';
 
 export default function AcademicManagerResultsPage() {
   const { showSuccess } = useToast();
 
+  const [assignments, setAssignments] = useState<SharedAssignment[]>([]);
+
+  useEffect(() => {
+    setAssignments(assignmentStore.getAll());
+    const unsubscribe = assignmentStore.subscribe(() => {
+      setAssignments(assignmentStore.getAll());
+    });
+    return unsubscribe;
+  }, []);
+
+  // Compute live StudentMarkEntry list from real assignmentStore submissions
+  const markLedger: StudentMarkEntry[] = useMemo(() => {
+    const list: StudentMarkEntry[] = [];
+
+    assignments.forEach((asg) => {
+      if (asg.submissions && asg.submissions.length > 0) {
+        asg.submissions.forEach((sub) => {
+          const score = sub.scoreAwarded ?? 0;
+          const maxScore = sub.maxScore || asg.maxScore || 100;
+          const percentage = Math.round((score / maxScore) * 100);
+          
+          let grade: 'A+' | 'A' | 'B+' | 'B' | 'C' | 'RA' = 'RA';
+          if (percentage >= 90) grade = 'A+';
+          else if (percentage >= 80) grade = 'A';
+          else if (percentage >= 70) grade = 'B+';
+          else if (percentage >= 60) grade = 'B';
+          else if (percentage >= 50) grade = 'C';
+
+          const d = new Date(sub.submittedAt);
+          const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+          list.push({
+            id: sub.id,
+            studentId: sub.studentRollNo || sub.studentId,
+            studentName: sub.studentName,
+            studentEmail: `${sub.studentRollNo.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.isml.edu`,
+            batchId: asg.batchId,
+            batchName: asg.batchName,
+            languageFamily: asg.languageFamily || 'FRENCH',
+            courseName: asg.courseName,
+            itemType: 'ASSIGNMENT',
+            activityTitle: asg.title,
+            moduleName: asg.moduleName || 'Core Curriculum',
+            lsrwSkill: asg.lsrwSkill,
+            submissionDate: d.toLocaleDateString(),
+            dayOfWeek: days[d.getDay()] || 'Weekday',
+            score,
+            maxScore,
+            percentage,
+            grade,
+            status: sub.status === 'EVALUATED' ? 'EVALUATED' : 'PENDING_REVIEW',
+            evaluatedByTutor: asg.assignedTutorName || 'Course Faculty',
+            tutorFeedback: sub.tutorFeedback || 'Submitted deliverable pending tutor evaluation',
+          });
+        });
+      }
+    });
+
+    return list;
+  }, [assignments]);
+
   // Filters
   const [selectedBatchId, setSelectedBatchId] = useState<string>('ALL');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ALL');
-  const [selectedItemType, setSelectedItemType] = useState<'ALL' | 'ASSESSMENT' | 'ASSIGNMENT'>('ALL');
+  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [selectedStudentId, setSelectedStudentId] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Active View Tab: 'BATCH_MATRIX' vs 'STUDENT_MARKLIST'
+  // Active View Tab: 'ALL_RECORDS' vs 'STUDENT_TRANSCRIPTS'
   const [viewMode, setViewMode] = useState<'ALL_RECORDS' | 'STUDENT_TRANSCRIPTS'>('ALL_RECORDS');
 
   // Selected Student for Modal Transcript view
@@ -59,16 +113,16 @@ export default function AcademicManagerResultsPage() {
   // Extract distinct batches
   const batchOptions = useMemo(() => {
     const map = new Map<string, string>();
-    mockStudentMarksLedger.forEach((m) => {
+    markLedger.forEach((m) => {
       map.set(m.batchId, m.batchName);
     });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, []);
+  }, [markLedger]);
 
-  // Extract distinct students (optionally scoped to batch)
+  // Extract distinct students
   const studentOptions = useMemo(() => {
     const map = new Map<string, { id: string; name: string; batchName: string }>();
-    mockStudentMarksLedger.forEach((m) => {
+    markLedger.forEach((m) => {
       if (selectedBatchId === 'ALL' || m.batchId === selectedBatchId) {
         map.set(m.studentId, {
           id: m.studentId,
@@ -78,23 +132,15 @@ export default function AcademicManagerResultsPage() {
       }
     });
     return Array.from(map.values());
-  }, [selectedBatchId]);
+  }, [markLedger, selectedBatchId]);
 
   // Filtered dataset
   const filteredMarks = useMemo(() => {
-    return mockStudentMarksLedger.filter((item) => {
-      if (selectedBatchId !== 'ALL' && item.batchId !== selectedBatchId) {
-        return false;
-      }
-      if (selectedLanguage !== 'ALL' && item.languageFamily !== selectedLanguage) {
-        return false;
-      }
-      if (selectedItemType !== 'ALL' && item.itemType !== selectedItemType) {
-        return false;
-      }
-      if (selectedStudentId !== 'ALL' && item.studentId !== selectedStudentId) {
-        return false;
-      }
+    return markLedger.filter((item) => {
+      if (selectedBatchId !== 'ALL' && item.batchId !== selectedBatchId) return false;
+      if (selectedLanguage !== 'ALL' && item.languageFamily !== selectedLanguage) return false;
+      if (selectedStatus !== 'ALL' && item.status !== selectedStatus) return false;
+      if (selectedStudentId !== 'ALL' && item.studentId !== selectedStudentId) return false;
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
         return (
@@ -108,24 +154,24 @@ export default function AcademicManagerResultsPage() {
       }
       return true;
     });
-  }, [selectedBatchId, selectedLanguage, selectedItemType, selectedStudentId, searchQuery]);
+  }, [markLedger, selectedBatchId, selectedLanguage, selectedStatus, selectedStudentId, searchQuery]);
 
   // Aggregate Stats
   const stats = useMemo(() => {
     const total = filteredMarks.length;
     if (total === 0) {
-      return { total: 0, avgPercentage: 0, passCount: 0, topGradeCount: 0 };
+      return { total: 0, avgPercentage: 0, passCount: 0, evaluatedCount: 0 };
     }
     const sumPct = filteredMarks.reduce((acc, curr) => acc + curr.percentage, 0);
     const avgPercentage = Math.round(sumPct / total);
     const passCount = filteredMarks.filter((m) => m.percentage >= 50).length;
-    const topGradeCount = filteredMarks.filter((m) => m.grade === 'A+' || m.grade === 'A').length;
+    const evaluatedCount = filteredMarks.filter((m) => m.status === 'EVALUATED').length;
 
     return {
       total,
       avgPercentage,
       passCount,
-      topGradeCount
+      evaluatedCount
     };
   }, [filteredMarks]);
 
@@ -148,8 +194,7 @@ export default function AcademicManagerResultsPage() {
       const avgScore = Math.round(
         entries.reduce((acc, c) => acc + c.percentage, 0) / entries.length
       );
-      const assessmentsCount = entries.filter((e) => e.itemType === 'ASSESSMENT').length;
-      const assignmentsCount = entries.filter((e) => e.itemType === 'ASSIGNMENT').length;
+      const evaluatedCount = entries.filter((e) => e.status === 'EVALUATED').length;
 
       return {
         studentId: stId,
@@ -159,8 +204,8 @@ export default function AcademicManagerResultsPage() {
         languageFamily,
         courseName,
         avgScore,
-        assessmentsCount,
-        assignmentsCount,
+        evaluatedCount,
+        totalTasks: entries.length,
         entries
       };
     });
@@ -169,7 +214,7 @@ export default function AcademicManagerResultsPage() {
   // Selected student details for modal
   const selectedStudentForModal = useMemo(() => {
     if (!activeStudentModal) return null;
-    const entries = mockStudentMarksLedger.filter((m) => m.studentId === activeStudentModal);
+    const entries = markLedger.filter((m) => m.studentId === activeStudentModal);
     if (entries.length === 0) return null;
     return {
       studentId: activeStudentModal,
@@ -181,7 +226,7 @@ export default function AcademicManagerResultsPage() {
       entries,
       avgScore: Math.round(entries.reduce((a, b) => a + b.percentage, 0) / entries.length)
     };
-  }, [activeStudentModal]);
+  }, [activeStudentModal, markLedger]);
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -194,84 +239,137 @@ export default function AcademicManagerResultsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0B2447] tracking-tight flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-blue-600" />
-            <span>Student Marks & Report Cards</span>
+            <span>Assignment Submissions & Student Progress Marks</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            View continuous assessments, homework assignments, CEFR modular scores, and student report cards.
+            Real-time evaluation marks ledger, CEFR modular scores, and student report cards generated from active assignments.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => showSuccess('Exported Student Mark List CSV/Excel sheet successfully!')}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+            onClick={() => {
+              if (filteredMarks.length === 0) {
+                showSuccess('No submission records to export yet.');
+                return;
+              }
+              showSuccess('Marks sheet CSV exported successfully.');
+            }}
+            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-2xs"
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Export Mark Sheet (Excel)</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* 4 Metric Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
-            <span>Evaluated Submissions</span>
-            <ClipboardList className="w-4 h-4 text-blue-600" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500">Total Submissions</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0052CC] flex items-center justify-center">
+              <ClipboardList className="w-4 h-4" />
+            </div>
           </div>
-          <p className="text-2xl font-extrabold text-[#0B2447]">{stats.total}</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">Assessments & Assignments</p>
+          <p className="text-2xl font-black text-[#0B2447] mt-2">{stats.total}</p>
+          <span className="text-[11px] text-slate-400 font-medium">Across assigned cohorts</span>
         </div>
 
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
-            <span>Class Average Score</span>
-            <Award className="w-4 h-4 text-purple-600" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500">Evaluated Tasks</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
           </div>
-          <p className="text-2xl font-extrabold text-purple-700">{stats.avgPercentage}%</p>
-          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Satisfies CEFR Benchmark</p>
+          <p className="text-2xl font-black text-emerald-700 mt-2">{stats.evaluatedCount}</p>
+          <span className="text-[11px] text-slate-400 font-medium">Graded by tutors</span>
         </div>
 
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
-            <span>Distinction / Grade A</span>
-            <Sparkles className="w-4 h-4 text-amber-500" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500">Average Score</span>
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
           </div>
-          <p className="text-2xl font-extrabold text-[#0B2447]">{stats.topGradeCount}</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">Scores 80% and above</p>
+          <p className="text-2xl font-black text-indigo-700 mt-2">{stats.avgPercentage}%</p>
+          <span className="text-[11px] text-slate-400 font-medium">Overall student average</span>
         </div>
 
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-1">
-            <span>Pass Clearance Rate</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500">Passing Deliverables</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Award className="w-4 h-4" />
+            </div>
           </div>
-          <p className="text-2xl font-extrabold text-emerald-600">
-            {stats.total > 0 ? Math.round((stats.passCount / stats.total) * 100) : 0}%
-          </p>
-          <p className="text-[10px] text-slate-500 mt-0.5">Pass benchmark &gt;= 50%</p>
+          <p className="text-2xl font-black text-amber-700 mt-2">{stats.passCount}</p>
+          <span className="text-[11px] text-slate-400 font-medium">Scoring ≥ 50%</span>
         </div>
       </div>
 
-      {/* Main Filter & Navigation Panel */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        {/* Top Filter Controls: Batch, Student, Type, Search */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* 1. Batch Selection */}
+      {/* Filter Bar & View Toggle */}
+      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl w-fit">
+            <button
+              onClick={() => setViewMode('ALL_RECORDS')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'ALL_RECORDS'
+                  ? 'bg-white text-[#0B2447] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All Submission Records ({filteredMarks.length})
+            </button>
+            <button
+              onClick={() => setViewMode('STUDENT_TRANSCRIPTS')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'STUDENT_TRANSCRIPTS'
+                  ? 'bg-white text-[#0B2447] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Student Transcripts & Report Cards ({studentProfiles.length})
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative w-full md:w-72">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by student, batch, tutor..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Dropdown Filters */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100">
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
-              <Users className="w-3.5 h-3.5 text-blue-600" />
-              <span>Select Student Batch:</span>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Batch Cohort
             </label>
             <select
               value={selectedBatchId}
-              onChange={(e) => {
-                setSelectedBatchId(e.target.value);
-                setSelectedStudentId('ALL'); // Reset student when batch changes
-              }}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+              onChange={(e) => setSelectedBatchId(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
             >
-              <option value="ALL">All Student Batches ({batchOptions.length})</option>
+              <option value="ALL">All Batches</option>
               {batchOptions.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -280,501 +378,274 @@ export default function AcademicManagerResultsPage() {
             </select>
           </div>
 
-          {/* 2. Individual Student Selection */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
-              <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Individual Student:</span>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Language Track
+            </label>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+            >
+              <option value="ALL">All Languages</option>
+              <option value="FRENCH">French</option>
+              <option value="JAPANESE">Japanese</option>
+              <option value="KOREAN">Korean</option>
+              <option value="SPANISH">Spanish</option>
+              <option value="GERMAN">German</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Evaluation Status
+            </label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+            >
+              <option value="ALL">All Status</option>
+              <option value="EVALUATED">Evaluated</option>
+              <option value="PENDING_REVIEW">Pending Review</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Filter by Student
             </label>
             <select
               value={selectedStudentId}
               onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+              className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
             >
               <option value="ALL">All Students ({studentOptions.length})</option>
-              {studentOptions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.id})
+              {studentOptions.map((st) => (
+                <option key={st.id} value={st.id}>
+                  {st.name} ({st.id})
                 </option>
               ))}
             </select>
           </div>
-
-          {/* 3. Item Category (Assessments vs Assignments) */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-purple-600" />
-              <span>Activity Type:</span>
-            </label>
-            <select
-              value={selectedItemType}
-              onChange={(e) => setSelectedItemType(e.target.value as any)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-            >
-              <option value="ALL">Assessments & Assignments (Both)</option>
-              <option value="ASSESSMENT">Assessments / Quizzes / Midterms Only</option>
-              <option value="ASSIGNMENT">Homework / Practice Tasks Only</option>
-            </select>
-          </div>
-
-          {/* 4. Search Bar */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
-              <Search className="w-3.5 h-3.5 text-slate-500" />
-              <span>Search Records:</span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search student, activity, tutor..."
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* View Switcher & Language Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
-          {/* Language filter pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            <span className="text-[11px] font-bold text-slate-500 mr-1 shrink-0">Language:</span>
-            {['ALL', 'FRENCH', 'JAPANESE', 'KOREAN', 'SPANISH', 'GERMAN'].map((lang) => (
-              <button
-                key={lang}
-                onClick={() => setSelectedLanguage(lang)}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedLanguage === lang
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {lang === 'ALL' ? 'All Languages' : lang}
-              </button>
-            ))}
-          </div>
-
-          {/* View Mode Toggle: All Records Table vs Student Report Cards */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl self-start sm:self-auto shrink-0">
-            <button
-              onClick={() => setViewMode('ALL_RECORDS')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                viewMode === 'ALL_RECORDS'
-                  ? 'bg-white text-[#0052CC] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <ClipboardList className="w-3.5 h-3.5" />
-              <span>Detailed Mark List ({filteredMarks.length})</span>
-            </button>
-            <button
-              onClick={() => setViewMode('STUDENT_TRANSCRIPTS')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                viewMode === 'STUDENT_TRANSCRIPTS'
-                  ? 'bg-white text-[#0052CC] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <GraduationCap className="w-3.5 h-3.5" />
-              <span>Student Profile Cards ({studentProfiles.length})</span>
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* VIEW MODE 1: DETAILED MARK LIST TABLE */}
-      {viewMode === 'ALL_RECORDS' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <div>
-              <h2 className="text-sm font-bold text-[#0B2447] flex items-center gap-2">
-                <span>Assessments & Assignments Mark Sheet</span>
-                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-extrabold">
-                  {filteredMarks.length} records
-                </span>
-              </h2>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Individual item-level scores, awarded grades, evaluating tutor feedback, and dates.
-              </p>
-            </div>
-          </div>
-
-          {filteredMarks.length === 0 ? (
-            <div className="p-12 text-center space-y-3">
-              <ClipboardList className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="text-sm font-bold text-slate-700">No mark records found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                No items match the chosen batch, student, or activity filters.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-[11px] font-bold text-slate-600 uppercase tracking-wider border-b border-slate-200">
-                    <th className="py-3 px-4">Student & Batch</th>
-                    <th className="py-3 px-4">Activity Title & Module</th>
-                    <th className="py-3 px-4">Type & Skill</th>
-                    <th className="py-3 px-4">Date & Day</th>
-                    <th className="py-3 px-4 text-center">Score / Max</th>
-                    <th className="py-3 px-4 text-center">Percentage</th>
-                    <th className="py-3 px-4 text-center">Grade</th>
-                    <th className="py-3 px-4">Evaluating Tutor</th>
-                    <th className="py-3 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                  {filteredMarks.map((item) => (
-                    <tr key={item.id} className="hover:bg-blue-50/40 transition-colors">
-                      {/* Student & Batch */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
-                            {item.studentName.slice(0, 1)}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                              <span>{item.studentName}</span>
-                              <span className="text-[10px] font-mono text-slate-400 font-normal">
-                                ({item.studentId})
-                              </span>
-                            </p>
-                            <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60 mt-0.5">
-                              {item.batchName}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Activity Title & Module */}
-                      <td className="py-3.5 px-4 max-w-xs">
-                        <p className="font-bold text-slate-900 leading-snug">{item.activityTitle}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 truncate">{item.moduleName}</p>
-                      </td>
-
-                      {/* Item Type & LSRW */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-1">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-                              item.itemType === 'ASSESSMENT'
-                                ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                                : 'bg-amber-100 text-amber-800 border border-amber-200'
-                            }`}
-                          >
-                            {item.itemType}
-                          </span>
-                          <span className="block text-[10px] font-semibold text-slate-500">
-                            {item.lsrwSkill}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Date and Day */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <p className="font-bold text-slate-800">{item.dayOfWeek}</p>
-                        <p className="text-[11px] text-slate-500">{item.submissionDate}</p>
-                      </td>
-
-                      {/* Score */}
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-900">
-                        {item.score} <span className="text-slate-400 font-normal">/ {item.maxScore}</span>
-                      </td>
-
-                      {/* Percentage Bar */}
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="inline-flex flex-col items-center">
-                          <span
-                            className={`font-black text-xs ${
-                              item.percentage >= 80
-                                ? 'text-emerald-600'
-                                : item.percentage >= 60
-                                ? 'text-blue-600'
-                                : 'text-amber-600'
-                            }`}
-                          >
-                            {item.percentage}%
-                          </span>
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                item.percentage >= 80
-                                  ? 'bg-emerald-500'
-                                  : item.percentage >= 60
-                                  ? 'bg-blue-500'
-                                  : 'bg-amber-500'
-                              }`}
-                              style={{ width: `${item.percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Awarded Grade */}
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`px-2.5 py-1 rounded-lg text-xs font-black border ${
-                            item.grade === 'A+' || item.grade === 'A'
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                              : item.grade === 'B+' || item.grade === 'B'
-                              ? 'bg-blue-50 text-blue-800 border-blue-300'
-                              : 'bg-amber-50 text-amber-800 border-amber-300'
-                          }`}
-                        >
-                          {item.grade}
-                        </span>
-                      </td>
-
-                      {/* Evaluating Tutor & Feedback tooltip */}
-                      <td className="py-3.5 px-4 max-w-[200px]">
-                        <p className="font-bold text-slate-800 text-xs">{item.evaluatedByTutor}</p>
-                        <p className="text-[10px] text-slate-500 italic truncate mt-0.5" title={item.tutorFeedback}>
-                          &quot;{item.tutorFeedback}&quot;
-                        </p>
-                      </td>
-
-                      {/* Action: View Student Profile Transcript */}
-                      <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/academic-manager/results/${item.studentId}`}
-                          className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>View Page</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {/* Main Content Area */}
+      {filteredMarks.length === 0 ? (
+        <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-slate-300">
+          <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-800">No Assignment Results Found</h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
+            Students who submit assignments created in the Assignments portal will automatically appear here once submitted or evaluated.
+          </p>
+          <Link
+            href="/academic-manager/assignments"
+            className="px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer shadow-xs"
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span>Go to Assignments</span>
+          </Link>
         </div>
-      )}
-
-      {/* VIEW MODE 2: STUDENT PROFILE TRANSCRIPTS */}
-      {viewMode === 'STUDENT_TRANSCRIPTS' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {studentProfiles.map((profile) => (
-            <div
-              key={profile.studentId}
-              className="bg-white rounded-2xl border border-slate-200 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden border-t-4 border-t-blue-600 p-5 space-y-4"
-            >
-              <div>
-                {/* Header: Student Name & Batch */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center text-sm shadow-2xs">
-                      {profile.studentName.slice(0, 1)}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-[#0B2447]">{profile.studentName}</h3>
-                      <p className="text-[11px] text-slate-500 font-mono">{profile.studentId}</p>
-                    </div>
-                  </div>
-
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                    {profile.languageFamily}
-                  </span>
-                </div>
-
-                {/* Batch & Program Info */}
-                <div className="mt-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-                  <p className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>{profile.batchName}</span>
-                  </p>
-                  <p className="text-[10px] text-slate-500 line-clamp-1">{profile.courseName}</p>
-                </div>
-
-                {/* Performance Summary Pill */}
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div className="p-2 bg-blue-50/60 rounded-xl border border-blue-100">
-                    <span className="text-[10px] text-slate-500 block font-semibold">Average</span>
-                    <strong className="text-base font-extrabold text-blue-700">{profile.avgScore}%</strong>
-                  </div>
-                  <div className="p-2 bg-purple-50/60 rounded-xl border border-purple-100">
-                    <span className="text-[10px] text-slate-500 block font-semibold">Assessments</span>
-                    <strong className="text-base font-extrabold text-purple-700">{profile.assessmentsCount}</strong>
-                  </div>
-                  <div className="p-2 bg-amber-50/60 rounded-xl border border-amber-100">
-                    <span className="text-[10px] text-slate-500 block font-semibold">Assignments</span>
-                    <strong className="text-base font-extrabold text-amber-700">{profile.assignmentsCount}</strong>
-                  </div>
-                </div>
-
-                {/* List of submissions */}
-                <div className="mt-4 space-y-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Completed Records ({profile.entries.length})
-                  </span>
-                  <div className="space-y-1.5">
-                    {profile.entries.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="p-2 bg-slate-50 rounded-lg flex items-center justify-between text-xs border border-slate-100"
-                      >
-                        <div className="truncate pr-2">
-                          <p className="font-semibold text-slate-800 text-[11px] truncate">
-                            {entry.activityTitle}
-                          </p>
-                          <p className="text-[10px] text-slate-400">
-                            {entry.dayOfWeek}, {entry.submissionDate}
-                          </p>
-                        </div>
-                        <span className="font-extrabold text-slate-900 shrink-0 text-xs">
-                          {entry.score}/{entry.maxScore}
+      ) : viewMode === 'ALL_RECORDS' ? (
+        /* TABLE: All Submission Records */
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider">
+                <tr>
+                  <th className="px-4 py-3">Student</th>
+                  <th className="px-4 py-3">Batch & Course</th>
+                  <th className="px-4 py-3">Assignment Activity</th>
+                  <th className="px-4 py-3">Skill Track</th>
+                  <th className="px-4 py-3 text-center">Marks & Grade</th>
+                  <th className="px-4 py-3">Evaluator & Feedback</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredMarks.map((entry) => (
+                  <tr key={entry.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-bold text-[#0B2447]">{entry.studentName}</p>
+                      <p className="font-mono text-[10px] text-slate-400">{entry.studentId}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-bold text-slate-800">{entry.batchName}</p>
+                      <p className="text-[11px] text-slate-500">{entry.courseName}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-bold text-slate-800">{entry.activityTitle}</p>
+                      <p className="text-[10px] text-slate-500">{entry.moduleName}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[#0052CC] border border-blue-200 uppercase">
+                        {entry.lsrwSkill}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="inline-flex flex-col items-center">
+                        <span className="font-black text-slate-900 text-sm">
+                          {entry.score} / {entry.maxScore}
+                        </span>
+                        <span className={`px-2 py-0.2 rounded text-[10px] font-black ${
+                          entry.percentage >= 80 ? 'bg-emerald-100 text-emerald-800' :
+                          entry.percentage >= 50 ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'
+                        }`}>
+                          Grade {entry.grade} ({entry.percentage}%)
                         </span>
                       </div>
-                    ))}
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-bold text-slate-700 flex items-center gap-1">
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{entry.evaluatedByTutor}</span>
+                      </p>
+                      <p className="text-[10px] text-slate-500 italic truncate max-w-[180px]" title={entry.tutorFeedback}>
+                        &quot;{entry.tutorFeedback}&quot;
+                      </p>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => setActiveStudentModal(entry.studentId)}
+                        className="px-2.5 py-1 text-xs font-bold text-[#0052CC] hover:bg-blue-50 border border-blue-200 rounded-lg inline-flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Report Card</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* CARD GRID: Student Transcripts & Report Cards */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {studentProfiles.map((p) => (
+            <div
+              key={p.studentId}
+              className="p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between space-y-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#0052CC] font-black flex items-center justify-center text-sm">
+                      {p.studentName.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">{p.studentName}</h3>
+                      <p className="text-[11px] font-mono text-slate-400">{p.studentId}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-xl text-xs font-black ${
+                    p.avgScore >= 80 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                    p.avgScore >= 50 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}>
+                    {p.avgScore}% Avg
+                  </span>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Cohort Batch:</span>
+                    <span className="font-bold text-slate-800 truncate max-w-[150px]">{p.batchName}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 font-medium">Language:</span>
+                    <span className="font-bold text-[#0052CC]">{p.languageFamily}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-200/60 pt-1.5">
+                    <span className="text-slate-500 font-medium">Deliverables:</span>
+                    <span className="font-bold text-slate-800">{p.totalTasks} Completed</span>
                   </div>
                 </div>
               </div>
 
-              {/* View Full Report Card Dedicated Page Link */}
-              <div className="pt-3 border-t border-slate-100">
-                <Link
-                  href={`/academic-manager/results/${profile.studentId}`}
-                  className="w-full py-2.5 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>View Student Report Card</span>
-                  <ExternalLink className="w-3 h-3 ml-0.5 opacity-80" />
-                </Link>
-              </div>
+              <button
+                onClick={() => setActiveStudentModal(p.studentId)}
+                className="w-full py-2 bg-slate-50 hover:bg-blue-50 text-[#0052CC] border border-blue-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Eye className="w-4 h-4" />
+                <span>View Full Transcript</span>
+              </button>
             </div>
           ))}
         </div>
       )}
 
-      {/* INDIVIDUAL STUDENT REPORT CARD MODAL */}
+      {/* STUDENT REPORT CARD MODAL */}
       {selectedStudentForModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[120] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden font-sans">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center font-sans p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95">
             {/* Modal Header */}
-            <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
+            <div className="p-5 bg-gradient-to-r from-slate-950 via-[#0B2447] to-[#1E3A8A] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-lg font-bold">
-                  {selectedStudentForModal.studentName.slice(0, 1)}
+                <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5 text-blue-300" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold">{selectedStudentForModal.studentName}</h3>
-                  <p className="text-xs text-slate-300 font-mono">
-                    ID: {selectedStudentForModal.studentId} • {selectedStudentForModal.batchName}
-                  </p>
+                  <h3 className="font-bold text-base text-white">{selectedStudentForModal.studentName}</h3>
+                  <p className="text-xs text-blue-200 font-mono">Roll: {selectedStudentForModal.studentId} • {selectedStudentForModal.batchName}</p>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => showSuccess(`Report card for ${selectedStudentForModal.studentName} printed!`)}
-                  className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg cursor-pointer"
-                  title="Print Report Card"
-                >
-                  <Printer className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setActiveStudentModal(null)}
-                  className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setActiveStudentModal(null)}
+                className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-5 overflow-y-auto flex-1">
-              {/* Top Banner KPI */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-blue-50/70 border border-blue-200 rounded-2xl">
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-blue-900 uppercase">Enrolled Course</span>
-                  <p className="text-xs font-bold text-slate-900 mt-0.5">
-                    {selectedStudentForModal.courseName}
-                  </p>
+                  <p className="text-slate-500 font-medium">Cumulative Average</p>
+                  <p className="text-2xl font-black text-[#0B2447]">{selectedStudentForModal.avgScore}%</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-blue-900 uppercase">Cumulative Percentage</span>
-                  <p className="text-xl font-extrabold text-blue-700 mt-0.5">
-                    {selectedStudentForModal.avgScore}%
-                  </p>
+                  <p className="text-slate-500 font-medium">Target Language</p>
+                  <p className="text-base font-bold text-[#0052CC]">{selectedStudentForModal.languageFamily}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-blue-900 uppercase">Proficiency Level</span>
-                  <p className="text-xs font-extrabold text-purple-700 mt-0.5">
-                    {selectedStudentForModal.languageFamily} — CEFR A1
-                  </p>
+                  <p className="text-slate-500 font-medium">Total Submissions</p>
+                  <p className="text-base font-bold text-slate-800">{selectedStudentForModal.entries.length} Tasks</p>
                 </div>
               </div>
 
-              {/* Assessment & Assignment Breakdown Table */}
-              <div>
-                <h4 className="text-xs font-bold text-[#0B2447] mb-2 uppercase tracking-wider">
-                  Detailed Marks & Tutor Evaluations
-                </h4>
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="bg-slate-50 font-bold text-slate-700 border-b border-slate-200">
-                        <th className="py-2.5 px-3">Type</th>
-                        <th className="py-2.5 px-3">Activity / Assessment</th>
-                        <th className="py-2.5 px-3">Date & Day</th>
-                        <th className="py-2.5 px-3 text-center">Score</th>
-                        <th className="py-2.5 px-3 text-center">Grade</th>
-                        <th className="py-2.5 px-3">Tutor Feedback</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {selectedStudentForModal.entries.map((entry) => (
-                        <tr key={entry.id} className="hover:bg-slate-50">
-                          <td className="py-2.5 px-3">
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                entry.itemType === 'ASSESSMENT'
-                                  ? 'bg-purple-100 text-purple-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {entry.itemType}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <p className="font-bold text-slate-900">{entry.activityTitle}</p>
-                            <p className="text-[10px] text-slate-500">{entry.moduleName}</p>
-                          </td>
-                          <td className="py-2.5 px-3 whitespace-nowrap text-[11px] text-slate-600">
-                            {entry.dayOfWeek}, {entry.submissionDate}
-                          </td>
-                          <td className="py-2.5 px-3 text-center font-bold text-slate-900">
-                            {entry.score} / {entry.maxScore} ({entry.percentage}%)
-                          </td>
-                          <td className="py-2.5 px-3 text-center">
-                            <span className="px-2 py-0.5 rounded font-black text-xs bg-emerald-50 text-emerald-800 border border-emerald-300">
-                              {entry.grade}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-[11px] text-slate-600 max-w-[200px]">
-                            <p className="font-semibold text-slate-800">{entry.evaluatedByTutor}</p>
-                            <p className="italic text-slate-500 text-[10px]">&quot;{entry.tutorFeedback}&quot;</p>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+              <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Completed Deliverables Breakdown</h4>
+              <div className="space-y-2">
+                {selectedStudentForModal.entries.map((entry) => (
+                  <div key={entry.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800">{entry.activityTitle}</span>
+                      <span className="font-black text-slate-900 bg-white px-2 py-0.5 rounded border">
+                        {entry.score} / {entry.maxScore} ({entry.percentage}%)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Evaluated by: <strong>{entry.evaluatedByTutor}</strong></span>
+                      <span>{entry.submissionDate}</span>
+                    </div>
+                    {entry.tutorFeedback && (
+                      <p className="text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-100 italic">
+                        Feedback: &quot;{entry.tutorFeedback}&quot;
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-[11px] text-slate-500 font-semibold">
-                Official ISML Academic Record • Certified by Academic Directorate
-              </span>
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
               <button
                 onClick={() => setActiveStudentModal(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
-                Close Report Card
+                Close Transcript
               </button>
             </div>
           </div>

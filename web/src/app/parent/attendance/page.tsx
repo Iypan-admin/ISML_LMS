@@ -124,7 +124,7 @@ export default function ParentAttendancePage() {
           <p className="text-[11px] font-bold text-slate-500 uppercase">NAAC Compliance</p>
           <p className={`text-base font-black mt-2 flex items-center gap-1.5 ${isSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
             {isSafe ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertTriangle className="w-5 h-5 text-rose-600" />}
-            <span>{isSafe ? 'Eligible for DELF Exam' : 'Below 75% Threshold'}</span>
+            <span>{isSafe ? 'Eligible for CEFR Certification' : 'Below 75% Threshold'}</span>
           </p>
           <p className="text-[10px] text-slate-400 mt-1">Minimum 75% required by UGC</p>
         </div>
@@ -170,38 +170,48 @@ export default function ParentAttendancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-[#0B2447] whitespace-nowrap">
-                    {log.date}
-                  </td>
-                  <td className="py-3.5 px-4 font-semibold text-slate-800">
-                    {log.sessionTitle}
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-600 font-medium">
-                    {log.tutorName}
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-500 font-mono">
-                    {log.timeIn}
-                  </td>
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
-                        log.status === 'PRESENT'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : log.status === 'ABSENT'
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {log.status}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-500 italic max-w-xs truncate">
-                    {log.remarks || '—'}
+              {filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-slate-400">
+                    <CheckSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-600">No Attendance Records Logged</p>
+                    <p className="text-[11px] text-slate-400">Attendance timestamps will appear once live sessions commence.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-[#0B2447] whitespace-nowrap">
+                      {log.date}
+                    </td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-800">
+                      {log.sessionTitle}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600 font-medium">
+                      {log.tutorName}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-500 font-mono">
+                      {log.timeIn}
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                          log.status === 'PRESENT'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : log.status === 'ABSENT'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {log.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-500 italic max-w-xs truncate">
+                      {log.remarks || '—'}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

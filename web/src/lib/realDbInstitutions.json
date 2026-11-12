@@ -1,0 +1,22 @@
+[
+  {
+    "id": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "name": "The American College",
+    "code": "AMER-COL",
+    "displayName": "The American College (Autonomous), Madurai",
+    "email": "admin@americancollege.edu.in",
+    "phone": "+91 452 253 0070",
+    "type": "COLLEGE",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "name": "Sivakasi Lions Matriculation Higher Secondary School",
+    "code": "SIVA-LIONS",
+    "displayName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "email": "principal@sivakasilions.edu.in",
+    "phone": "+91 4562 277 890",
+    "type": "SCHOOL",
+    "status": "ACTIVE"
+  }
+]

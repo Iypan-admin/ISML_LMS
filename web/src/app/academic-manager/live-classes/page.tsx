@@ -18,24 +18,71 @@ import DeleteConfirmDrawer from '@/components/common/DeleteConfirmDrawer';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import { useCollege } from '@/context/CollegeContext';
 import LiveMeetingInspectionModal, { ClassSessionData } from '@/components/academic-manager/LiveMeetingInspectionModal';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function AcademicManagerLiveClassesPage() {
-  const { showSuccess } = useToast();
-  const { selectedCollegeId, isOverall } = useCollege();
-  const [classes, setClasses] = useState<ClassSessionItem[]>(mockClassSessions);
+  const { showSuccess, showWarning } = useToast();
+  const { selectedCollegeId, isOverall, isSchoolMode, selectedCollege } = useCollege();
+  const [classes, setClasses] = useState<ClassSessionItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'LIVE_NOW' | 'UPCOMING'>('ALL');
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [editSession, setEditSession] = useState<ClassSessionItem | null>(null);
   const [deleteSession, setDeleteSession] = useState<ClassSessionItem | null>(null);
   const [inspectingSession, setInspectingSession] = useState<ClassSessionData | null>(null);
 
-  // Filter classes based on selected college AND status filter (All pure online)
+  // Fetch live classes from backend API (live status always fresh without stale cache)
+  const fetchLiveClasses = React.useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:4000/api/live-classes', { cache: 'no-store' });
+      const json = await res.json();
+      if (json?.data && Array.isArray(json.data)) {
+        const mapped: ClassSessionItem[] = json.data.map((c: any) => ({
+          id: c.id,
+          subjectName: c.title || c.subjectName,
+          programName: c.courseName || 'Foreign Language Certification',
+          batchName: c.batchName || 'Interactive Batch',
+          facultyName: c.tutorName || 'Certified Tutor',
+          deliveryMode: 'ONLINE',
+          meetingUrl: c.meetingUrl,
+          roomOrLink: c.roomName || c.meetingUrl,
+          date: c.scheduledStartTime ? c.scheduledStartTime.split('T')[0] : '2026-11-03',
+          timeSlot: `${c.durationMinutes || 60} Mins Session`,
+          attendeesCount: c.enrolledStudentsCount || 35,
+          institutionId: c.institutionId || 'inst-01',
+          status: (c.status === 'LIVE' || c.tutorJoined === true) ? 'LIVE_NOW' : c.status === 'DRAFT' ? 'DRAFT' : 'UPCOMING',
+        }));
+        setClasses(mapped);
+      }
+    } catch {}
+  }, []);
+
+  React.useEffect(() => {
+    fetchLiveClasses();
+    const interval = setInterval(fetchLiveClasses, 3000);
+    return () => clearInterval(interval);
+  }, [fetchLiveClasses]);
+
+  // Filter classes based on selected School/College AND status filter
   const displayClasses = classes.filter((c) => {
     if (statusFilter === 'LIVE_NOW' && c.status !== 'LIVE_NOW') return false;
     if (statusFilter === 'UPCOMING' && c.status !== 'UPCOMING') return false;
 
+    // School vs College type filter
+    const isClassSchool = c.batchName.toLowerCase().includes('school') ||
+      c.batchName.includes('Grade') ||
+      c.subjectName.toLowerCase().includes('school') ||
+      c.timeSlot.includes('Period');
+    if (isSchoolMode && !isClassSchool && classes.some(cl => cl.batchName.toLowerCase().includes('school') || cl.batchName.includes('Grade'))) {
+      return false;
+    }
+    if (!isSchoolMode && isClassSchool) {
+      return false;
+    }
+
     if (isOverall) return true;
+    if ((c as any).institutionId && (c as any).institutionId === selectedCollegeId) return true;
     const batch = mockBatches.find((b) => b.name === c.batchName);
+    if (batch?.institutionId && batch.institutionId === selectedCollegeId) return true;
     const prog = mockPrograms.find((p) => p.name === c.programName || p.id === batch?.programId);
     const dept = mockDepartments.find((d) => d.id === prog?.departmentId);
     return !dept?.institutionId || dept.institutionId === selectedCollegeId;
@@ -119,7 +166,43 @@ export default function AcademicManagerLiveClassesPage() {
     {
       key: 'status',
       header: 'Session Status',
-      render: (row) => <StatusBadge status={row.status} />,
+      render: (row) => (
+        <div className="space-y-0.5">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              row.status === 'LIVE_NOW'
+                ? 'bg-rose-100 text-rose-800 border border-rose-300 animate-pulse'
+                : row.status === 'DRAFT'
+                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+            }`}
+          >
+            {row.status === 'LIVE_NOW' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping mr-0.5" />
+                <span>Live Now</span>
+              </>
+            ) : row.status === 'DRAFT' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping mr-0.5" />
+                <span>Draft</span>
+              </>
+            ) : (
+              <>
+                <span className="text-emerald-600 mr-0.5">✓</span>
+                <span>Authorized</span>
+              </>
+            )}
+          </span>
+          <p className="text-[10px] text-slate-500 font-semibold truncate">
+            {row.status === 'DRAFT'
+              ? 'Awaiting Super Admin Approval'
+              : row.status === 'LIVE_NOW'
+              ? 'Session Ongoing'
+              : 'Approved by Super Admin'}
+          </p>
+        </div>
+      ),
     },
     {
       key: 'actions',
@@ -127,42 +210,59 @@ export default function AcademicManagerLiveClassesPage() {
       className: 'text-right',
       render: (row) => {
         const isLive = row.status === 'LIVE_NOW';
+        const isDraft = row.status === 'DRAFT';
         return (
           <div className="flex items-center justify-end gap-1.5">
-            {/* 🎥 GOOGLE MEET STYLE LIVE INSPECT BUTTON — ENABLED ONLY FOR LIVE_NOW */}
-            {isLive ? (
-              <button
-                onClick={() => {
-                  setInspectingSession({
-                    id: row.id,
-                    topic: row.subjectName,
-                    subjectName: row.subjectName,
-                    batchName: row.batchName,
-                    batchCode: 'FR-A1-ONLINE',
-                    facultyName: row.facultyName,
-                    date: row.date,
-                    timeSlot: row.timeSlot,
-                    status: 'LIVE_NOW',
-                    roomOrLink: row.meetingUrl || row.roomOrLink,
-                    attendeesCount: row.attendeesCount || 38,
-                  });
-                }}
-                className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer animate-pulse"
-                title="Inspect Live Meeting & Mark Attendance (Live Now)"
-              >
-                <Video className="w-3.5 h-3.5 text-white" />
-                <span>Inspect Meet</span>
-              </button>
-            ) : (
-              <button
-                disabled
-                className="px-2.5 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed opacity-60"
-                title="Class is not live yet. Inspection opens once session goes Live Now."
-              >
-                <Video className="w-3.5 h-3.5 text-slate-400" />
-                <span>Not Live</span>
-              </button>
-            )}
+            {/* 🎥 GOOGLE MEET STYLE LIVE INSPECT / JOIN STUDIO BUTTON */}
+            <button
+              onClick={async () => {
+                // Realtime check from backend API if tutor has actually started and is broadcasting
+                try {
+                  const checkRes = await fetch(`http://localhost:4000/api/live-classes/${row.id}`);
+                  const checkData = await checkRes.json();
+                  const trulyLive = checkData?.data?.status === 'LIVE' || checkData?.data?.tutorJoined === true;
+
+                  if (!trulyLive) {
+                    showWarning(
+                      'Live class has not started yet by tutor. Please wait for the faculty to launch the live broadcast.',
+                      'Class Not Live Yet'
+                    );
+                    return;
+                  }
+                } catch {
+                  if (!isLive) {
+                    showWarning(
+                      'Live class has not started yet by tutor. Please wait for the faculty to launch the live broadcast.',
+                      'Class Not Live Yet'
+                    );
+                    return;
+                  }
+                }
+
+                setInspectingSession({
+                  id: row.id,
+                  topic: row.subjectName,
+                  subjectName: row.subjectName,
+                  batchName: row.batchName,
+                  batchCode: 'FR-A1-ONLINE',
+                  facultyName: row.facultyName,
+                  date: row.date,
+                  timeSlot: row.timeSlot,
+                  status: 'LIVE_NOW',
+                  roomOrLink: row.meetingUrl || row.roomOrLink,
+                  attendeesCount: row.attendeesCount || 38,
+                });
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                isLive
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+                  : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+              }`}
+              title={isLive ? 'Attend & Inspect Live Online Class' : 'Live class not started yet by tutor'}
+            >
+              <Video className={`w-3.5 h-3.5 ${isLive ? 'text-white' : 'text-slate-500'}`} />
+              <span>{isLive ? 'Attend / Inspect Live' : 'Not Started Yet'}</span>
+            </button>
 
             <button
               onClick={() => {
@@ -173,13 +273,6 @@ export default function AcademicManagerLiveClassesPage() {
               title="Edit Online Class Schedule"
             >
               <Edit2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setDeleteSession(row)}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-              title="Cancel Online Class"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         );
@@ -209,25 +302,22 @@ export default function AcademicManagerLiveClassesPage() {
           <div className="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200 text-xs font-bold shadow-2xs">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                statusFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${statusFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               All Online
             </button>
             <button
               onClick={() => setStatusFilter('LIVE_NOW')}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                statusFilter === 'LIVE_NOW' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${statusFilter === 'LIVE_NOW' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               Live Now
             </button>
             <button
               onClick={() => setStatusFilter('UPCOMING')}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                statusFilter === 'UPCOMING' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${statusFilter === 'UPCOMING' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
             >
               Upcoming
             </button>

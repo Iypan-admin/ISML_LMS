@@ -421,6 +421,11 @@ export interface ApprovalRequest {
   diff?: RequestDiffItem[];
   history: RequestHistoryStep[];
   impactAnalysis?: string;
+  priority?: string;
+  description?: string;
+  sourcePortal?: string;
+  payload?: any;
+  institutionId?: string;
 }
 
 // ─── MASTER FINANCE MODELS ───
@@ -508,7 +513,7 @@ export interface Institution {
   id: string;
   name: string;
   code: string;
-  type: 'COLLEGE' | 'UNIVERSITY' | 'INSTITUTE';
+  type: 'COLLEGE' | 'UNIVERSITY' | 'INSTITUTE' | 'SCHOOL';
   status: 'ACTIVE' | 'INACTIVE';
   affiliation: string;
   address: string;
@@ -565,6 +570,7 @@ export interface Program {
 
 export interface Batch {
   id: string;
+  code?: string;
   programId: string;
   programName: string;
   departmentName: string;
@@ -575,7 +581,7 @@ export interface Batch {
   currentSemesterNumber: number;
   sectionsCount: number;
   studentsCount: number;
-  status: 'ACTIVE' | 'GRADUATED' | 'INACTIVE';
+  status: 'ACTIVE' | 'GRADUATED' | 'INACTIVE' | 'DRAFT';
   createdAt: string;
   institutionId?: string;
   institutionName?: string;
@@ -622,11 +628,28 @@ export interface AcademicLevel {
   id: string;
   subjectId: string;
   subjectName: string;
-  levelCode: string; // e.g. A1, A2, B1, B2 or N5, N4, N3 or TOPIK I, TOPIK II
-  name: string; // e.g. "A1 Beginner Foundation"
+  levelCode: string; // e.g. A1.1, A1.2, A2.1, B1.1, N5, N4, N3, N2
+  name: string; // e.g. "A1.1 Beginner Foundation"
   description?: string;
-  targetCefrOrJlpt?: string; // e.g. "CEFR A1" | "JLPT N5" | "TOPIK Level 1"
-  estimatedHours?: number;
+  targetCefrOrJlpt?: string; // e.g. "CEFR A1.1" | "JLPT N5"
+  estimatedHours?: number; // Teaching hours exclusive of assessment and final exam
+  assessmentsBeforeFinalExam?: number; // Official count of continuous assessments before final exam
+  humanSpeakingMinutesPerSession?: number; // Minutes per session once in 2 weeks with human appointment
+  humanSpeakingMinutesPerWeek?: number; // Minutes per week with human appointment
+  aiSpeakingPracticePerDay?: number; // No. of times AI speaking practice per day
+  periodCategoryMetrics?: {
+    cat1_35m?: { periodsPerWeek: number; totalPeriods: number };
+    cat2_40m?: { periodsPerWeek: number; totalPeriods: number };
+    cat3_45m?: { periodsPerWeek: number; totalPeriods: number };
+    cat4_50m?: { periodsPerWeek: number; totalPeriods: number };
+    cat5_55m?: { periodsPerWeek: number; totalPeriods: number };
+    cat6_60m?: { periodsPerWeek: number; totalPeriods: number };
+  };
+  pacingTracks?: {
+    standard?: { minutesPerSession?: number; sessionsCount?: number; sessionsPerWeek?: number; monthsCount?: number };
+    intensive?: { minutesPerSession?: number; sessionsCount?: number; sessionsPerWeek?: number; monthsCount?: number };
+    superIntensive?: { minutesPerSession?: number; sessionsCount?: number; sessionsPerWeek?: number; monthsCount?: number };
+  };
   modulesCount?: number;
   status: 'ACTIVE' | 'DRAFT';
 }
@@ -700,8 +723,17 @@ export interface CourseSummary {
   duration?: string;
   durationDays?: number;
   durationType?: '3_MONTHS' | '6_MONTHS' | '1_YEAR' | 'CUSTOM' | string;
+  startDate?: string;
+  endDate?: string;
   substituteTutors?: string[];
   doubtSupportTutor?: string;
+  assignedCollegeTutor?: string;
+  campusTutors?: Record<string, string>;
+  teachingHours?: number; // e.g. 60, 80, 100, 140, 160, 180, 200 (exclusive of assessment & final exam)
+  assessmentsCount?: number; // During course continuous assessments count
+  humanSpeakingMinutes?: number; // 10, 15, 20, 30, 40
+  aiSpeakingTimesPerDay?: number; // 2, 3, 4, 5, 7, 10
+  targetLevel?: string; // A1.1, A1, A2, B1, B2, N5, N4, N3, N2
 }
 
 export interface ResourceItem {
@@ -726,11 +758,15 @@ export interface ClassSessionItem {
   roomOrLink: string;
   date: string;
   timeSlot: string;
+  startTime?: string;
+  endTime?: string;
   attendeesCount: number;
+  enrolledCount?: number;
+  institutionId?: string;
   deliveryMode?: 'ONLINE' | 'OFFLINE';
   meetingUrl?: string;
   venueRoom?: string;
-  status: 'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED';
+  status: 'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED' | 'DRAFT';
 }
 
 export interface TimetableSlot {
@@ -827,6 +863,7 @@ export interface ResultRecord {
   maxMarks: number;
   grade: 'A+' | 'A' | 'B+' | 'B' | 'C' | 'F';
   status: 'PASS' | 'FAIL' | 'PENDING';
+  institutionId?: string;
 }
 
 export interface AuditLogEntry {

@@ -30,7 +30,20 @@ import { useToast } from '@/context/ToastContext';
 export default function CollegeAdminEnrollStudentPage() {
   const router = useRouter();
   const { showSuccess } = useToast();
-  const currentCollege = mockInstitutions[0];
+  const currentCollege = mockInstitutions[0] || {
+    id: 'inst-default',
+    name: 'Affiliated College Campus',
+    code: 'COLLEGE',
+    address: 'Campus Address',
+    phone: '',
+    email: '',
+    website: '',
+    status: 'ACTIVE' as const,
+    type: 'COLLEGE' as const,
+    affiliation: 'Autonomous',
+    contactEmail: 'admin@college.edu',
+    contactPhone: '+91 98401 00000',
+  };
 
   const collegeCourses = mockCourses.filter((c) => c.collegeId === currentCollege.id || !c.collegeId);
   const collegeBatches = mockBatches.filter((b) => b.institutionId === currentCollege.id || !b.institutionId);

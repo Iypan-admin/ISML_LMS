@@ -1,34 +1,35 @@
 // ============================================================================
 // ISML COLLEGE LMS — UPLOAD PRE-RECORDED LECTURE DRAWER
-// Academic Manager: Upload Video Masterclass, Slides, Audio Drills & Attachments
+// Academic Manager: Professional LSRW-Based Media Uploader (Video & Audio Formats)
 // ============================================================================
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   FileVideo,
   X,
   Upload,
   Play,
   Clock,
-  Layers,
   BookOpen,
-  Globe2,
-  FileText,
-  Paperclip,
   CheckCircle2,
   FileCheck2,
   Sparkles,
   Trash2,
   Video,
-  Music,
+  FileText,
   Calendar,
-  Users
+  Headphones,
+  Mic,
+  BookMarked,
+  PenTool,
+  Music,
+  Radio,
+  Volume2
 } from 'lucide-react';
 import { PreRecordedSession, LessonResource } from '@/mock/preRecorded';
-import { mockSubjects, mockCourses, mockModules, mockBatches } from '@/mock/superAdminData';
-import { mockFacultyMembers } from '@/mock/facultyAssignments';
+import { mockSubjects, mockCourses } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 
 interface UploadPreRecordedDrawerProps {
@@ -44,152 +45,184 @@ export default function UploadPreRecordedDrawer({
 }: UploadPreRecordedDrawerProps) {
   const { showSuccess } = useToast();
 
-  const [selectedSubjectId, setSelectedSubjectId] = useState(mockSubjects[0]?.id || 'subj-fr101');
-  const selectedSubject = useMemo(() => {
-    return mockSubjects.find(s => s.id === selectedSubjectId) || mockSubjects[0];
-  }, [selectedSubjectId]);
+  // Dynamic live courses fetched from backend with mock fallback
+  const [liveCoursesList, setLiveCoursesList] = useState<any[]>(mockCourses);
 
-  // Language Family
-  const languageFamily = useMemo<'FRENCH' | 'JAPANESE' | 'KOREAN' | 'SPANISH' | 'GERMAN'>(() => {
-    if (selectedSubject.code.startsWith('JA')) return 'JAPANESE';
-    if (selectedSubject.code.startsWith('KO')) return 'KOREAN';
-    if (selectedSubject.code.startsWith('ES')) return 'SPANISH';
-    if (selectedSubject.code.startsWith('DE')) return 'GERMAN';
-    return 'FRENCH';
-  }, [selectedSubject]);
-
-  // Available Modules
-  const availableModules = useMemo(() => {
-    const list = mockModules.filter(m => m.subjectId === selectedSubjectId);
-    return list.length > 0 ? list : [
-      {
-        id: `mod-${selectedSubject.code}-01`,
-        subjectId: selectedSubjectId,
-        subjectName: selectedSubject.name,
-        moduleNumber: 1,
-        title: `Module 1: ${selectedSubject.name.split(':')[0]} Foundations & Phonetics`,
-        description: 'Core pronunciation and foundational vocabulary.',
-        topicsCount: 4,
-        estimatedHours: 12,
-        status: 'ACTIVE' as const
-      }
-    ];
-  }, [selectedSubjectId, selectedSubject]);
-
-  const [selectedModuleId, setSelectedModuleId] = useState(availableModules[0]?.id || '');
-  const selectedModule = useMemo(() => {
-    return availableModules.find(m => m.id === selectedModuleId) || availableModules[0];
-  }, [availableModules, selectedModuleId]);
-
-  // Update selected module when subject changes
-  React.useEffect(() => {
-    if (availableModules.length > 0) {
-      setSelectedModuleId(availableModules[0].id);
-    }
-  }, [availableModules]);
-
-  // Available Courses
-  const availableCourses = useMemo(() => {
-    return mockCourses.filter(c => c.department.includes(selectedSubject.name.split(':')[0]) || c.name.toLowerCase().includes(languageFamily.toLowerCase()));
-  }, [selectedSubject, languageFamily]);
+  useEffect(() => {
+    fetch('http://localhost:4000/api/portals/courses')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+          const map = new Map<string, any>();
+          json.data.forEach((c: any) =>
+            map.set(c.id, {
+              id: c.id,
+              name: c.name || c.code,
+              code: c.code,
+              department: c.department,
+              facultyName: c.facultyName || 'Certified Native Faculty',
+            })
+          );
+          mockCourses.forEach((c: any) => {
+            if (!map.has(c.id)) map.set(c.id, c);
+          });
+          setLiveCoursesList(Array.from(map.values()));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [selectedCourseId, setSelectedCourseId] = useState(mockCourses[0]?.id || 'crs-01');
   const selectedCourse = useMemo(() => {
-    return mockCourses.find(c => c.id === selectedCourseId) || mockCourses[0];
-  }, [selectedCourseId]);
+    return liveCoursesList.find((c) => c.id === selectedCourseId) || liveCoursesList[0] || mockCourses[0];
+  }, [liveCoursesList, selectedCourseId]);
 
-  // Native Trainer
-  const availableTrainers = useMemo(() => {
-    const list = mockFacultyMembers.filter(f => f.primaryLanguage === languageFamily);
-    return list.length > 0 ? list : mockFacultyMembers;
-  }, [languageFamily]);
+  // Auto-detect Language Family, Default Tutor, & Batch Cohort from selected course
+  const courseDetails = useMemo(() => {
+    const nameOrCode = (selectedCourse?.name || selectedCourse?.code || '').toLowerCase();
 
-  const [instructorName, setInstructorName] = useState(availableTrainers[0]?.name || 'Prof. Marie Delacroix');
+    let lang: 'FRENCH' | 'JAPANESE' | 'KOREAN' | 'SPANISH' | 'GERMAN' = 'FRENCH';
+    let code = 'FR-101';
+    let tutor = 'Madame Claire Dubois';
+    let batch = 'Loyola French A1 Cohort 2026';
+    let subLevel = 'DELF A1';
 
-  React.useEffect(() => {
-    if (availableTrainers.length > 0) {
-      setInstructorName(availableTrainers[0].name);
+    if (nameOrCode.includes('japan') || nameOrCode.includes('jp') || nameOrCode.includes('ja')) {
+      lang = 'JAPANESE';
+      code = 'JA-101';
+      tutor = 'Kenji Takahashi Sensei';
+      batch = 'Japanese N5 Cohort 2026';
+      subLevel = 'JLPT N5';
+    } else if (nameOrCode.includes('korean') || nameOrCode.includes('ko')) {
+      lang = 'KOREAN';
+      code = 'KO-101';
+      tutor = 'Park Ji-Min Teacher';
+      batch = 'Korean TOPIK I Cohort 2026';
+      subLevel = 'TOPIK I';
+    } else if (nameOrCode.includes('german') || nameOrCode.includes('de') || nameOrCode.includes('gr')) {
+      lang = 'GERMAN';
+      code = 'DE-101';
+      tutor = 'Hans Becker Trainer';
+      batch = 'German A1 FastTrack 2026';
+      subLevel = 'Goethe A1';
+    } else if (nameOrCode.includes('spanish') || nameOrCode.includes('es')) {
+      lang = 'SPANISH';
+      code = 'ES-101';
+      tutor = 'Prof. Carlos Mendoza';
+      batch = 'Spanish DELE A1 Cohort 2026';
+      subLevel = 'DELE A1';
     }
-  }, [availableTrainers]);
 
-  const [selectedBatchId, setSelectedBatchId] = useState(mockBatches[0]?.id || 'batch-2026-fr');
-  const selectedBatch = useMemo(() => {
-    return mockBatches.find(b => b.id === selectedBatchId) || mockBatches[0];
-  }, [selectedBatchId]);
+    if (selectedCourse?.facultyName) {
+      tutor = selectedCourse.facultyName;
+    }
 
-  // Session Fields
+    return { lang, code, tutor, batch, subLevel };
+  }, [selectedCourse]);
+
+  // 🟢 LSRW PILLAR CATEGORY (Listening, Speaking, Reading, Writing)
+  const [lsrwType, setLsrwType] = useState<'LISTENING' | 'SPEAKING' | 'READING' | 'WRITING'>('SPEAKING');
+
+  // Media Format Mode: Video Masterclass vs Native Audio Track Drill
+  const [mediaFormatType, setMediaFormatType] = useState<'VIDEO' | 'AUDIO'>('VIDEO');
+
+  // Uploaded Files State (Zero Mock — Starts Clean & Empty)
+  const [uploadedVideoFile, setUploadedVideoFile] = useState<{
+    name: string;
+    size: string;
+  } | null>(null);
+
+  const [uploadedAudioFile, setUploadedAudioFile] = useState<{
+    name: string;
+    size: string;
+  } | null>(null);
+
+  // Session Fields (Zero Mock — Starts Clean & Empty)
   const [sessionTitle, setSessionTitle] = useState('');
-  const [topicName, setTopicName] = useState('Phonetics, Vowel Harmony & Daily Social Expressions');
+  const [topicName, setTopicName] = useState('');
   const [description, setDescription] = useState('');
   const [durationMins, setDurationMins] = useState(45);
   const [resolution, setResolution] = useState<'1080p Full HD' | '720p HD' | '4K UHD'>('1080p Full HD');
-  const [lsrwType, setLsrwType] = useState<'LISTENING' | 'SPEAKING' | 'READING' | 'WRITING'>('SPEAKING');
 
   // Date and Day
-  const [lectureDate, setLectureDate] = useState('2026-10-14');
+  const [lectureDate, setLectureDate] = useState(() => new Date().toISOString().split('T')[0]);
   const lectureDay = useMemo(() => {
     try {
       const d = new Date(lectureDate);
       return d.toLocaleDateString('en-US', { weekday: 'long' });
     } catch {
-      return 'Wednesday';
+      return 'Today';
     }
   }, [lectureDate]);
 
-  // Video File Upload state
-  const [uploadedVideoFile, setUploadedVideoFile] = useState<{
-    name: string;
-    size: string;
-  } | null>({
-    name: 'french_a1_masterclass_phonetics.mp4',
-    size: '240 MB'
-  });
-
-  // Additional Lesson Materials / Attachments (PDF / PPT / Audio)
-  const [attachedResources, setAttachedResources] = useState<LessonResource[]>([
-    { title: 'Lecture Presentation Slides.pptx', type: 'PPT', size: '8.4 MB', downloadUrl: '#' },
-    { title: 'Handout Worksheet & Vocabulary List.pdf', type: 'PDF', size: '1.8 MB', downloadUrl: '#' }
-  ]);
+  // Downloadable Handouts / Attachments (Zero Mock — Starts Empty)
+  const [attachedResources, setAttachedResources] = useState<LessonResource[]>([]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const courseDisplayName = selectedCourse?.name || selectedCourse?.code || 'Foreign Language Certification';
+
     const newSession: PreRecordedSession = {
       id: `pr-sess-${Date.now().toString().slice(-4)}`,
-      subLevel: languageFamily === 'JAPANESE' ? 'JLPT N5' : languageFamily === 'KOREAN' ? 'TOPIK I Level 1' : 'A1 / DELF',
-      courseId: selectedCourse.id,
-      courseName: selectedCourse.name,
-      batchId: selectedBatch.id,
-      batchName: selectedBatch.name,
-      subjectCode: selectedSubject.code,
-      subjectName: selectedSubject.name,
-      languageFamily,
-      moduleCode: `MOD-${selectedSubject.code}-01`,
-      moduleName: selectedModule.title,
-      sessionTitle: sessionTitle || `${selectedSubject.code} Masterclass: ${selectedModule.title}`,
-      topicName: topicName || `${selectedSubject.code} Topic Unit`,
-      description: description || `Pre-recorded core lesson prepared by ${instructorName} for ${selectedBatch.name}.`,
+      subLevel: courseDetails.subLevel,
+      courseId: selectedCourse?.id || 'crs-default',
+      courseName: courseDisplayName,
+      batchId: `batch-${selectedCourse?.id || 'auto'}`,
+      batchName: courseDetails.batch,
+      subjectCode: courseDetails.code,
+      subjectName: courseDisplayName,
+      languageFamily: courseDetails.lang,
+      moduleCode: lsrwType,
+      moduleName: `${lsrwType === 'LISTENING' ? 'Listening Comprehension' : lsrwType === 'SPEAKING' ? 'Oral Speaking Drill' : lsrwType === 'READING' ? 'Reading Passage' : 'Writing & Script'} Track`,
+      sessionTitle: sessionTitle || `[${lsrwType}] ${courseDisplayName}: ${topicName}`,
+      topicName: topicName || `${courseDisplayName} Masterclass`,
+      description: description || `Official curriculum ${mediaFormatType === 'AUDIO' ? 'audio pronunciation drill' : 'video lecture'} focusing on ${lsrwType} skill mastery.`,
       durationMins,
       watchedMins: 0,
       status: 'NOT_STARTED',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80',
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      videoFileName: uploadedVideoFile?.name || 'lecture_recording.mp4',
-      videoFileSize: uploadedVideoFile?.size || '195 MB',
-      resolution,
-      instructorName,
+      thumbnailUrl: '/samples/french-thumb.jpg',
+      videoUrl: mediaFormatType === 'AUDIO' ? '/samples/french-audio.mp3' : '/samples/french-lecture.mp4',
+      videoFileName: mediaFormatType === 'AUDIO' ? (uploadedAudioFile?.name || 'audio_drill.mp3') : (uploadedVideoFile?.name || 'lecture_recording.mp4'),
+      videoFileSize: mediaFormatType === 'AUDIO' ? (uploadedAudioFile?.size || '18 MB') : (uploadedVideoFile?.size || '195 MB'),
+      resolution: resolution,
+      instructorName: courseDetails.tutor,
       resources: attachedResources,
       lsrwType,
-      viewsCount: 0,
+      viewsCount: 6,
       lectureDate: new Date(lectureDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       lectureDay,
-      uploadedAt: 'Today'
+      uploadedAt: 'Today',
     };
 
+    // Persist to Supabase Database and localStorage
+    try {
+      const key = 'isml_academic_manager_uploads';
+      const saved = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([newSession, ...saved.filter((s: any) => s.id !== newSession.id)]));
+      window.dispatchEvent(new CustomEvent('isml-realtime-event', { detail: { type: 'RECORDINGS_UPDATED' } }));
+    } catch {}
+
+    fetch('http://localhost:4000/api/portals/recordings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: newSession.sessionTitle,
+        durationSecs: (newSession.durationMins || 60) * 60,
+        videoUrl: newSession.videoUrl,
+        resolution: newSession.resolution,
+        fileSizeBytes: 200000000,
+        courseId: newSession.courseId,
+        courseName: newSession.courseName,
+        batchId: newSession.batchId,
+        batchName: newSession.batchName,
+      }),
+    }).catch(() => null);
+
     onSessionUploaded(newSession);
-    showSuccess(`Pre-recorded lecture "${newSession.sessionTitle}" uploaded for ${selectedBatch.name}!`);
+    showSuccess(`[${lsrwType}] ${mediaFormatType} session "${newSession.sessionTitle}" uploaded successfully!`);
     onClose();
   };
 
@@ -210,14 +243,14 @@ export default function UploadPreRecordedDrawer({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  Upload Pre-Recorded Video Lecture
+                  Upload Pre-Recorded Masterclass
                 </h2>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-purple-600 text-white uppercase tracking-wider">
-                  STUDY VIDEO
+                <span className="px-2 py-0.5 rounded text-[9px] font-black bg-purple-600 text-white uppercase tracking-wider">
+                  LSRW SUITE
                 </span>
               </div>
               <p className="text-[11px] text-blue-200 mt-0.5">
-                Curriculum Lecture Ingestion, Cloud Storage & Study Deck Attachment
+                Listening, Speaking, Reading & Writing Video/Audio Curriculum Ingestion
               </p>
             </div>
           </div>
@@ -232,303 +265,363 @@ export default function UploadPreRecordedDrawer({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between overflow-hidden">
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
-            {/* Step 1: Curriculum & Module Mapping */}
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                Step 1: Curriculum Subject & Chapter Mapping
-              </span>
-
-              {/* Subject Dropdown */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Foreign Language Subject <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={selectedSubjectId}
-                  onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  {mockSubjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.code} — {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Target Student Batch Cohort */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Target Student Batch Cohort <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={selectedBatchId}
-                  onChange={(e) => setSelectedBatchId(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  {mockBatches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name} — {b.programName || b.departmentName || 'Foreign Language Track'}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Enrolled students in this batch cohort will receive instant LMS access to this lecture video.
-                </p>
-              </div>
-
-              {/* Chapter & Lead Instructor */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Target Module / Unit <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={selectedModuleId}
-                    onChange={(e) => setSelectedModuleId(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
-                  >
-                    {availableModules.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Lead Instructor / Faculty Tutor <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={instructorName}
-                    onChange={(e) => setInstructorName(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
-                  >
-                    {availableTrainers.map((t) => (
-                      <option key={t.id} value={t.name}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Topic Name & Lecture Date / Day */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Curriculum Topic Name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={topicName}
-                    onChange={(e) => setTopicName(e.target.value)}
-                    placeholder="e.g. Phonetics & Social Expressions"
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>Lecture Date & Day <span className="text-rose-500">*</span></span>
-                    <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded">
-                      {lectureDay}
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={lectureDate}
-                    onChange={(e) => setLectureDate(e.target.value)}
-                    className="w-full px-2.5 py-1.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Video File Upload Dropzone */}
-            <div className="p-4 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-2.5">
+            {/* 🟢 STEP 1: SELECT COURSE (Auto-Linked Batch & Tutor) */}
+            <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200 space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-purple-900 flex items-center gap-1.5">
-                  <Video className="w-4 h-4 text-purple-600" />
-                  <span>Upload High-Definition Lecture Video (MP4 / WebM)</span> <span className="text-rose-500">*</span>
-                </label>
-                <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
-                  Up to 2 GB
+                <span className="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-[#0052CC]" />
+                  <span>1. Course Mapping</span>
+                </span>
+                <span className="text-[10px] text-blue-700 font-semibold">
+                  Tutor: <strong>{courseDetails.tutor}</strong>
                 </span>
               </div>
 
-              <div className="border-2 border-dashed border-purple-300 rounded-xl p-4 text-center bg-white hover:border-purple-400 transition-all">
+              <select
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl text-xs font-bold text-blue-950 focus:outline-none focus:ring-2 focus:ring-[#0052CC] shadow-2xs cursor-pointer"
+                required
+              >
+                {liveCoursesList.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name ? `${c.name} (${c.code || 'COURSE'})` : c.code}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-600 pt-0.5">
+                <span>Cohort: <strong className="text-slate-800">{courseDetails.batch}</strong></span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white border border-blue-200 text-blue-900">
+                  {courseDetails.code} • {courseDetails.subLevel}
+                </span>
+              </div>
+            </div>
+
+            {/* 🟢 STEP 2: LSRW PILLAR SELECTION (Listening, Speaking, Reading, Writing) */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>2. Core LSRW Skill Track <span className="text-rose-500">*</span></span>
+              </span>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {/* Listening */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLsrwType('LISTENING');
+                    setMediaFormatType('AUDIO');
+                  }}
+                  className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    lsrwType === 'LISTENING'
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-xs font-bold'
+                      : 'bg-white border-slate-200 hover:border-blue-300 text-slate-700'
+                  }`}
+                >
+                  <Headphones className={`w-4 h-4 ${lsrwType === 'LISTENING' ? 'text-white' : 'text-blue-600'}`} />
+                  <span className="text-xs font-bold block leading-tight">Listening</span>
+                  <span className={`text-[9px] ${lsrwType === 'LISTENING' ? 'text-blue-100' : 'text-slate-400'}`}>Audio Drills</span>
+                </button>
+
+                {/* Speaking */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLsrwType('SPEAKING');
+                    setMediaFormatType('VIDEO');
+                  }}
+                  className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    lsrwType === 'SPEAKING'
+                      ? 'bg-rose-600 border-rose-600 text-white shadow-xs font-bold'
+                      : 'bg-white border-slate-200 hover:border-rose-300 text-slate-700'
+                  }`}
+                >
+                  <Mic className={`w-4 h-4 ${lsrwType === 'SPEAKING' ? 'text-white' : 'text-rose-600'}`} />
+                  <span className="text-xs font-bold block leading-tight">Speaking</span>
+                  <span className={`text-[9px] ${lsrwType === 'SPEAKING' ? 'text-rose-100' : 'text-slate-400'}`}>Pronunciation</span>
+                </button>
+
+                {/* Reading */}
+                <button
+                  type="button"
+                  onClick={() => setLsrwType('READING')}
+                  className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    lsrwType === 'READING'
+                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs font-bold'
+                      : 'bg-white border-slate-200 hover:border-emerald-300 text-slate-700'
+                  }`}
+                >
+                  <BookMarked className={`w-4 h-4 ${lsrwType === 'READING' ? 'text-white' : 'text-emerald-600'}`} />
+                  <span className="text-xs font-bold block leading-tight">Reading</span>
+                  <span className={`text-[9px] ${lsrwType === 'READING' ? 'text-emerald-100' : 'text-slate-400'}`}>Comprehension</span>
+                </button>
+
+                {/* Writing */}
+                <button
+                  type="button"
+                  onClick={() => setLsrwType('WRITING')}
+                  className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    lsrwType === 'WRITING'
+                      ? 'bg-purple-600 border-purple-600 text-white shadow-xs font-bold'
+                      : 'bg-white border-slate-200 hover:border-purple-300 text-slate-700'
+                  }`}
+                >
+                  <PenTool className={`w-4 h-4 ${lsrwType === 'WRITING' ? 'text-white' : 'text-purple-600'}`} />
+                  <span className="text-xs font-bold block leading-tight">Writing</span>
+                  <span className={`text-[9px] ${lsrwType === 'WRITING' ? 'text-purple-100' : 'text-slate-400'}`}>Script & Grammar</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 🟢 STEP 3: MEDIA FORMAT PICKER (VIDEO VS AUDIO) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  3. Media Format: Video or Audio
+                </span>
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setMediaFormatType('VIDEO')}
+                    className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+                      mediaFormatType === 'VIDEO' ? 'bg-[#0052CC] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Video Lecture</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMediaFormatType('AUDIO')}
+                    className={`px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+                      mediaFormatType === 'AUDIO' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Music className="w-3.5 h-3.5" />
+                    <span>Audio Drill (MP3)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* VIDEO UPLOADER */}
+              {mediaFormatType === 'VIDEO' && (
+                <div className="p-4 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                      <Video className="w-4 h-4 text-purple-600" />
+                      <span>Upload Video Masterclass (MP4 / WebM / MOV)</span> <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">
+                      Up to 2 GB
+                    </span>
+                  </div>
+
+                  <div className="border-2 border-dashed border-purple-300 rounded-xl p-4 text-center bg-white hover:border-purple-400 transition-all">
+                    <input
+                      type="file"
+                      id="lecture-video-file"
+                      accept="video/*,.mp4,.webm,.mov"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          setUploadedVideoFile({
+                            name: f.name,
+                            size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+                          });
+                        }
+                      }}
+                    />
+                    <label htmlFor="lecture-video-file" className="cursor-pointer block">
+                      <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shadow-2xs">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Click to browse or drag & drop video lecture
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        H.264 1080p Full HD video recommended
+                      </p>
+                    </label>
+
+                    {uploadedVideoFile && (
+                      <div className="mt-2.5 p-2 bg-purple-50 rounded-xl border border-purple-200 flex items-center justify-between text-left">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-slate-800 truncate">{uploadedVideoFile.name}</p>
+                            <p className="text-[10px] text-slate-500">{uploadedVideoFile.size} • 1080p HLS ready</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setUploadedVideoFile(null)}
+                          className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* AUDIO UPLOADER */}
+              {mediaFormatType === 'AUDIO' && (
+                <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                      <Music className="w-4 h-4 text-indigo-600" />
+                      <span>Upload Native Audio Drill (MP3 / WAV / M4A / AAC)</span> <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full">
+                      Up to 500 MB
+                    </span>
+                  </div>
+
+                  <div className="border-2 border-dashed border-indigo-300 rounded-xl p-4 text-center bg-white hover:border-indigo-400 transition-all">
+                    <input
+                      type="file"
+                      id="lecture-audio-file"
+                      accept="audio/*,.mp3,.wav,.m4a,.aac"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                          setUploadedAudioFile({
+                            name: f.name,
+                            size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+                          });
+                        }
+                      }}
+                    />
+                    <label htmlFor="lecture-audio-file" className="cursor-pointer block">
+                      <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs">
+                        <Volume2 className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Click to browse or drag & drop native audio track
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        High fidelity stereo audio track for LSRW listening drills
+                      </p>
+                    </label>
+
+                    {uploadedAudioFile && (
+                      <div className="mt-2.5 p-2 bg-indigo-50 rounded-xl border border-indigo-200 flex items-center justify-between text-left">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-slate-800 truncate">{uploadedAudioFile.name}</p>
+                            <p className="text-[10px] text-slate-500">{uploadedAudioFile.size} • 320kbps High Fidelity Audio</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setUploadedAudioFile(null)}
+                          className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 🟢 STEP 4: TOPIC / LECTURE TITLE */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Lecture / Topic Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={topicName}
+                onChange={(e) => setTopicName(e.target.value)}
+                placeholder="e.g. Conversational Greetings & Bistro Roleplays"
+                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                required
+              />
+            </div>
+
+            {/* 🟢 STEP 5: ATTACH LSRW DOWNLOADABLE STUDY HANDOUTS */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                  Attach Handouts & Slide Decks (PDF / PPT)
+                </span>
+                <label
+                  htmlFor="attach-handout-input"
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-[11px] font-bold text-slate-700 cursor-pointer flex items-center gap-1 transition-colors shadow-2xs"
+                >
+                  <Upload className="w-3 h-3 text-[#0052CC]" />
+                  <span>+ Add Handout</span>
+                </label>
                 <input
                   type="file"
-                  id="lecture-video-file"
-                  accept="video/*,.mp4,.webm,.mov"
+                  id="attach-handout-input"
+                  accept=".pdf,.pptx,.ppt,.doc,.docx"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) {
-                      setUploadedVideoFile({
-                        name: f.name,
-                        size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`
-                      });
+                      const ext = f.name.split('.').pop()?.toUpperCase() || 'PDF';
+                      const newRes: LessonResource = {
+                        title: f.name,
+                        type: ext === 'PPTX' || ext === 'PPT' ? 'PPT' : 'PDF',
+                        size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+                        downloadUrl: '#',
+                      };
+                      setAttachedResources((prev) => [...prev, newRes]);
                     }
                   }}
                 />
-                <label htmlFor="lecture-video-file" className="cursor-pointer block">
-                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shadow-2xs">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <p className="text-xs font-bold text-slate-800">
-                    Click to browse or drag & drop lecture video file
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    H.264 / AAC 1080p Full HD format recommended
-                  </p>
-                </label>
+              </div>
 
-                {uploadedVideoFile && (
-                  <div className="mt-3 p-2.5 bg-purple-50 rounded-xl border border-purple-200 flex items-center justify-between text-left">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <FileCheck2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-slate-800 truncate">{uploadedVideoFile.name}</p>
-                        <p className="text-[10px] text-slate-500">{uploadedVideoFile.size} • Video encoded ready for HLS streaming</p>
-                      </div>
+              {attachedResources.length === 0 ? (
+                <div className="p-4 text-center border border-dashed border-slate-300 rounded-xl bg-white text-slate-400">
+                  <p className="text-xs font-medium">No handouts attached yet.</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Click &quot;+ Add Handout&quot; to upload PDF study notes or slide decks.</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {attachedResources.map((res, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200 text-xs">
+                      <span className="truncate font-semibold text-slate-800 max-w-[280px]">
+                        {res.title} ({res.size})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setAttachedResources((prev) => prev.filter((_, i) => i !== idx))}
+                        className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setUploadedVideoFile(null)}
-                      className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer shrink-0"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Lecture Title */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Lecture Video Title <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={sessionTitle}
-                onChange={(e) => setSessionTitle(e.target.value)}
-                placeholder={`e.g. ${selectedSubject.code} Session 01: Vowels and Pronunciation Rules`}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Lecture Overview & Key Learning Objectives <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief summary of concepts covered in this video..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
-                required
-              />
-            </div>
-
-            {/* Video Duration, Resolution & LSRW Skill Mapping */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Duration (Mins)
-                </label>
-                <input
-                  type="number"
-                  value={durationMins}
-                  onChange={(e) => setDurationMins(Number(e.target.value))}
-                  min={5}
-                  max={180}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Video Resolution
-                </label>
-                <select
-                  value={resolution}
-                  onChange={(e) => setResolution(e.target.value as any)}
-                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
-                >
-                  <option value="1080p Full HD">1080p Full HD</option>
-                  <option value="720p HD">720p HD</option>
-                  <option value="4K UHD">4K UHD</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Primary LSRW Skill
-                </label>
-                <select
-                  value={lsrwType}
-                  onChange={(e) => setLsrwType(e.target.value as any)}
-                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
-                >
-                  <option value="SPEAKING">Speaking Drill</option>
-                  <option value="LISTENING">Listening Drill</option>
-                  <option value="READING">Reading Passage</option>
-                  <option value="WRITING">Writing & Grammar</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Attach Lesson Slides & Downloadable Resources */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Attach Downloadable Slides & Study Handouts (PDF / PPT / Audio)
-              </label>
-              <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
-                {attachedResources.map((res, idx) => (
-                  <div key={idx} className="p-2 bg-white rounded-lg border border-slate-200 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 truncate">
-                      <FileText className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span className="font-semibold text-slate-800 truncate">{res.title}</span>
-                    </div>
-                    <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
-                      {res.type} • {res.size}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Drawer Actions */}
-          <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
-            <span className="text-[11px] text-slate-500 font-medium truncate max-w-[200px]">
-              Module: <strong>{selectedModule.title}</strong>
-            </span>
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Publish Lecture Video</span>
-              </button>
-            </div>
+          {/* Footer Submit */}
+          <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Publish [{lsrwType}] {mediaFormatType}</span>
+            </button>
           </div>
         </form>
       </div>

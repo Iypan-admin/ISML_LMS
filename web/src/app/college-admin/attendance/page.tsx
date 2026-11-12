@@ -21,17 +21,55 @@ import {
   CheckCircle2,
   ArrowRight,
 } from 'lucide-react';
-import { mockInstitutions, mockStudents, mockBatches } from '@/mock/superAdminData';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function CollegeAdminAttendancePage() {
-  const currentCollege = mockInstitutions[0];
-  const students = mockStudents.filter((s) => s.collegeId === currentCollege.id || !s.collegeId);
+  const currentCollege = {
+    id: 'inst-01',
+    name: 'Loyola College of Arts & Science',
+    code: 'LOYOLA',
+    address: 'Sterling Road, Nungambakkam, Chennai',
+    phone: '+91 44 2817 8200',
+    email: 'admin@loyola.edu',
+    website: 'https://loyolacollege.edu',
+    status: 'ACTIVE' as const,
+    type: 'COLLEGE' as const,
+    affiliation: 'Autonomous • University of Madras',
+    contactEmail: 'admin@loyola.edu',
+    contactPhone: '+91 44 2817 8200',
+  };
+
+  const [students, setStudents] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [thresholdFilter, setThresholdFilter] = useState('ALL');
 
+  React.useEffect(() => {
+    let collegeIdParam = '';
+    try {
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('isml_user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u.campusId) collegeIdParam = u.campusId;
+        }
+      }
+    } catch { }
+
+    const queryUrl = collegeIdParam
+      ? `http://localhost:4000/api/portals/students?collegeId=${encodeURIComponent(collegeIdParam)}`
+      : 'http://localhost:4000/api/portals/students?collegeId=inst-01';
+
+    fastFetch(queryUrl, (json) => {
+      if (json && json.data) {
+        setStudents(json.data);
+      }
+    });
+  }, []);
+
   const filteredStudents = students.filter((s) => {
-    if (thresholdFilter === 'CRITICAL' && s.attendancePercentage >= 75) return false;
-    if (thresholdFilter === 'GOOD' && s.attendancePercentage < 85) return false;
+    const att = Number(s.attendancePercentage) || 92;
+    if (thresholdFilter === 'CRITICAL' && att >= 75) return false;
+    if (thresholdFilter === 'GOOD' && att < 85) return false;
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       return (
@@ -43,8 +81,12 @@ export default function CollegeAdminAttendancePage() {
     return true;
   });
 
-  const criticalCount = students.filter((s) => s.attendancePercentage < 75).length;
-  const goodCount = students.filter((s) => s.attendancePercentage >= 85).length;
+  const avgAttendance = students.length > 0
+    ? (students.reduce((acc, s) => acc + (Number(s.attendancePercentage) || 0), 0) / students.length).toFixed(1)
+    : '0.0';
+
+  const criticalCount = students.filter((s) => (Number(s.attendancePercentage) || 0) < 75).length;
+  const goodCount = students.filter((s) => (Number(s.attendancePercentage) || 0) >= 85).length;
 
   return (
     <div className="space-y-6 pb-12 font-sans text-slate-900">
@@ -57,7 +99,7 @@ export default function CollegeAdminAttendancePage() {
               <span>Campus Attendance & Performance Monitor</span>
             </h1>
             <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              88.4% Average
+              {avgAttendance}% Average
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -78,7 +120,7 @@ export default function CollegeAdminAttendancePage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500">Overall Campus Benchmark</span>
-          <p className="text-2xl font-black text-emerald-700 mt-1">88.4%</p>
+          <p className="text-2xl font-black text-emerald-700 mt-1">{avgAttendance}%</p>
           <span className="text-[10px] text-slate-400 mt-0.5 block">Target CEFR 80% met</span>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-rose-200 bg-rose-50/20 shadow-2xs">

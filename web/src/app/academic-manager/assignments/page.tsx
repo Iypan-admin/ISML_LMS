@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ClipboardList,
   Plus,
@@ -18,26 +18,60 @@ import {
   FileCheck2,
   X,
   Download,
-  CheckCircle2,
-  Upload
+  Trash2,
+  UserCheck
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
-import { mockAssignments, HomeworkAssignment, AssignmentLsrwSkill } from '@/mock/assignments';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import { useToast } from '@/context/ToastContext';
 import CreateAssignmentDrawer from '@/components/academic-manager/CreateAssignmentDrawer';
+import { assignmentStore, SharedAssignment, AssignmentLsrwSkill } from '@/services/assignmentStore';
 
 export default function AcademicManagerAssignmentsPage() {
   const { showSuccess } = useToast();
-  const [assignments, setAssignments] = useState<HomeworkAssignment[]>(mockAssignments);
+  const [assignments, setAssignments] = useState<SharedAssignment[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedLsrwFilter, setSelectedLsrwFilter] = useState<'ALL' | AssignmentLsrwSkill>('ALL');
-  const [viewingAssignment, setViewingAssignment] = useState<HomeworkAssignment | null>(null);
+  const [viewingAssignment, setViewingAssignment] = useState<SharedAssignment | null>(null);
 
-  const handleAssignmentCreated = (newAsg: HomeworkAssignment) => {
-    setAssignments((prev) => [newAsg, ...prev]);
+  useEffect(() => {
+    setAssignments(assignmentStore.getAll());
+    const unsubscribe = assignmentStore.subscribe(() => {
+      setAssignments(assignmentStore.getAll());
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleAssignmentCreated = (newAsg: any) => {
+    // Stored in assignmentStore as PENDING (or waiting for super admin approval)
+    assignmentStore.create({
+      title: newAsg.title,
+      courseId: newAsg.courseId,
+      courseName: newAsg.courseName,
+      batchId: newAsg.batchId,
+      batchName: newAsg.batchName,
+      subjectCode: newAsg.subjectCode,
+      subjectName: newAsg.subjectName,
+      languageFamily: newAsg.languageFamily || 'FRENCH',
+      lsrwSkill: newAsg.lsrwSkill,
+      moduleCode: newAsg.moduleCode,
+      moduleName: newAsg.moduleName,
+      dueDate: newAsg.dueDate,
+      status: 'ACTIVE',
+      instructions: newAsg.instructions,
+      maxScore: newAsg.maxScore || 100,
+      assignedTutorName: newAsg.assignedTutorName || 'Assigned Course Tutor',
+      attachedFile: newAsg.attachedFile,
+    });
+  };
+
+  const handleDelete = (id: string, title: string) => {
+    if (confirm(`Are you sure you want to delete assignment "${title}"?`)) {
+      assignmentStore.delete(id);
+      showSuccess(`Assignment "${title}" removed.`);
+    }
   };
 
   const filteredAssignments = assignments.filter((asg) => {
@@ -45,7 +79,7 @@ export default function AcademicManagerAssignmentsPage() {
     return true;
   });
 
-  const columns: Column<HomeworkAssignment>[] = [
+  const columns: Column<SharedAssignment>[] = [
     {
       key: 'title',
       header: 'Assignment Task & Skill',
@@ -75,7 +109,7 @@ export default function AcademicManagerAssignmentsPage() {
             </span>
           </div>
           <p className="font-bold text-[#0B2447] text-xs leading-snug">{row.title}</p>
-          <p className="text-[11px] text-slate-500 font-medium">{row.moduleName}</p>
+          <p className="text-[11px] text-slate-500 font-medium">{row.moduleName || 'Core Curriculum'}</p>
         </div>
       ),
     },
@@ -91,6 +125,21 @@ export default function AcademicManagerAssignmentsPage() {
           <p className="text-[11px] text-indigo-700 font-semibold flex items-center gap-1 mt-0.5">
             <Users className="w-3 h-3 shrink-0" />
             <span>{row.batchName}</span>
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'assignedTutorName',
+      header: 'Assigned Tutor & Submissions',
+      render: (row) => (
+        <div>
+          <p className="text-xs font-bold text-slate-700 flex items-center gap-1">
+            <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>{row.assignedTutorName || 'Course Faculty'}</span>
+          </p>
+          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+            {row.submissions?.length || 0} Student Submissions
           </p>
         </div>
       ),
@@ -123,13 +172,22 @@ export default function AcademicManagerAssignmentsPage() {
       key: 'id',
       header: 'Actions',
       render: (row) => (
-        <button
-          onClick={() => setViewingAssignment(row)}
-          className="px-2.5 py-1 text-xs font-bold text-[#0052CC] hover:bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-        >
-          <Eye className="w-3.5 h-3.5" />
-          <span>View Brief</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setViewingAssignment(row)}
+            className="px-2.5 py-1 text-xs font-bold text-[#0052CC] hover:bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Brief</span>
+          </button>
+          <button
+            onClick={() => handleDelete(row.id, row.title)}
+            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            title="Delete Assignment"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -147,7 +205,7 @@ export default function AcademicManagerAssignmentsPage() {
             <span>Course Assignments & Practical Worksheets</span>
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            LSRW mapped homework deliverables, audio recording tasks, handwriting sheets, and batch milestones.
+            LSRW practical homework tasks linked to courses and batches. Auto-syncs to assigned tutors and students.
           </p>
         </div>
 
@@ -156,7 +214,7 @@ export default function AcademicManagerAssignmentsPage() {
           className="px-4 py-2 bg-gradient-to-r from-[#0052CC] to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-md self-start sm:self-auto active:scale-95"
         >
           <Plus className="w-4 h-4" />
-          <span>+ Create Assignment (Full Screen)</span>
+          <span>+ Create Assignment</span>
         </button>
       </div>
 
@@ -177,14 +235,31 @@ export default function AcademicManagerAssignmentsPage() {
         ))}
       </div>
 
-      <DataTable<HomeworkAssignment>
-        data={filteredAssignments}
-        columns={columns}
-        rowKey={(row) => row.id}
-        searchKey="title"
-        searchPlaceholder="Search by assignment title, batch or course..."
-        pageSize={10}
-      />
+      {filteredAssignments.length === 0 ? (
+        <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-slate-300">
+          <ClipboardList className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-800">No Assignments Created Yet</h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-4">
+            Click &quot;+ Create Assignment&quot; to assign LSRW tasks to student cohorts. Published assignments will instantly appear for assigned tutors and students.
+          </p>
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 cursor-pointer shadow-xs"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create First Assignment</span>
+          </button>
+        </div>
+      ) : (
+        <DataTable<SharedAssignment>
+          data={filteredAssignments}
+          columns={columns}
+          rowKey={(row) => row.id}
+          searchKey="title"
+          searchPlaceholder="Search by assignment title, batch or course..."
+          pageSize={10}
+        />
+      )}
 
       {/* FULL SCREEN ASSIGNMENT CREATOR STUDIO */}
       <CreateAssignmentDrawer
@@ -243,6 +318,10 @@ export default function AcademicManagerAssignmentsPage() {
                   <span className="text-slate-500 font-medium">Batch Cohort:</span>
                   <span className="font-bold text-indigo-700">{viewingAssignment.batchName}</span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 font-medium">Assigned Tutor:</span>
+                  <span className="font-bold text-emerald-700">{viewingAssignment.assignedTutorName || 'Course Faculty'}</span>
+                </div>
                 <div className="flex items-center justify-between border-t border-slate-200/80 pt-2">
                   <span className="text-slate-500 font-medium">Deadline:</span>
                   <span className="font-bold text-rose-600 flex items-center gap-1">
@@ -268,6 +347,34 @@ export default function AcademicManagerAssignmentsPage() {
                 </div>
               </div>
 
+              {/* Student Submissions List */}
+              <div>
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Student Submissions ({viewingAssignment.submissions?.length || 0}):
+                </h3>
+                {(!viewingAssignment.submissions || viewingAssignment.submissions.length === 0) ? (
+                  <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-500">
+                    No student submissions yet for this batch.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {viewingAssignment.submissions.map((sub) => (
+                      <div key={sub.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                        <div>
+                          <p className="font-bold text-slate-900">{sub.studentName} ({sub.studentRollNo})</p>
+                          <p className="text-[10px] text-slate-500">{new Date(sub.submittedAt).toLocaleString()}</p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          sub.status === 'EVALUATED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {sub.status === 'EVALUATED' ? `${sub.scoreAwarded} / ${sub.maxScore}` : 'Pending Evaluation'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Attached Resource File / Audio */}
               {viewingAssignment.attachedFile && (
                 <div className="p-3.5 bg-blue-50/80 rounded-xl border border-blue-200 space-y-2">
@@ -290,25 +397,6 @@ export default function AcademicManagerAssignmentsPage() {
                       Download
                     </span>
                   </div>
-
-                  {viewingAssignment.lsrwSkill === 'LISTENING' && (
-                    <div className="p-2 bg-white rounded-lg border border-blue-200 flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-blue-100 text-[#0052CC] flex items-center justify-center shrink-0">
-                        <Volume2 className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-[10px] font-bold text-slate-700 block truncate">
-                          Listening Audio Player: {viewingAssignment.attachedFile.name}
-                        </span>
-                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
-                          <div className="bg-[#0052CC] h-full w-2/5 rounded-full" />
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-mono text-slate-500 font-semibold shrink-0">
-                        01:15 / 03:20
-                      </span>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

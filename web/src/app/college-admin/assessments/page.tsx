@@ -20,84 +20,35 @@ import {
 import { mockInstitutions, mockCourses, mockBatches, mockStudents } from '@/mock/superAdminData';
 
 export default function CollegeAdminAssessmentsPage() {
-  const currentCollege = mockInstitutions[0];
+  const currentCollege = mockInstitutions[0] || {
+    id: 'inst-default',
+    name: 'Affiliated College Campus',
+    code: 'COLLEGE',
+    address: 'Campus Address',
+    phone: '',
+    email: '',
+    website: '',
+    status: 'ACTIVE' as const,
+    type: 'COLLEGE' as const,
+    affiliation: 'Autonomous',
+    contactEmail: 'admin@college.edu',
+    contactPhone: '+91 98401 00000',
+  };
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [search, setSearch] = useState('');
 
-  const marksRoster = [
-    {
-      studentId: 'ISML20260001',
-      name: 'Aarav Sharma',
-      courseName: 'French A1 Intensive',
-      batchName: 'Cohort 2026–2029 (Section A)',
-      internalScore: 48,
-      midTermScore: 42,
-      oralProficiency: 'A+',
-      finalGrade: 'O (Outstanding)',
-      percentage: 92,
-      result: 'PASSED',
-    },
-    {
-      studentId: 'ISML20260002',
-      name: 'Diya Patel',
-      courseName: 'French A1 Intensive',
-      batchName: 'Cohort 2026–2029 (Section A)',
-      internalScore: 45,
-      midTermScore: 39,
-      oralProficiency: 'A',
-      finalGrade: 'A+ (Distinction)',
-      percentage: 86,
-      result: 'PASSED',
-    },
-    {
-      studentId: 'ISML20260003',
-      name: 'Rohan Iyer',
-      courseName: 'German B1 Professional',
-      batchName: 'Cohort 2026–2029 (Section B)',
-      internalScore: 41,
-      midTermScore: 36,
-      oralProficiency: 'B+',
-      finalGrade: 'A (Very Good)',
-      percentage: 79,
-      result: 'PASSED',
-    },
-    {
-      studentId: 'ISML20260004',
-      name: 'Ananya Deshmukh',
-      courseName: 'Japanese N5 Beginner',
-      batchName: 'Cohort 2026–2029 (Section A)',
-      internalScore: 49,
-      midTermScore: 44,
-      oralProficiency: 'A+',
-      finalGrade: 'O (Outstanding)',
-      percentage: 95,
-      result: 'PASSED',
-    },
-    {
-      studentId: 'ISML20260005',
-      name: 'Vikram Menon',
-      courseName: 'Spanish A1 Conversational',
-      batchName: 'Cohort 2026–2029 (Section B)',
-      internalScore: 32,
-      midTermScore: 28,
-      oralProficiency: 'B',
-      finalGrade: 'B+ (Good)',
-      percentage: 64,
-      result: 'PASSED',
-    },
-    {
-      studentId: 'ISML20260006',
-      name: 'Pooja Hegde',
-      courseName: 'French A1 Intensive',
-      batchName: 'Cohort 2026–2029 (Section A)',
-      internalScore: 20,
-      midTermScore: 22,
-      oralProficiency: 'C',
-      finalGrade: 'RA (Re-Appear)',
-      percentage: 42,
-      result: 'ARREAR',
-    },
-  ];
+  const marksRoster: Array<{
+    studentId: string;
+    name: string;
+    courseName: string;
+    batchName: string;
+    internalScore: number;
+    midTermScore: number;
+    oralProficiency: string;
+    finalGrade: string;
+    percentage: number;
+    result: string;
+  }> = [];
 
   const filtered = marksRoster.filter((row) => {
     const matchesSearch =
@@ -106,6 +57,13 @@ export default function CollegeAdminAssessmentsPage() {
     const matchesCourse = selectedCourse === 'all' || row.courseName.includes(selectedCourse);
     return matchesSearch && matchesCourse;
   });
+
+  const passCount = filtered.filter((r) => r.result === 'PASSED').length;
+  const passRate = filtered.length > 0 ? ((passCount / filtered.length) * 100).toFixed(1) : '0%';
+  const distinctionCount = filtered.filter((r) => r.percentage >= 85).length;
+  const distinctionRate = filtered.length > 0 ? ((distinctionCount / filtered.length) * 100).toFixed(1) + '%' : '0%';
+  const avgScore = filtered.length > 0 ? (filtered.reduce((sum, r) => sum + r.percentage, 0) / filtered.length).toFixed(1) + '%' : '0%';
+  const remedialCount = filtered.filter((r) => r.result === 'ARREAR' || r.percentage < 50).length;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -138,22 +96,22 @@ export default function CollegeAdminAssessmentsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500 block mb-1">Campus Pass Rate</span>
-          <p className="text-2xl font-black text-emerald-700">94.2%</p>
+          <p className="text-2xl font-black text-emerald-700">{passRate}</p>
           <span className="text-[11px] font-semibold text-slate-500 mt-1 block">Higher than state avg (88%)</span>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500 block mb-1">Distinction Rate</span>
-          <p className="text-2xl font-black text-purple-700">41.8%</p>
+          <p className="text-2xl font-black text-purple-700">{distinctionRate}</p>
           <span className="text-[11px] font-medium text-slate-500 mt-1 block">Grade O & A+ Achievers</span>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500 block mb-1">Average CEFR Score</span>
-          <p className="text-2xl font-black text-blue-700">79.6%</p>
+          <p className="text-2xl font-black text-blue-700">{avgScore}</p>
           <span className="text-[11px] font-medium text-slate-500 mt-1 block">Oral & Written composite</span>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500 block mb-1">Remedial Attention</span>
-          <p className="text-2xl font-black text-rose-600">3 Students</p>
+          <p className="text-2xl font-black text-rose-600">{remedialCount} Students</p>
           <span className="text-[11px] font-medium text-rose-600 mt-1 block">Recommended for tutoring</span>
         </div>
       </div>
@@ -202,51 +160,59 @@ export default function CollegeAdminAssessmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((row) => (
-                <tr key={row.studentId} className="hover:bg-slate-50/60 transition">
-                  <td className="p-3.5">
-                    <span className="font-bold text-[#0B2447] block">{row.name}</span>
-                    <span className="text-[11px] font-mono text-slate-400">{row.studentId}</span>
-                  </td>
-                  <td className="p-3.5">
-                    <span className="font-semibold text-slate-800 block">{row.courseName}</span>
-                    <span className="text-[10px] text-slate-400">{row.batchName}</span>
-                  </td>
-                  <td className="p-3.5 text-center font-mono font-bold text-slate-700">
-                    {row.internalScore}/50
-                  </td>
-                  <td className="p-3.5 text-center font-mono font-bold text-slate-700">
-                    {row.midTermScore}/50
-                  </td>
-                  <td className="p-3.5 text-center">
-                    <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
-                      {row.oralProficiency}
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-center font-mono font-black text-sm text-slate-900">
-                    {row.percentage}%
-                  </td>
-                  <td className="p-3.5 text-center">
-                    <span className="font-bold text-slate-800">{row.finalGrade}</span>
-                  </td>
-                  <td className="p-3.5 text-center">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
-                        row.result === 'PASSED'
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : 'bg-rose-50 text-rose-800 border-rose-200'
-                      }`}
-                    >
-                      {row.result === 'PASSED' ? (
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      ) : (
-                        <AlertTriangle className="w-3 h-3 text-rose-600" />
-                      )}
-                      <span>{row.result}</span>
-                    </span>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-xs text-slate-400 font-medium">
+                    No student assessment marks or exam records found for this campus.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((row) => (
+                  <tr key={row.studentId} className="hover:bg-slate-50/60 transition">
+                    <td className="p-3.5">
+                      <span className="font-bold text-[#0B2447] block">{row.name}</span>
+                      <span className="text-[11px] font-mono text-slate-400">{row.studentId}</span>
+                    </td>
+                    <td className="p-3.5">
+                      <span className="font-semibold text-slate-800 block">{row.courseName}</span>
+                      <span className="text-[10px] text-slate-400">{row.batchName}</span>
+                    </td>
+                    <td className="p-3.5 text-center font-mono font-bold text-slate-700">
+                      {row.internalScore}/50
+                    </td>
+                    <td className="p-3.5 text-center font-mono font-bold text-slate-700">
+                      {row.midTermScore}/50
+                    </td>
+                    <td className="p-3.5 text-center">
+                      <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+                        {row.oralProficiency}
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-center font-mono font-black text-sm text-slate-900">
+                      {row.percentage}%
+                    </td>
+                    <td className="p-3.5 text-center">
+                      <span className="font-bold text-slate-800">{row.finalGrade}</span>
+                    </td>
+                    <td className="p-3.5 text-center">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
+                          row.result === 'PASSED'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
+                        }`}
+                      >
+                        {row.result === 'PASSED' ? (
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        ) : (
+                          <AlertTriangle className="w-3 h-3 text-rose-600" />
+                        )}
+                        <span>{row.result}</span>
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

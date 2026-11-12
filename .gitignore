@@ -1,0 +1,58 @@
+# ============================================================================
+# ISML LMS MONOREPO — GLOBAL GITIGNORE CONFIGURATION
+# Optimized for Railway (Backend) & Vercel/Node (Frontend) Deployment
+# ============================================================================
+
+# Dependencies
+node_modules/
+*/node_modules/
+.pnp/
+.pnp.js
+
+# Build Outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment & Sensitive Secret Files
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+web/.env
+web/.env.*
+!.env.production.example
+
+# Temporary Scripts, Dumps & Test Run files
+check_all_counts.js
+check_db.js
+dump_db_timetables.json
+dump_users.js
+export_real_timetables.js
+fix-upload-prerecorded.js
+real_db_dump.json
+seed_test_institutions.js
+test_direct_db.js
+generate_docs.py
+
+# Logs & Debugging
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+.vercel

@@ -1,0 +1,113 @@
+[
+  {
+    "id": "fac-201834",
+    "name": "Joy JK",
+    "designation": "Foreign Language Faculty & Master Trainer",
+    "email": "joyjk348@gmail.com",
+    "mobile": "9090909090",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "primaryLanguage": "FRENCH",
+    "qualification": "Certified Language Specialist",
+    "experienceYears": 8,
+    "nativeCountry": "India",
+    "status": "ACTIVE",
+    "activeBatchesCount": 2,
+    "assignedRoles": [
+      "LEAD_TRAINER",
+      "DOUBT_SOLVING_TUTOR",
+      "SUBSTITUTE_TUTOR"
+    ],
+    "weeklyHoursLimit": 24,
+    "allocatedHours": 14,
+    "assignedInstitutionType": "BOTH",
+    "assignedInstitutionName": "The American College & Sivakasi Lions School",
+    "assignedInstitutions": [
+      {
+        "id": "521323cd-00da-49a6-98ed-6b7918d181b4",
+        "name": "The American College",
+        "code": "AMER-COL",
+        "type": "COLLEGE"
+      },
+      {
+        "id": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+        "name": "Sivakasi Lions Matriculation Higher Secondary School",
+        "code": "SIVA-LIONS",
+        "type": "SCHOOL"
+      }
+    ]
+  },
+  {
+    "id": "fac-218604",
+    "name": "Prof. Antoine Martin",
+    "designation": "FRENCH Foreign Language Faculty",
+    "email": "antoine@isml.edu",
+    "mobile": "+91 98400 11223",
+    "avatarUrl": "/avatars/default.png",
+    "primaryLanguage": "FRENCH",
+    "qualification": "Certified Language Specialist",
+    "experienceYears": 4,
+    "nativeCountry": "India",
+    "status": "ACTIVE",
+    "activeBatchesCount": 2,
+    "assignedRoles": [
+      "LEAD_TRAINER",
+      "DOUBT_SOLVING_TUTOR",
+      "SUBSTITUTE_TUTOR"
+    ],
+    "weeklyHoursLimit": 24,
+    "allocatedHours": 14,
+    "assignedInstitutionType": "BOTH",
+    "assignedInstitutionName": "The American College & Sivakasi Lions School",
+    "assignedInstitutions": [
+      {
+        "id": "521323cd-00da-49a6-98ed-6b7918d181b4",
+        "name": "The American College",
+        "code": "AMER-COL",
+        "type": "COLLEGE"
+      },
+      {
+        "id": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+        "name": "Sivakasi Lions Matriculation Higher Secondary School",
+        "code": "SIVA-LIONS",
+        "type": "SCHOOL"
+      }
+    ]
+  },
+  {
+    "id": "fac-373222",
+    "name": "JK Faculty",
+    "designation": "FRENCH Foreign Language Faculty",
+    "email": "jk@isml.edu",
+    "mobile": "9090909090",
+    "avatarUrl": "/avatars/default.png",
+    "primaryLanguage": "FRENCH",
+    "qualification": "M.A. Linguistics / Certified Native C2",
+    "experienceYears": 4,
+    "nativeCountry": "India",
+    "status": "ACTIVE",
+    "activeBatchesCount": 2,
+    "assignedRoles": [
+      "LEAD_TRAINER",
+      "DOUBT_SOLVING_TUTOR",
+      "SUBSTITUTE_TUTOR"
+    ],
+    "weeklyHoursLimit": 24,
+    "allocatedHours": 14,
+    "assignedInstitutionType": "BOTH",
+    "assignedInstitutionName": "The American College & Sivakasi Lions School",
+    "assignedInstitutions": [
+      {
+        "id": "521323cd-00da-49a6-98ed-6b7918d181b4",
+        "name": "The American College",
+        "code": "AMER-COL",
+        "type": "COLLEGE"
+      },
+      {
+        "id": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+        "name": "Sivakasi Lions Matriculation Higher Secondary School",
+        "code": "SIVA-LIONS",
+        "type": "SCHOOL"
+      }
+    ]
+  }
+]

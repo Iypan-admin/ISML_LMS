@@ -14,6 +14,7 @@ import {
   Search,
   Bell,
   Building2,
+  GraduationCap,
   ShieldCheck,
   User,
   LogOut,
@@ -24,13 +25,35 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthRbacContext';
 import { useCollege, OVERALL_COLLEGE_ID } from '@/context/CollegeContext';
+import { notificationStore } from '@/services/notificationStore';
+import { soundNotification } from '@/lib/soundNotification';
 import NotificationDrawer from './NotificationDrawer';
 
 export default function SuperAdminHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, logout } = useAuth();
-  const { selectedCollegeId, setSelectedCollegeId, institutions, isOverall } = useCollege();
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+    setUnreadCount(notificationStore.getUnreadCount());
+    const unsub = notificationStore.subscribe(() => {
+      setUnreadCount(notificationStore.getUnreadCount());
+    });
+    return () => unsub();
+  }, []);
+  const {
+    selectedCollegeId,
+    setSelectedCollegeId,
+    institutions,
+    filteredInstitutions,
+    institutionCategory,
+    setInstitutionCategory,
+    isOverall,
+    isSchoolMode,
+  } = useCollege();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,32 +81,65 @@ export default function SuperAdminHeader() {
               </div>
             </Link>
 
-            {/* Desktop / Tablet College Scope Selector */}
-            <div className="hidden md:flex items-center bg-slate-100 hover:bg-slate-100/90 border border-slate-200 rounded-xl px-2.5 py-1 text-xs transition-colors shadow-2xs">
-              <Building2 className="w-3.5 h-3.5 text-[#0052CC] mr-1.5 shrink-0" />
-              <select
-                id="header-college-select-desktop"
-                value={selectedCollegeId}
-                onChange={(e) => setSelectedCollegeId(e.target.value)}
-                className="bg-transparent text-slate-800 font-bold text-xs outline-none cursor-pointer pr-1 truncate max-w-[220px] lg:max-w-[280px]"
-                title="Select College Scope"
-              >
-                <option value={OVERALL_COLLEGE_ID}>🏛️ Overall (All Colleges)</option>
-                {institutions.map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    🎓 {inst.name}
+            {/* College vs School Segmented Switcher & Campus Scope */}
+            <div className="hidden md:flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-2xs">
+              {/* Mode Toggle: College vs School */}
+              <div className="flex items-center bg-white/90 p-0.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setInstitutionCategory('COLLEGE')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 cursor-pointer ${institutionCategory === 'COLLEGE'
+                      ? 'bg-[#0052CC] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  title="Switch to College Scope (Degrees, Semesters, Batches)"
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>College</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInstitutionCategory('SCHOOL')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 cursor-pointer ${institutionCategory === 'SCHOOL'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                  title="Switch to School Scope (Grades, Sections, Terms)"
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>School</span>
+                </button>
+              </div>
+
+              {/* Scoped Institution Dropdown */}
+              <div className="flex items-center pl-1.5 pr-2 py-0.5">
+                <select
+                  id="header-college-select-desktop"
+                  value={selectedCollegeId}
+                  onChange={(e) => setSelectedCollegeId(e.target.value)}
+                  className="bg-transparent text-slate-800 font-bold text-xs outline-none cursor-pointer pr-1 truncate max-w-[180px] lg:max-w-[240px]"
+                  title={`Select ${isSchoolMode ? 'School' : 'College'} Scope`}
+                >
+                  <option value={OVERALL_COLLEGE_ID}>
+                    {isSchoolMode ? '🏫 Overall (All Schools)' : '🏛️ Overall (All Colleges)'}
                   </option>
-                ))}
-              </select>
-              {isOverall ? (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-black bg-blue-50 text-[#0052CC] border border-blue-200 uppercase tracking-wider shrink-0">
-                  Overall
-                </span>
-              ) : (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider shrink-0">
-                  Filtered
-                </span>
-              )}
+                  {filteredInstitutions.map((inst) => (
+                    <option key={inst.id} value={inst.id}>
+                      {inst.type === 'SCHOOL' ? '🏫' : '🎓'} {inst.name}
+                    </option>
+                  ))}
+                </select>
+                {isOverall ? (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider shrink-0 ${isSchoolMode ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-[#0052CC] border border-blue-200'
+                    }`}>
+                    All
+                  </span>
+                ) : (
+                  <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-white uppercase tracking-wider shrink-0">
+                    Active
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -109,20 +165,30 @@ export default function SuperAdminHeader() {
 
           {/* ─── Right: Mobile College Scoper, Notifications & Profile (No Search Icon on Mobile) ─── */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Mobile College Selector Pill */}
-            <div className="flex md:hidden items-center bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl px-2 py-1 text-xs shrink-0 max-w-[125px]">
-              <Building2 className="w-3.5 h-3.5 text-[#0052CC] mr-1 shrink-0" />
+            {/* Mobile College/School Selector Pill */}
+            <div className="flex md:hidden items-center bg-slate-100 border border-slate-200 rounded-xl px-1.5 py-1 text-xs shrink-0 max-w-[150px] gap-1">
+              <button
+                type="button"
+                onClick={() => setInstitutionCategory(isSchoolMode ? 'COLLEGE' : 'SCHOOL')}
+                className={`p-1 rounded-lg text-[10px] font-black shrink-0 ${isSchoolMode ? 'bg-emerald-600 text-white' : 'bg-[#0052CC] text-white'
+                  }`}
+                title={`Currently in ${isSchoolMode ? 'School' : 'College'} Mode. Tap to switch.`}
+              >
+                {isSchoolMode ? 'SCH' : 'COL'}
+              </button>
               <select
                 id="header-college-select-mobile"
                 value={selectedCollegeId}
                 onChange={(e) => setSelectedCollegeId(e.target.value)}
                 className="bg-transparent text-slate-900 font-bold text-[11px] outline-none cursor-pointer w-full truncate pr-0.5"
-                title="Select College Scope"
+                title={`Select ${isSchoolMode ? 'School' : 'College'} Scope`}
               >
-                <option value={OVERALL_COLLEGE_ID}>🏛️ Overall</option>
-                {institutions.map((inst) => (
+                <option value={OVERALL_COLLEGE_ID}>
+                  {isSchoolMode ? '🏫 All Schools' : '🏛️ All Colleges'}
+                </option>
+                {filteredInstitutions.map((inst) => (
                   <option key={inst.id} value={inst.id}>
-                    🎓 {inst.code}
+                    {inst.type === 'SCHOOL' ? '🏫' : '🎓'} {inst.code}
                   </option>
                 ))}
               </select>
@@ -136,7 +202,13 @@ export default function SuperAdminHeader() {
               title="Notifications & Alerts"
             >
               <Bell className="w-4 h-4" />
-              <span className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white animate-pulse" />
+              {mounted && unreadCount > 0 ? (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white shadow-xs animate-bounce">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              ) : (
+                <span className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-2 h-2 rounded-full bg-slate-300 ring-2 ring-white" />
+              )}
             </button>
 
             {/* User Profile Avatar & Dropdown */}

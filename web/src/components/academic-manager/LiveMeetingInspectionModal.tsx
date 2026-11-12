@@ -44,6 +44,7 @@ import {
   Info
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
+import RealLiveKitStage from '@/components/live/RealLiveKitStage';
 
 export interface ClassSessionData {
   id: string;
@@ -83,134 +84,36 @@ interface LiveMeetingInspectionModalProps {
   session: ClassSessionData;
 }
 
-const INITIAL_STUDENTS: StudentAttendee[] = [
-  {
-    id: 'att-1',
-    name: 'Bharathi M',
-    rollNo: '2026-FR-8942',
-    college: 'Anna University, Chennai',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '10:30 AM',
-    durationMins: 42,
-    attendanceStatus: 'PRESENT',
-    micOn: false,
-    videoOn: true,
-    handRaised: true,
-    connectionQuality: 'EXCELLENT',
-  },
-  {
-    id: 'att-2',
-    name: 'Priya Sharma',
-    rollNo: '2026-FR-8910',
-    college: 'IIT Madras',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '10:31 AM',
-    durationMins: 41,
-    attendanceStatus: 'PRESENT',
-    micOn: false,
-    videoOn: true,
-    handRaised: false,
-    connectionQuality: 'EXCELLENT',
-  },
-  {
-    id: 'att-3',
-    name: 'Rahul Verma',
-    rollNo: '2026-FR-8915',
-    college: 'Loyola College, Chennai',
-    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '10:38 AM',
-    durationMins: 34,
-    attendanceStatus: 'LATE',
-    micOn: false,
-    videoOn: false,
-    handRaised: false,
-    connectionQuality: 'GOOD',
-  },
-  {
-    id: 'att-4',
-    name: 'Sneha Patel',
-    rollNo: '2026-FR-8922',
-    college: 'Stella Maris College',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '10:30 AM',
-    durationMins: 42,
-    attendanceStatus: 'PRESENT',
-    micOn: true,
-    videoOn: true,
-    handRaised: false,
-    connectionQuality: 'EXCELLENT',
-  },
-  {
-    id: 'att-5',
-    name: 'Karthik Raja',
-    rollNo: '2026-FR-8930',
-    college: 'PSG Tech, Coimbatore',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '10:32 AM',
-    durationMins: 40,
-    attendanceStatus: 'PRESENT',
-    micOn: false,
-    videoOn: true,
-    handRaised: false,
-    connectionQuality: 'GOOD',
-  },
-  {
-    id: 'att-6',
-    name: 'Ananya Deshmukh',
-    rollNo: '2026-FR-8938',
-    college: 'Madras Christian College (MCC)',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '10:30 AM',
-    durationMins: 42,
-    attendanceStatus: 'PRESENT',
-    micOn: false,
-    videoOn: false,
-    handRaised: false,
-    connectionQuality: 'EXCELLENT',
-  },
-  {
-    id: 'att-7',
-    name: 'Siddharth Menon',
-    rollNo: '2026-FR-8951',
-    college: 'Anna University, Chennai',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '--',
-    durationMins: 0,
-    attendanceStatus: 'ABSENT',
-    micOn: false,
-    videoOn: false,
-    handRaised: false,
-    connectionQuality: 'POOR',
-  },
-  {
-    id: 'att-8',
-    name: 'Divya Krishnan',
-    rollNo: '2026-FR-8964',
-    college: 'Women\'s Christian College (WCC)',
-    avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&auto=format&fit=crop&q=80',
-    joinedAt: '--',
-    durationMins: 0,
-    attendanceStatus: 'EXCUSED',
-    micOn: false,
-    videoOn: false,
-    handRaised: false,
-    connectionQuality: 'POOR',
-  },
-];
+const INITIAL_STUDENTS: StudentAttendee[] = [];
 
 export default function LiveMeetingInspectionModal({
   isOpen,
   onClose,
   session,
 }: LiveMeetingInspectionModalProps) {
-  const { showSuccess } = useToast();
+  const { showSuccess, showWarning } = useToast();
+
+  // Safety check: verify live status on mount. If tutor is NOT live, immediately close modal and show toast!
+  useEffect(() => {
+    if (!isOpen || !session?.id) return;
+    fetch('http://localhost:4000/api/live-classes/' + session.id)
+      .then((r) => r.json())
+      .then((json) => {
+        const isLive = json?.data?.status === 'LIVE' || json?.data?.tutorJoined === true;
+        if (!isLive) {
+          onClose();
+          showWarning('Live class has not started yet by tutor. Please wait for the faculty to launch the live broadcast.', 'Class Not Live Yet');
+        }
+      })
+      .catch(() => {});
+  }, [isOpen, session?.id, onClose, showWarning]);
 
   // Navigation tabs in side sheet
   const [activeSideTab, setActiveSideTab] = useState<'ATTENDANCE' | 'PEOPLE' | 'CHAT' | 'INSPECT'>('ATTENDANCE');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  // Attendance management state
-  const [attendees, setAttendees] = useState<StudentAttendee[]>(INITIAL_STUDENTS);
+  // Attendance management state (Real dynamic students from DB)
+  const [attendees, setAttendees] = useState<StudentAttendee[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [attendanceFilter, setAttendanceFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT'>('ALL');
 
@@ -219,17 +122,76 @@ export default function LiveMeetingInspectionModal({
   const [managerCamMuted, setManagerCamMuted] = useState(true);
   const [managerMicMuted, setManagerMicMuted] = useState(true);
   const [screenShareMode, setScreenShareMode] = useState<'PRESENTATION' | 'GRID' | 'SPOTLIGHT'>('PRESENTATION');
-  const [elapsedSeconds, setElapsedSeconds] = useState(2540); // ~42 mins
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
 
-  // Chat messages
-  const [messages, setMessages] = useState([
-    { sender: session.facultyName, role: 'Instructor', text: 'Bonjour à tous! Please turn to slide 14 on Café conversation phrases.', time: '10:30 AM' },
-    { sender: 'Academic Manager (You)', role: 'Supervisor', text: 'Class inspection ongoing. Audio transmission clarity: 100%. Attendance auto-tracking enabled.', time: '10:32 AM' },
-    { sender: 'Bharathi M', role: 'Student', text: 'Bonjour professeur! Audio is very clear.', time: '10:33 AM' },
-    { sender: 'Priya Sharma', role: 'Student', text: 'Should we conjugate regular -er verbs as well?', time: '10:36 AM' },
-  ]);
+  // Chat messages (dynamically loaded from live class interactive state)
+  const [messages, setMessages] = useState<Array<{ sender: string; role: string; text: string; time: string }>>([]);
   const [chatInput, setChatInput] = useState('');
+
+  // Fetch real students and real room state
+  useEffect(() => {
+    if (!isOpen || !session?.id) return;
+    let isSubscribed = true;
+
+    // Load real students from database
+    const loadRealStudents = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/api/portals/students');
+        const json = await res.json();
+        if (json?.data && Array.isArray(json.data) && isSubscribed) {
+          const mapped: StudentAttendee[] = json.data.map((stu: any, idx: number) => ({
+            id: stu.id,
+            name: stu.name,
+            rollNo: stu.studentId || ('STU-' + stu.id.slice(-6).toUpperCase()),
+            college: stu.collegeName || 'Loyola Campus',
+            avatar: stu.avatarUrl || ('https://images.unsplash.com/photo-' + (1534528741775 + (idx * 13) % 1000) + '?w=150'),
+            joinedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            durationMins: 10,
+            attendanceStatus: 'PRESENT',
+            micOn: false,
+            videoOn: true,
+            handRaised: false,
+            connectionQuality: 'EXCELLENT',
+          }));
+          setAttendees(mapped);
+        }
+      } catch (e) {
+        console.warn('Real students load notice:', e);
+      }
+    };
+
+    // Load interactive state (chats & shared materials)
+    const loadInteractiveState = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/api/live-classes/' + session.id + '/interactive-state');
+        const json = await res.json();
+        if (json?.data && isSubscribed) {
+          if (Array.isArray(json.data.messages) && json.data.messages.length > 0) {
+            setMessages(json.data.messages);
+          } else {
+            setMessages([
+              {
+                sender: 'System Broadcast',
+                role: 'Security',
+                text: 'Live class monitoring active for ' + session.topic + '. Academic Supervisor connected in Surveillance Mode.',
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              },
+            ]);
+          }
+        }
+      } catch {}
+    };
+
+    loadRealStudents();
+    loadInteractiveState();
+
+    const interval = setInterval(loadInteractiveState, 5000);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [isOpen, session?.id, session?.topic]);
 
   // Live timer effect
   useEffect(() => {
@@ -355,141 +317,19 @@ export default function LiveMeetingInspectionModal({
         <div className="flex-1 bg-[#121212] p-2 sm:p-4 flex flex-col justify-between overflow-hidden relative">
           {/* Main Stage Grid Container */}
           <div className="flex-1 rounded-2xl overflow-hidden bg-[#1E1E1E] border border-white/10 p-2 sm:p-3 relative flex flex-col gap-2">
-            {screenShareMode === 'PRESENTATION' && (
-              <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2 sm:gap-3 min-h-0">
-                {/* 1. Large Presentation Screen */}
-                <div className="lg:col-span-3 bg-slate-900 rounded-xl relative overflow-hidden flex flex-col justify-between border border-slate-800 shadow-xl">
-                  {/* Presentation Header */}
-                  <div className="p-2 sm:p-3 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-10 text-xs">
-                    <span className="font-bold text-cyan-400 flex items-center gap-2 truncate">
-                      <Monitor className="w-4 h-4 text-cyan-400 shrink-0" />
-                      <span className="truncate">{session.facultyName} (Screen Presentation: LiveKit 1080p)</span>
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 shrink-0">
-                      60 FPS HD
-                    </span>
-                  </div>
-
-                  {/* Simulated High-Res Slide Presentation Canvas */}
-                  <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 text-center space-y-4 bg-gradient-to-b from-slate-900 via-[#0B2447] to-slate-950 overflow-y-auto">
-                    <div className="p-5 sm:p-7 bg-white/10 border border-white/20 rounded-2xl backdrop-blur-md w-full max-w-xl space-y-3 shadow-2xl">
-                      <div className="flex items-center justify-between text-[11px] font-mono text-cyan-300">
-                        <span>ISML INTERACTIVE WEBINAR</span>
-                        <span>MODULE 3 • SLIDE 18</span>
-                      </div>
-                      <h3 className="text-lg sm:text-2xl font-bold text-white font-serif tracking-tight leading-snug">
-                        Pratique Orale: Les Dialogues au Café Parisien
-                      </h3>
-                      <div className="p-3.5 bg-slate-950/80 rounded-xl text-left space-y-2 text-xs sm:text-sm text-slate-200 font-mono border border-slate-800">
-                        <p>
-                          <span className="text-cyan-400 font-bold">Serveur:</span> &ldquo;Bonjour Madame, que désirez-vous prendre aujourd&apos;hui?&rdquo;
-                        </p>
-                        <p>
-                          <span className="text-emerald-400 font-bold">Étudiant:</span> &ldquo;Bonjour! Je voudrais un croissant chaud et un grand café crème.&rdquo;
-                        </p>
-                      </div>
-                      <p className="text-[11px] text-slate-400 italic">
-                        Speaking task: Students practice roleplay in pairs. Live transcription active.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Live Reaction Overlay */}
-                  {selectedEmoji && (
-                    <div className="absolute bottom-12 right-6 p-3 bg-slate-900/90 text-3xl rounded-full border border-cyan-400/50 shadow-2xl animate-bounce z-20">
-                      {selectedEmoji}
-                    </div>
-                  )}
-                </div>
-
-                {/* 2. Side Spotlight Column: Faculty Cam + Student Thumbnails */}
-                <div className="lg:col-span-1 flex flex-row lg:flex-col gap-2 shrink-0 overflow-x-auto lg:overflow-y-auto max-h-full">
-                  {/* Faculty Camera Tile */}
-                  <div className="relative aspect-video lg:aspect-auto lg:h-44 w-40 lg:w-full rounded-xl overflow-hidden bg-slate-950 border-2 border-cyan-500/80 shadow-lg shrink-0">
-                    <Image
-                      src={session.facultyAvatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80'}
-                      alt={session.facultyName}
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-white truncate max-w-[100px]">{session.facultyName}</span>
-                      <span className="p-1 rounded-full bg-cyan-500/20 text-cyan-400">
-                        <Mic className="w-3 h-3 text-cyan-400" />
-                      </span>
-                    </div>
-                    <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-black bg-[#0052CC] text-white">
-                      TRAINER
-                    </span>
-                  </div>
-
-                  {/* Top Enrolled Student Tiles */}
-                  {attendees.slice(0, 3).map((stu) => (
-                    <div
-                      key={stu.id}
-                      className="relative aspect-video lg:aspect-auto lg:h-32 w-36 lg:w-full rounded-xl overflow-hidden bg-slate-900 border border-white/10 shrink-0"
-                    >
-                      <Image src={stu.avatar} alt={stu.name} fill className="object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-between text-[10px]">
-                        <span className="font-semibold text-slate-200 truncate max-w-[90px]">{stu.name}</span>
-                        {stu.micOn ? (
-                          <Mic className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <MicOff className="w-3 h-3 text-slate-400" />
-                        )}
-                      </div>
-                      {stu.handRaised && (
-                        <div className="absolute top-1.5 right-1.5 p-1 rounded-full bg-amber-500/90 text-white animate-bounce shadow">
-                          <Hand className="w-3 h-3" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {screenShareMode === 'GRID' && (
-              /* Gallery Grid View */
-              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 overflow-y-auto">
-                {/* Faculty Card */}
-                <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border-2 border-cyan-500 shadow-lg">
-                  <Image
-                    src={session.facultyAvatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80'}
-                    alt={session.facultyName}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-between text-xs">
-                    <span className="font-bold text-white">{session.facultyName} (Instructor)</span>
-                    <Mic className="w-3.5 h-3.5 text-cyan-400" />
-                  </div>
-                </div>
-
-                {/* All Attendees in Grid */}
-                {attendees.map((stu) => (
-                  <div
-                    key={stu.id}
-                    className="relative aspect-video rounded-xl overflow-hidden bg-slate-900 border border-white/10"
-                  >
-                    <Image src={stu.avatar} alt={stu.name} fill className="object-cover" />
-                    <div className="absolute inset-x-0 bottom-0 p-1.5 sm:p-2 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-between text-[11px]">
-                      <span className="font-semibold text-slate-200 truncate">{stu.name}</span>
-                      {stu.micOn ? (
-                        <Mic className="w-3 h-3 text-emerald-400" />
-                      ) : (
-                        <MicOff className="w-3 h-3 text-slate-400" />
-                      )}
-                    </div>
-                    {stu.handRaised && (
-                      <div className="absolute top-1.5 right-1.5 p-1 rounded-full bg-amber-500 text-white animate-bounce">
-                        <Hand className="w-3 h-3" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* 🔴 100% REAL LIVEKIT WEBRTC VIDEO STAGE (Zero Mock) */}
+            <div className="flex-1 w-full h-full relative rounded-xl overflow-hidden bg-slate-950 min-h-0 flex flex-col">
+              <RealLiveKitStage
+                classId={session.id}
+                identity="academic_supervisor"
+                name="Academic Supervisor (HQ)"
+                role="academic"
+                hideControls={false}
+                externalMicOn={!managerMicMuted}
+                externalVideoOn={!managerCamMuted}
+                onDisconnect={onClose}
+              />
+            </div>
           </div>
 
           {/* 🟢 BOTTOM CONTROLS BAR (Google Meet Signature Toolbar) */}

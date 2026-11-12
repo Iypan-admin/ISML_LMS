@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -37,7 +37,6 @@ const mobileNavLinks = [
   { name: 'Live Classes', href: '/live-classes', icon: Video, badge: 'LIVE' },
   { name: 'Pre-Recorded Sessions', href: '/pre-recorded', icon: PlaySquare },
   { name: 'Class Recordings Archive', href: '/recordings', icon: Film },
-  { name: 'LSRW Practice Engine', href: '/lsrw', icon: Headphones },
   { name: 'Assignments & Homework', href: '/assignments', icon: FileCheck2 },
   { name: 'Exams & Assessments', href: '/exams', icon: GraduationCap },
   { name: 'Results & Performance', href: '/results', icon: BarChart3 },
@@ -250,3 +249,4 @@ export default function Header() {
     </>
   );
 }
+

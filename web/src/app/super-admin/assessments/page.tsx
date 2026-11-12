@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileCheck2,
@@ -63,8 +63,42 @@ export default function SuperAdminAssessmentsPage() {
   // Primary Tab: Assessments Management vs Student Marks Ledger
   const [activeMainTab, setActiveMainTab] = useState<'ASSESSMENTS' | 'STUDENT_MARKS'>('ASSESSMENTS');
 
-  // Assessments Management State
-  const [assessments, setAssessments] = useState<AssessmentItem[]>(mockAssessments);
+  // Assessments Management State - Live Data Driven
+  const [assessments, setAssessments] = useState<AssessmentItem[]>([]);
+  const [studentMarksLedger, setStudentMarksLedger] = useState<StudentMarkEntry[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Fetch real assessments and marks from backend
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        const res = await fetch('http://localhost:4000/api/portals/assessments');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setAssessments(Array.isArray(data.assessments) ? data.assessments : (Array.isArray(data) ? data : []));
+            setStudentMarksLedger(Array.isArray(data.marks) ? data.marks : []);
+          }
+        } else {
+          if (isMounted) {
+            setAssessments([]);
+            setStudentMarksLedger([]);
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setAssessments([]);
+          setStudentMarksLedger([]);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadData();
+    return () => { isMounted = false; };
+  }, []);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [viewAssessment, setViewAssessment] = useState<AssessmentItem | null>(null);
   const [editAssessment, setEditAssessment] = useState<AssessmentItem | null>(null);
@@ -138,7 +172,7 @@ export default function SuperAdminAssessmentsPage() {
 
   // Filtered Marks Ledger
   const filteredMarks = useMemo(() => {
-    return mockStudentMarksLedger.filter((item) => {
+    return studentMarksLedger.filter((item) => {
       // Course filter
       if (selectedCourseFilter !== 'ALL') {
         const crs = mockCourses.find((c) => c.id === selectedCourseFilter);
@@ -242,7 +276,7 @@ export default function SuperAdminAssessmentsPage() {
   // Selected student for Report Card Modal
   const selectedStudentForModal = useMemo(() => {
     if (!activeStudentModal) return null;
-    const entries = mockStudentMarksLedger.filter((m) => m.studentId === activeStudentModal);
+    const entries = studentMarksLedger.filter((m) => m.studentId === activeStudentModal);
     if (entries.length === 0) return null;
     return {
       studentId: activeStudentModal,
@@ -416,21 +450,6 @@ export default function SuperAdminAssessmentsPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {activeMainTab === 'ASSESSMENTS' && (
-            <Can permission="ASSESSMENT_CREATE">
-              <button
-                onClick={() => {
-                  setEditAssessment(null);
-                  setIsDrawerOpen(true);
-                }}
-                className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>+ Create Assessment</span>
-              </button>
-            </Can>
-          )}
-
           {activeMainTab === 'STUDENT_MARKS' && (
             <button
               onClick={() => showSuccess('Exported Student Mark List (Excel) successfully!')}

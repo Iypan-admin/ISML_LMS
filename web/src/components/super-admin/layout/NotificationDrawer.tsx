@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Bell,
   X,
@@ -21,59 +22,49 @@ import {
   ExternalLink,
   Trash2,
   Filter,
+  GraduationCap,
+  Building,
+  Clock,
+  AlertCircle,
+  BookOpen,
+  Users,
+  Video,
+  CreditCard,
+  UserCheck,
 } from 'lucide-react';
-import { NotificationItem } from '@/types/rbac';
-import { mockNotifications } from '@/mock/superAdminData';
+import { notificationStore, LiveNotification } from '@/services/notificationStore';
 
 export interface NotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface ExtendedNotification extends NotificationItem {
-  isRead?: boolean;
-}
-
-const INITIAL_NOTIFICATIONS: ExtendedNotification[] = [
-  ...mockNotifications.map((n, idx) => ({ ...n, isRead: idx > 0 })),
-  {
-    id: 'notif-03',
-    title: 'New Fee Structure Approval Pending',
-    message: 'Finance Manager at Loyola College submitted AY 2026-27 Semester 1 schedule for authorization.',
-    type: 'SYSTEM',
-    audience: 'SUPER_ADMINS',
-    sentBy: 'Finance System',
-    sentAt: '2026-10-08T09:15:00Z',
-    status: 'SENT',
-    isRead: false,
-  },
-  {
-    id: 'notif-04',
-    title: 'Faculty Session Rescheduled',
-    message: 'Prof. Ramesh shifted JLPT N4 Grammar from Virtual Studio 1 to Interactive Audio Lab.',
-    type: 'ACADEMIC',
-    audience: 'ALL_FACULTY',
-    sentBy: 'Academic Coordinator',
-    sentAt: '2026-10-08T07:45:00Z',
-    status: 'SENT',
-    isRead: true,
-  },
-  {
-    id: 'notif-05',
-    title: 'Zero-Plaintext Secret Rotated',
-    message: 'Institutional tenant API tokens were securely rotated with SHA-256 HMAC digest validation.',
-    type: 'SYSTEM',
-    audience: 'SUPER_ADMINS',
-    sentBy: 'Security Bot',
-    sentAt: '2026-10-07T18:20:00Z',
-    status: 'SENT',
-    isRead: true,
-  },
-];
-
 export default function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps) {
-  const [items, setItems] = useState<ExtendedNotification[]>(INITIAL_NOTIFICATIONS);
-  const [filter, setFilter] = useState<'ALL' | 'UNREAD' | 'SYSTEM' | 'ACADEMIC'>('ALL');
+  const pathname = usePathname();
+
+  // Detect current portal key from pathname
+  const currentPortalKey = React.useMemo(() => {
+    if (pathname?.startsWith('/academic-manager')) return 'ACADEMIC';
+    if (pathname?.startsWith('/college-admin')) return 'COLLEGE_ADMIN';
+    if (pathname?.startsWith('/school-admin')) return 'SCHOOL_ADMIN';
+    if (pathname?.startsWith('/tutor')) return 'TUTOR';
+    if (pathname?.startsWith('/finance-manager')) return 'FINANCE';
+    if (pathname?.startsWith('/sales-manager')) return 'SALES';
+    if (pathname?.startsWith('/parent')) return 'PARENT';
+    if (pathname?.startsWith('/super-admin')) return 'SUPER_ADMIN';
+    return 'STUDENT';
+  }, [pathname]);
+
+  const [items, setItems] = useState<LiveNotification[]>(() => notificationStore.getNotificationsForPortal(currentPortalKey));
+  const [filter, setFilter] = useState<'ALL' | 'UNREAD' | 'APPROVALS' | 'SYSTEM'>('ALL');
+
+  useEffect(() => {
+    setItems(notificationStore.getNotificationsForPortal(currentPortalKey));
+    const unsub = notificationStore.subscribe(() => {
+      setItems(notificationStore.getNotificationsForPortal(currentPortalKey));
+    });
+    return () => unsub();
+  }, [currentPortalKey]);
 
   // Handle escape key
   useEffect(() => {
@@ -90,20 +81,31 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
     };
   }, [isOpen, onClose]);
 
+  // Dynamically resolve target full notifications page based on active portal route
+  const fullNotificationsUrl = React.useMemo(() => {
+    if (pathname?.startsWith('/academic-manager')) return '/academic-manager/notifications';
+    if (pathname?.startsWith('/college-admin')) return '/college-admin/notifications';
+    if (pathname?.startsWith('/school-admin')) return '/school-admin/notifications';
+    if (pathname?.startsWith('/tutor')) return '/tutor/notifications';
+    if (pathname?.startsWith('/finance-manager')) return '/finance-manager/notifications';
+    if (pathname?.startsWith('/sales-manager')) return '/sales-manager/notifications';
+    if (pathname?.startsWith('/parent')) return '/parent/notifications';
+    if (pathname?.startsWith('/super-admin')) return '/super-admin/notifications';
+    return '/notifications'; // Student & General
+  }, [pathname]);
+
   if (!isOpen) return null;
 
   const unreadCount = items.filter((i) => !i.isRead).length;
 
   const markAllAsRead = () => {
-    setItems((prev) => prev.map((item) => ({ ...item, isRead: true })));
+    notificationStore.markAllAsRead(currentPortalKey);
   };
 
-  const toggleReadStatus = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, isRead: !item.isRead } : item
-      )
-    );
+  const toggleReadStatus = (id: string, isRead: boolean) => {
+    if (!isRead) {
+      notificationStore.markAsRead(id);
+    }
   };
 
   const clearNotification = (id: string) => {
@@ -112,29 +114,84 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
 
   const filteredItems = items.filter((item) => {
     if (filter === 'UNREAD') return !item.isRead;
-    if (filter === 'SYSTEM') return item.type === 'SYSTEM';
-    if (filter === 'ACADEMIC') return item.type === 'ACADEMIC';
+    if (filter === 'APPROVALS') return item.type === 'APPROVAL_REQUEST' || item.type === 'APPROVAL_REVIEWED';
+    if (filter === 'SYSTEM') return item.type === 'SYSTEM' || item.type === 'ANNOUNCEMENT';
     return true;
   });
 
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'SYSTEM':
+  const getTargetBadge = (targetModule?: string) => {
+    switch (targetModule) {
+      case 'COURSE':
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 uppercase tracking-wider">
-            System Alert
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-purple-50 text-purple-700 border border-purple-200">
+            <BookOpen className="w-2.5 h-2.5" />
+            <span>Course</span>
           </span>
         );
-      case 'ACADEMIC':
+      case 'BATCH':
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-blue-50 text-[#0052CC] border border-blue-200 uppercase tracking-wider">
-            Academic
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-50 text-blue-700 border border-blue-200">
+            <Users className="w-2.5 h-2.5" />
+            <span>Batch / Cohort</span>
+          </span>
+        );
+      case 'LIVE_CLASS':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <Video className="w-2.5 h-2.5" />
+            <span>Live Class</span>
+          </span>
+        );
+      case 'FEES':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+            <CreditCard className="w-2.5 h-2.5" />
+            <span>Finance / Fee</span>
+          </span>
+        );
+      case 'ADMISSION':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-cyan-50 text-cyan-700 border border-cyan-200">
+            <GraduationCap className="w-2.5 h-2.5" />
+            <span>Admission</span>
+          </span>
+        );
+      case 'INSTITUTION':
+        return (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <Building className="w-2.5 h-2.5" />
+            <span>Institution MoU</span>
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getTypeBadge = (type: string, targetModule?: string) => {
+    switch (type) {
+      case 'APPROVAL_REQUEST':
+        return (
+          <span className="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-700 border border-amber-400/50 flex items-center justify-center shrink-0 shadow-2xs" title="Pending Approval">
+            <Clock className="w-3.5 h-3.5" />
+          </span>
+        );
+      case 'APPROVAL_REVIEWED':
+        return (
+          <span className="w-6 h-6 rounded-lg bg-emerald-500/15 text-emerald-700 border border-emerald-400/50 flex items-center justify-center shrink-0 shadow-2xs" title="Authorized">
+            <CheckCheck className="w-3.5 h-3.5" />
+          </span>
+        );
+      case 'SYSTEM':
+        return (
+          <span className="w-6 h-6 rounded-lg bg-rose-500/15 text-rose-700 border border-rose-400/50 flex items-center justify-center shrink-0 shadow-2xs" title="System Alert">
+            <AlertCircle className="w-3.5 h-3.5" />
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-200 uppercase tracking-wider">
-            Announcement
+          <span className="w-6 h-6 rounded-lg bg-blue-500/15 text-[#0052CC] border border-blue-400/50 flex items-center justify-center shrink-0 shadow-2xs" title="Broadcast">
+            <Bell className="w-3.5 h-3.5" />
           </span>
         );
     }
@@ -213,6 +270,17 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
               </button>
               <button
                 type="button"
+                onClick={() => setFilter('APPROVALS')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  filter === 'APPROVALS'
+                    ? 'bg-[#0052CC] text-white shadow-2xs'
+                    : 'text-slate-600 hover:bg-slate-200/70'
+                }`}
+              >
+                Approvals & Requests
+              </button>
+              <button
+                type="button"
                 onClick={() => setFilter('SYSTEM')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                   filter === 'SYSTEM'
@@ -220,18 +288,7 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
                     : 'text-slate-600 hover:bg-slate-200/70'
                 }`}
               >
-                System
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter('ACADEMIC')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                  filter === 'ACADEMIC'
-                    ? 'bg-[#0052CC] text-white shadow-2xs'
-                    : 'text-slate-600 hover:bg-slate-200/70'
-                }`}
-              >
-                Academic
+                System Alerts
               </button>
             </div>
 
@@ -248,76 +305,102 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
           </div>
 
           {/* ─── Notification List ─── */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-2">
             {filteredItems.length === 0 ? (
-              <div className="text-center py-16 px-4">
-                <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto mb-3">
-                  <Bell className="w-6 h-6" />
+              <div className="text-center py-10 px-4">
+                <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto mb-2">
+                  <Bell className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-800">No notifications found</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                  {filter === 'UNREAD'
-                    ? "You are all caught up! No unread notifications at this time."
-                    : "No alerts match the selected filter category."}
+                <h3 className="text-xs font-bold text-slate-800">No notifications</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {filter === 'UNREAD' ? "No unread notifications." : "No alerts in this category."}
                 </p>
               </div>
             ) : (
               filteredItems.map((item) => (
                 <div
                   key={item.id}
-                  className={`p-3.5 rounded-2xl border transition-all relative group ${
+                  className={`p-2.5 rounded-xl border transition-all relative flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 group ${
                     !item.isRead
-                      ? 'bg-blue-50/50 border-blue-200 shadow-2xs'
+                      ? 'bg-blue-50/40 border-blue-200 shadow-2xs hover:bg-blue-50/70'
                       : 'bg-white border-slate-200/90 hover:border-slate-300'
                   }`}
                 >
-                  {/* Status Indicator Dot */}
-                  {!item.isRead && (
-                    <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#0052CC]" />
-                  )}
+                  {/* Left Section: Icon + Rich Categorized Content */}
+                  <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                    {getTypeBadge(item.type, item.targetModule)}
 
-                  <div className="flex items-start justify-between gap-2 mb-1.5 pr-4">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {getTypeBadge(item.type)}
-                      <span className="text-[10px] text-slate-400 font-semibold">
-                        {new Date(item.sentAt).toLocaleDateString([], {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      {/* Top Meta Line: Target Category Tag + Admin Name Tag + Campus */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Target Module Badge (Course / Batch / Live Class / Fees) */}
+                        {getTargetBadge(item.targetModule)}
+
+                        {/* Submitter Admin Pill */}
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200/80">
+                          <UserCheck className="w-2.5 h-2.5 text-slate-500" />
+                          <span className="truncate max-w-[120px]">{item.submittedBy?.name || 'Academic Manager'}</span>
+                        </span>
+
+                        {/* Origin Campus / Source Portal */}
+                        <span className="text-[10px] font-semibold text-slate-500 truncate max-w-[140px]">
+                          {item.institutionName ? item.institutionName : item.sourcePortal}
+                        </span>
+
+                        {!item.isRead && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0052CC] shrink-0" />
+                        )}
+                      </div>
+
+                      {/* Main Title & Message in Compact Single Line */}
+                      <div className="flex items-center gap-2 text-xs truncate">
+                        <h4 className="font-bold text-slate-900 truncate">
+                          {item.title}
+                        </h4>
+                        <span className="text-slate-300 hidden sm:inline">•</span>
+                        <p className="text-[11px] text-slate-600 truncate hidden sm:inline">
+                          {item.message}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
-                    {item.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    {item.message}
-                  </p>
-
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="truncate">
-                      By <strong className="text-slate-700">{item.sentBy}</strong>
+                  {/* Right Section: Time + Actions */}
+                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                    <span className="text-[10px] text-slate-400 font-medium shrink-0">
+                      {new Date(item.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </span>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
+                      {item.actionUrl && (
+                        <Link
+                          href={item.actionUrl}
+                          onClick={() => {
+                            toggleReadStatus(item.id, false);
+                            onClose();
+                          }}
+                          className="px-2.5 py-1 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg text-[10px] font-extrabold transition-all shadow-2xs inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Review</span>
+                          <ArrowRight className="w-2.5 h-2.5" />
+                        </Link>
+                      )}
                       <button
                         type="button"
-                        onClick={() => toggleReadStatus(item.id)}
-                        className="text-xs font-semibold text-slate-500 hover:text-[#0052CC] transition-colors"
+                        onClick={() => toggleReadStatus(item.id, item.isRead)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-[#0052CC] hover:bg-slate-100 transition-colors cursor-pointer"
                         title={item.isRead ? 'Mark as unread' : 'Mark as read'}
                       >
-                        {item.isRead ? 'Mark unread' : 'Mark read'}
+                        <CheckCheck className={`w-3.5 h-3.5 ${item.isRead ? 'text-slate-300' : 'text-slate-600'}`} />
                       </button>
-                      <span className="text-slate-300">•</span>
                       <button
                         type="button"
                         onClick={() => clearNotification(item.id)}
-                        className="text-slate-400 hover:text-rose-600 transition-colors p-0.5"
-                        title="Dismiss alert"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="Dismiss"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -331,11 +414,11 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
           {/* ─── Drawer Bottom Bar ─── */}
           <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
             <Link
-              href="/super-admin/notifications"
+              href={fullNotificationsUrl}
               onClick={onClose}
               className="text-xs font-bold text-[#0052CC] hover:underline flex items-center gap-1.5"
             >
-              <span>View Full Broadcast Center</span>
+              <span>View Full Notifications Center</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
 

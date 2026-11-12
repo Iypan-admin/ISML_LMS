@@ -1,3 +1,4 @@
+
 // ============================================================================
 // ISML COLLEGE LMS — TUTOR: RECORDED SESSIONS & CLOUD VOD ARCHIVE (/tutor/recordings)
 // Auto-Recorded Live Webinars (Cloudflare R2) + Pre-Recorded Curriculum Videos
@@ -6,7 +7,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -24,66 +25,141 @@ import {
   Radio,
   ShieldCheck,
   ExternalLink,
+  MessageSquare,
+  FileText,
+  Volume2,
+  PenTool,
+  Users,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { useTutor } from '@/context/TutorContext';
 import { mockPreRecordedSessions, PreRecordedSession } from '@/mock/preRecorded';
-import { mockLiveRecordings, LiveRecording } from '@/mock/recordings';
 
 export default function TutorRecordingsPage() {
   const { currentFaculty } = useTutor();
-  const [activeTab, setActiveTab] = useState<'AUTO_WEBINARS' | 'PRE_RECORDED'>('AUTO_WEBINARS');
+  const [activeTab, setActiveTab] = useState<'AUTO_WEBINARS' | 'PRE_RECORDED'>('PRE_RECORDED');
   const [searchQuery, setSearchQuery] = useState('');
-  const [previewVideo, setPreviewVideo] = useState<{ title: string; url: string } | null>(null);
+  const [autoCloudRecordings, setAutoCloudRecordings] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [previewVideo, setPreviewVideo] = useState<{
+    title: string;
+    url: string;
+    durationSecs?: number;
+    durationMins?: number;
+    sharedContent?: any;
+    chats?: any[];
+    attendance?: any[];
+  } | null>(null);
 
-  // Auto Cloud Recordings for Live Webinars conducted by Jay
-  const autoCloudRecordings = [
-    {
-      id: 'rec-jay-01',
-      sessionTopic: 'Live Webinar 01: French A1 Salutations, Vowels & Dialogue au Café',
-      courseName: 'French A1 Intensive Certification Program',
-      batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-      recordedDate: 'Yesterday, 10:30 AM',
-      durationMins: 90,
-      fileResolution: '1080p Full HD (60fps)',
-      storageProvider: 'Cloudflare R2 & AWS S3 Cold Storage',
-      autoStatus: 'AUTO_ENCODED_READY',
-      viewsCount: 58,
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'rec-jay-02',
-      sessionTopic: 'Live Webinar 02: Essential French Verbs (Avoir, Être et Premier Groupe)',
-      courseName: 'French A1 Intensive Certification Program',
-      batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-      recordedDate: 'Oct 12, 2026',
-      durationMins: 88,
-      fileResolution: '1080p Full HD',
-      storageProvider: 'Cloudflare R2',
-      autoStatus: 'AUTO_ENCODED_READY',
-      viewsCount: 62,
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 'rec-jay-03',
-      sessionTopic: 'Emergency Standby Covered Webinar: French A2 Passé Composé Auxiliary Verbs',
-      courseName: 'French A2: Elementary Communication',
-      batchName: 'French A2 Cohort (Section B)',
-      recordedDate: 'Oct 09, 2026',
-      durationMins: 85,
-      fileResolution: '1080p Full HD',
-      storageProvider: 'Cloudflare R2',
-      autoStatus: 'AUTO_ENCODED_READY',
-      viewsCount: 44,
-      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&auto=format&fit=crop&q=80',
-    },
-  ];
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [videoDuration, setVideoDuration] = useState<number>(0);
 
-  // Pre-recorded curriculum lessons
-  const frenchPreRecorded = mockPreRecordedSessions.filter((s) => s.languageFamily === 'FRENCH');
+  // Format seconds to mm:ss
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds) || seconds < 0) return '00:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleSeek = (newTime: number) => {
+    const v = videoRef.current;
+    if (v) {
+      v.currentTime = Math.max(0, Math.min(newTime, videoDuration || v.duration || 9999));
+      setCurrentTime(v.currentTime);
+    }
+  };
+
+  // Fetch real auto-recordings saved in backend & Supabase bucket
+  const fetchLiveRecordings = () => {
+    let localSaved: any[] = [];
+    try {
+      localSaved = JSON.parse(localStorage.getItem('isml_archived_live_recordings') || '[]');
+    } catch {}
+
+    fetch('http://localhost:4000/api/live-classes/recordings/all')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.data && Array.isArray(res.data)) {
+          const merged = [...res.data];
+          // Merge any client-persisted recordings not yet indexed
+          localSaved.forEach((ls: any) => {
+            if (!merged.some((m) => m.id === ls.id)) {
+              merged.push(ls);
+            }
+          });
+          const withDynamicViews = merged.map((rec) => {
+            let v = rec.viewsCount !== undefined ? rec.viewsCount : (rec.attendance?.length || 6);
+            try {
+              const stored = localStorage.getItem(`isml_rec_views_${rec.id}`);
+              if (stored) {
+                const parsed = parseInt(stored, 10);
+                if (parsed !== 142) v = parsed;
+              }
+            } catch {}
+            return { ...rec, viewsCount: v };
+          });
+          setAutoCloudRecordings(withDynamicViews);
+        } else if (localSaved.length > 0) {
+          const withDynamicViews = localSaved.map((rec) => {
+            let v = rec.viewsCount !== undefined ? rec.viewsCount : (rec.attendance?.length || 6);
+            try {
+              const stored = localStorage.getItem(`isml_rec_views_${rec.id}`);
+              if (stored) {
+                const parsed = parseInt(stored, 10);
+                if (parsed !== 142) v = parsed;
+              }
+            } catch {}
+            return { ...rec, viewsCount: v };
+          });
+          setAutoCloudRecordings(withDynamicViews);
+        }
+      })
+      .catch(() => {
+        if (localSaved.length > 0) {
+          setAutoCloudRecordings(localSaved);
+        }
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchLiveRecordings();
+
+    const handleUpdate = (e: any) => {
+      if (e?.detail?.type === 'RECORDINGS_UPDATED' || e?.detail?.type === 'LIVE_CLASS_ENDED') {
+        fetchLiveRecordings();
+      }
+    };
+    window.addEventListener('isml-realtime-event', handleUpdate);
+    return () => window.removeEventListener('isml-realtime-event', handleUpdate);
+  }, []);
+
+  const [academicUploadedLessons, setAcademicUploadedLessons] = useState<PreRecordedSession[]>([]);
+
+  // Fetch academic manager uploaded curriculum lessons from backend
+  const fetchAcademicUploadedSessions = () => {
+    // Check local client storage for actual genuine uploads from Academic Manager
+    try {
+      if (typeof window !== 'undefined') {
+        const saved = JSON.parse(localStorage.getItem('isml_academic_manager_uploads') || '[]');
+        if (Array.isArray(saved)) {
+          // Strictly isolate genuine uploads without dummy fallback
+          setAcademicUploadedLessons(saved.filter((s: any) => s && s.id && !s.id.includes('mock')));
+          return;
+        }
+      }
+    } catch {}
+    setAcademicUploadedLessons([]);
+  };
+
+  useEffect(() => {
+    fetchAcademicUploadedSessions();
+  }, []);
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -141,155 +217,482 @@ export default function TutorRecordingsPage() {
             }`}
           >
             <Film className="w-3.5 h-3.5" />
-            <span>Curriculum Pre-Recorded Lessons ({frenchPreRecorded.length})</span>
+            <span>Curriculum Pre-Recorded Lessons ({academicUploadedLessons.length})</span>
           </button>
         </div>
 
-        <div className="relative flex-1 max-w-xs">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search recording topic, date or cohort..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0052CC]"
-          />
+        <div className="flex items-center gap-2">
+          {activeTab === 'AUTO_WEBINARS' && autoCloudRecordings.length > 0 && (
+            <button
+              onClick={async () => {
+                if (confirm('Are you sure you want to delete and clear all recorded live sessions?')) {
+                  try {
+                    localStorage.removeItem('isml_archived_live_recordings');
+                    await fetch('http://localhost:4000/api/live-classes/recordings/clear', { method: 'POST' });
+                  } catch {}
+                  setAutoCloudRecordings([]);
+                }
+              }}
+              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+              title="Clear all recorded test sessions"
+            >
+              <span>Delete All Recordings</span>
+            </button>
+          )}
+
+          <div className="relative flex-1 sm:w-64">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search topic or date..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0052CC]"
+            />
+          </div>
         </div>
       </div>
 
       {/* ─── TAB 1: AUTO RECORDED LIVE WEBINARS ─── */}
       {activeTab === 'AUTO_WEBINARS' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {autoCloudRecordings.map((rec) => (
-            <div
-              key={rec.id}
-              className="p-4 bg-white rounded-2xl border border-slate-200/90 hover:border-blue-300 shadow-2xs space-y-3 flex flex-col justify-between group"
-            >
-              <div className="space-y-2.5">
-                <div className="relative w-full h-40 rounded-xl overflow-hidden bg-slate-950 border border-slate-200">
-                  <Image src={rec.thumbnailUrl} alt={rec.sessionTopic} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
-                    <button
-                      onClick={() => setPreviewVideo({ title: rec.sessionTopic, url: rec.videoUrl })}
-                      className="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-[#0052CC] flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer"
-                    >
-                      <Play className="w-7 h-7" />
-                    </button>
-                  </div>
-                  <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-black bg-slate-900/90 text-white border border-white/20">
-                    {rec.fileResolution}
-                  </span>
-                  <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900/90 text-cyan-300">
-                    {rec.durationMins} mins
-                  </span>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>Auto Saved to Cloud</span>
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">{rec.recordedDate}</span>
-                  </div>
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2">
-                    {rec.sessionTopic}
-                  </h3>
-                  <p className="text-[11px] text-blue-600 font-semibold mt-1 truncate">{rec.batchName}</p>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1 text-slate-500 font-bold">
-                  <Eye className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{rec.viewsCount} Student Views</span>
-                </div>
-                <button
-                  onClick={() => setPreviewVideo({ title: rec.sessionTopic, url: rec.videoUrl })}
-                  className="px-3 py-1 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
-                >
-                  Play VOD
-                </button>
-              </div>
+        <>
+          {loading ? (
+            <div className="p-12 text-center text-slate-400">
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-xs font-semibold">Loading recorded live classes...</p>
             </div>
-          ))}
-        </div>
+          ) : autoCloudRecordings.length === 0 ? (
+            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-2">
+              <Video className="w-10 h-10 text-slate-400 mx-auto" />
+              <p className="text-sm font-bold text-slate-700">No recorded sessions yet.</p>
+              <p className="text-xs text-slate-500">Live webinar sessions will be automatically recorded and archived here once ended.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {autoCloudRecordings
+                .filter(
+                  (rec) =>
+                    !searchQuery ||
+                    rec.sessionTopic?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    rec.batchName?.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((rec) => (
+                  <div
+                    key={rec.id}
+                    className="p-4 bg-white rounded-2xl border border-slate-200/90 hover:border-blue-300 shadow-2xs space-y-3 flex flex-col justify-between group"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="relative w-full h-40 rounded-xl overflow-hidden bg-black border border-slate-200">
+                        {rec.thumbnailUrl && !rec.thumbnailUrl.includes('french-thumb.jpg') && !rec.thumbnailUrl.startsWith('data:application/pdf') ? (
+                          <img
+                            src={rec.thumbnailUrl?.startsWith('http://localhost') ? rec.thumbnailUrl.replace(/^http:\/\/localhost:[0-9]+/, '') : rec.thumbnailUrl}
+                            alt={rec.sessionTopic}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-black flex flex-col items-center justify-center p-3 text-center">
+                            <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-1.5">
+                              <Video className="w-5 h-5 text-slate-400" />
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-200 line-clamp-1">{rec.sessionTopic}</span>
+                            <span className="text-[10px] text-slate-500 font-mono mt-0.5">Recorded Studio Class</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewVideo({
+                                title: rec.sessionTopic,
+                                url: rec.videoUrl,
+                                durationSecs: rec.durationSecs,
+                                durationMins: rec.durationMins,
+                                sharedContent: rec.sharedContent,
+                                chats: rec.chats,
+                                attendance: rec.attendance,
+                              })
+                            }
+                            className="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-[#0052CC] flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer pointer-events-auto"
+                          >
+                            <Play className="w-7 h-7" />
+                          </button>
+                        </div>
+                        <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-black bg-slate-900/90 text-white border border-white/20">
+                          {rec.fileResolution || '1080p Full HD'}
+                        </span>
+                        <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900/90 text-cyan-300">
+                          {rec.durationText || (rec.durationSecs ? `${Math.floor(rec.durationSecs / 60)}m ${rec.durationSecs % 60}s` : `${rec.durationMins || 1} mins`)}
+                        </span>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Saved & Available for Students</span>
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">{rec.recordedDate}</span>
+                        </div>
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                          {rec.sessionTopic}
+                        </h3>
+                        <p className="text-[11px] text-blue-600 font-semibold mt-1 truncate">{rec.batchName}</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-slate-500 font-bold text-[11px]">
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{rec.viewsCount || 1} Views</span>
+                        </span>
+                        {rec.chats && rec.chats.length > 0 && (
+                          <span className="flex items-center gap-1 text-cyan-700 bg-cyan-50 px-1.5 py-0.5 rounded">
+                            <MessageSquare className="w-3 h-3" />
+                            <span>{rec.chats.length}</span>
+                          </span>
+                        )}
+                        {rec.attendance && rec.attendance.length > 0 && (
+                          <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            <Users className="w-3 h-3" />
+                            <span>{rec.attendance.length}</span>
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={async () => {
+                            if (confirm(`Delete recording "${rec.sessionTopic}"?`)) {
+                              try {
+                                const key = 'isml_archived_live_recordings';
+                                const saved = JSON.parse(localStorage.getItem(key) || '[]');
+                                const filtered = saved.filter((s: any) => s.id !== rec.id);
+                                localStorage.setItem(key, JSON.stringify(filtered));
+                                await fetch(`http://localhost:4000/api/live-classes/recordings/${rec.id}/delete`, { method: 'POST' });
+                              } catch {}
+                              setAutoCloudRecordings((prev) => prev.filter((r) => r.id !== rec.id));
+                            }
+                          }}
+                          className="px-2.5 py-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                          title="Delete Recording"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() =>
+                            setPreviewVideo({
+                              title: rec.sessionTopic,
+                              url: rec.videoUrl,
+                              durationSecs: rec.durationSecs,
+                              durationMins: rec.durationMins,
+                              sharedContent: rec.sharedContent,
+                              chats: rec.chats,
+                              attendance: rec.attendance,
+                            })
+                          }
+                          className="px-3 py-1 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                        >
+                          Play VOD
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* ─── TAB 2: PRE-RECORDED CURRICULUM LESSONS ─── */}
       {activeTab === 'PRE_RECORDED' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {frenchPreRecorded.map((sess) => (
-            <div
-              key={sess.id}
-              className="p-4 bg-white rounded-2xl border border-slate-200/90 hover:border-blue-300 shadow-2xs space-y-3 flex flex-col justify-between group"
-            >
-              <div className="space-y-2.5">
-                <div className="relative w-full h-40 rounded-xl overflow-hidden bg-slate-950 border border-slate-200">
-                  <Image src={sess.thumbnailUrl} alt={sess.sessionTitle} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
-                    <button
-                      onClick={() => setPreviewVideo({ title: sess.sessionTitle, url: sess.videoUrl })}
-                      className="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-[#0052CC] flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer"
-                    >
-                      <Play className="w-7 h-7" />
-                    </button>
+        academicUploadedLessons.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 space-y-2">
+            <Film className="w-10 h-10 text-slate-400 mx-auto" />
+            <p className="text-sm font-bold text-slate-700">No Academic Manager uploaded lessons yet.</p>
+            <p className="text-xs text-slate-500">
+              When an Academic Manager uploads pre-recorded video lectures from the Academic Portal, they will appear here automatically.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {academicUploadedLessons.map((sess) => (
+              <div
+                key={sess.id}
+                className="p-4 bg-white rounded-2xl border border-slate-200/90 hover:border-blue-300 shadow-2xs space-y-3 flex flex-col justify-between group"
+              >
+                <div className="space-y-2.5">
+                  <div className="relative w-full h-40 rounded-xl overflow-hidden bg-slate-950 border border-slate-200">
+                    <img src={sess.thumbnailUrl} alt={sess.sessionTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
+                      <button
+                        onClick={() =>
+                          setPreviewVideo({
+                            title: sess.sessionTitle,
+                            url: sess.videoUrl || '/samples/french-lecture.mp4',
+                            durationMins: sess.durationMins || 35,
+                            durationSecs: (sess.durationMins || 35) * 60,
+                          })
+                        }
+                        className="w-12 h-12 rounded-full bg-white/90 hover:bg-white text-[#0052CC] flex items-center justify-center shadow-lg transition-transform hover:scale-110 cursor-pointer"
+                      >
+                        <Play className="w-7 h-7" />
+                      </button>
+                    </div>
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-black bg-blue-600 text-white">
+                      {sess.subLevel}
+                    </span>
+                    <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900/90 text-white">
+                      {sess.durationMins} mins
+                    </span>
                   </div>
-                  <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded text-[10px] font-black bg-blue-600 text-white">
-                    {sess.subLevel}
-                  </span>
-                  <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900/90 text-white">
-                    {sess.durationMins} mins
-                  </span>
+
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {sess.moduleName}
+                    </span>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2 mt-0.5">
+                      {sess.sessionTitle}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{sess.description}</p>
+                  </div>
                 </div>
 
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                    {sess.moduleName}
-                  </span>
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2 mt-0.5">
-                    {sess.sessionTitle}
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{sess.description}</p>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-[11px] font-bold text-slate-600">{sess.viewsCount} Views</span>
+                  <button
+                    onClick={() =>
+                      setPreviewVideo({
+                        title: sess.sessionTitle,
+                        url: sess.videoUrl || '/samples/french-lecture.mp4',
+                        durationMins: sess.durationMins || 35,
+                        durationSecs: (sess.durationMins || 35) * 60,
+                      })
+                    }
+                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Inspect Lesson
+                  </button>
                 </div>
               </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-[11px] font-bold text-slate-600">{sess.viewsCount} Views</span>
-                <button
-                  onClick={() => setPreviewVideo({ title: sess.sessionTitle, url: sess.videoUrl })}
-                  className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Inspect Lesson
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
-      {/* Video Modal Player */}
+      {/* Video Modal Player with Classroom Context (Audio, Video, Whiteboard, Shared Media & In-Class Chats) */}
       {previewVideo && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 text-white rounded-2xl max-w-3xl w-full p-4 space-y-3 shadow-2xl border border-slate-800">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-300 truncate">{previewVideo.title}</span>
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-slate-900 text-white rounded-3xl max-w-4xl w-full p-4 sm:p-5 space-y-4 shadow-2xl border border-white/10 flex flex-col max-h-[92vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="truncate">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  Classroom Recording • Full HD
+                </span>
+                <h3 className="text-sm sm:text-base font-bold text-white truncate mt-1">{previewVideo.title}</h3>
+              </div>
               <button
                 onClick={() => setPreviewVideo(null)}
-                className="text-slate-400 hover:text-white font-bold text-sm cursor-pointer"
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-rose-600 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs font-bold"
               >
                 ✕ Close
               </button>
             </div>
-            <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden">
-              <video src={previewVideo.url} controls autoPlay className="w-full h-full object-contain" />
+
+            {/* Video / Stage Playback */}
+            <div className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 flex flex-col group">
+              {previewVideo.url ? (
+                <div className="relative w-full h-full flex flex-col justify-between">
+                  <div className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden bg-black">
+                    <video
+                      ref={videoRef}
+                      key={previewVideo.url}
+                      src={previewVideo.url}
+                      controls
+                      autoPlay
+                      playsInline
+                      preload="auto"
+                      className="w-full h-full max-h-full object-contain cursor-pointer"
+                      onClick={() => {
+                        const v = videoRef.current;
+                        if (v) {
+                          if (v.paused) {
+                            v.play();
+                            setIsPlaying(true);
+                          } else {
+                            v.pause();
+                            setIsPlaying(false);
+                          }
+                        }
+                      }}
+                      onTimeUpdate={() => {
+                        const v = videoRef.current;
+                        if (v) {
+                          setCurrentTime(v.currentTime);
+                          if (!videoDuration || videoDuration === 0) {
+                            const d = (v.duration && !isNaN(v.duration) && v.duration !== Infinity && v.duration > 0)
+                              ? v.duration
+                              : (previewVideo.durationSecs || (previewVideo.durationMins ? previewVideo.durationMins * 60 : 60));
+                            setVideoDuration(d);
+                          }
+                        }
+                      }}
+                      onError={() => {
+                        // Fallback to local sample mp4 if remote cloud url is inaccessible
+                        if (previewVideo.url !== '/samples/french-lecture.mp4') {
+                          setPreviewVideo((prev) => prev ? { ...prev, url: '/samples/french-lecture.mp4' } : null);
+                        }
+                      }}
+                      onLoadedMetadata={() => {
+                        const v = videoRef.current;
+                        if (v) {
+                          const d = (v.duration && !isNaN(v.duration) && v.duration !== Infinity && v.duration > 0)
+                            ? v.duration
+                            : (previewVideo.durationSecs || (previewVideo.durationMins ? previewVideo.durationMins * 60 : 60));
+                          setVideoDuration(d);
+                          setIsPlaying(!v.paused);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  {/* Quick-Access Seeking Toolbar */}
+                  <div className="w-full bg-slate-900/95 border-t border-white/10 px-3 py-2 flex items-center justify-between text-xs text-white z-20">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleSeek(currentTime - 10)}
+                        className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white rounded-lg font-semibold cursor-pointer transition-colors"
+                        title="Rewind 10 seconds"
+                      >
+                        ⏪ -10s
+                      </button>
+
+                      <button
+                        onClick={() => handleSeek(currentTime + 10)}
+                        className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white rounded-lg font-semibold cursor-pointer transition-colors"
+                        title="Forward 10 seconds"
+                      >
+                        +10s ⏩
+                      </button>
+
+                      {/* Timestamp: Current Time / Total Duration */}
+                      <div className="font-mono text-xs text-slate-300 bg-black/50 px-2 py-0.5 rounded border border-white/10">
+                        <span className="text-white font-bold">{formatTime(currentTime)}</span>
+                        <span className="mx-1 text-slate-500">/</span>
+                        <span className="text-cyan-300 font-bold">{formatTime(videoDuration)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Playback Speed selector */}
+                      {[1, 1.25, 1.5, 2].map((speed) => (
+                        <button
+                          key={speed}
+                          onClick={() => {
+                            if (videoRef.current) videoRef.current.playbackRate = speed;
+                          }}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 hover:bg-white/20 text-slate-300 cursor-pointer"
+                          title={`${speed}x Speed`}
+                        >
+                          {speed}x
+                        </button>
+                      ))}
+
+                      {/* Fullscreen Button */}
+                      <button
+                        onClick={() => {
+                          const v = videoRef.current;
+                          if (v) {
+                            if (!document.fullscreenElement) {
+                              if (v.requestFullscreen) {
+                                v.requestFullscreen().catch(() => {});
+                              } else if ((v as any).webkitRequestFullscreen) {
+                                (v as any).webkitRequestFullscreen();
+                              }
+                            } else {
+                              document.exitFullscreen().catch(() => {});
+                            }
+                          }
+                        }}
+                        className="p-1.5 rounded-lg bg-white/15 hover:bg-[#0052CC] text-white flex items-center gap-1 cursor-pointer transition-colors"
+                        title="Full Screen (F)"
+                      >
+                        <Maximize className="w-3.5 h-3.5" />
+                        <span className="text-[11px] font-bold hidden sm:inline">Fullscreen</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : previewVideo.sharedContent && previewVideo.sharedContent.type === 'DOCUMENT' && previewVideo.sharedContent.url ? (
+                <iframe
+                  src={previewVideo.sharedContent.url}
+                  className="w-full h-full border-0 bg-white"
+                  title="Shared Lecture Deck"
+                />
+              ) : previewVideo.sharedContent && previewVideo.sharedContent.type === 'AUDIO' ? (
+                <div className="p-6 text-center space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                    <Volume2 className="w-8 h-8 animate-pulse" />
+                  </div>
+                  <h4 className="text-sm font-bold">{previewVideo.sharedContent.title}</h4>
+                  <audio controls className="w-full max-w-md mx-auto" src={previewVideo.sharedContent.url || previewVideo.url} />
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-6 text-center space-y-3 text-slate-300">
+                  <div className="w-16 h-16 rounded-full bg-blue-500/10 text-cyan-400 flex items-center justify-center">
+                    <Video className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-white">Interactive Session Archive</h4>
+                    <p className="text-xs text-slate-400 max-w-sm">
+                      {previewVideo.title} • Live stream concluded. Review in-class chats and student attendance below.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-              <span>Cloud Storage: Cloudflare R2 Stream (1080p Auto CDN)</span>
-              <span className="text-emerald-400 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Verified Available for Student Re-watch</span>
+
+            {/* Interactive Session Archive Footer (Shared Materials, In-Class Chat Log & Attendees) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs overflow-y-auto max-h-40 pt-1">
+              {/* Shared Material details */}
+              <div className="p-3 bg-white/5 border border-white/10 rounded-2xl space-y-1">
+                <span className="text-[10px] font-bold text-cyan-300 flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Shared Session Material</span>
+                </span>
+                <p className="font-semibold text-slate-200 truncate">
+                  {previewVideo.sharedContent?.title || 'Interactive Whiteboard & Live Audio-Visual Lecture'}
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  Type: {previewVideo.sharedContent?.type || 'VIDEO_CLASS'} • Available for Student Revision
+                </p>
+              </div>
+
+              {/* In-Class Chat Log Summary */}
+              <div className="p-3 bg-white/5 border border-white/10 rounded-2xl space-y-1">
+                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>In-Class Discussion Messages ({previewVideo.chats?.length || 0})</span>
+                </span>
+                <div className="space-y-1 max-h-20 overflow-y-auto text-[11px] pr-1">
+                  {!previewVideo.chats || previewVideo.chats.length === 0 ? (
+                    <p className="text-slate-400 italic">No in-class text chats recorded.</p>
+                  ) : (
+                    previewVideo.chats.map((c: any, i: number) => (
+                      <p key={i} className="text-slate-300 truncate">
+                        <strong className="text-cyan-300">{c.senderName}:</strong> {c.text}
+                      </p>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-white/10">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Class Session Saved & Ready for Student Re-watch</span>
               </span>
+              <span className="font-medium text-slate-400">Ready for Learners</span>
             </div>
           </div>
         </div>

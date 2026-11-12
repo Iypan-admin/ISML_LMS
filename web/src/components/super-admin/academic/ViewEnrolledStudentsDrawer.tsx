@@ -300,7 +300,7 @@ export default function ViewEnrolledStudentsDrawer({
                 </div>
                 <div>
                   <h4 className="font-bold text-xs text-slate-900">
-                    {staffInfo?.facultyName || 'Dr. Anandhakumar V.'}
+                    {staffInfo?.facultyName || 'Joy Jk'}
                   </h4>
                   <p className="text-[11px] text-slate-500">
                     Assigned Professor • Responsible for Course Lectures & Syllabus

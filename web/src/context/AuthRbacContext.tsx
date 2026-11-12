@@ -42,20 +42,53 @@ interface AuthRbacContextType {
 
 const AuthRbacContext = createContext<AuthRbacContextType | null>(null);
 
+const DEFAULT_SUPER_ADMIN_ROLE: RoleDefinition = {
+  id: 'role-super-admin',
+  name: 'Super Administrator',
+  code: 'SUPER_ADMIN',
+  description: 'Full system-wide administrative access',
+  userCount: 1,
+  isSystemRole: true,
+  permissions: ALL_PERMISSION_IDS,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+const DEFAULT_SUPER_ADMIN_USER: SuperAdminUser = {
+  id: 'usr-super-admin',
+  name: 'Super Admin',
+  email: 'superadmin@isml.edu',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+  roleId: 'role-super-admin',
+  roleName: 'Super Administrator',
+  roleCode: 'SUPER_ADMIN',
+  collegeId: 'ALL',
+  collegeName: 'Overall (All Colleges)',
+  permissions: ALL_PERMISSION_IDS,
+  status: 'ACTIVE',
+  lastLoginAt: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+};
+
 export function AuthRbacProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [roles, setRoles] = useState<RoleDefinition[]>(mockRoles);
-  const [currentUser, setCurrentUser] = useState<SuperAdminUser>(mockUsers[0]); // Super Admin by default
-  const [activeRoleId, setActiveRoleId] = useState<string>(mockRoles[0].id);
+  const initialRoles = mockRoles.length > 0 ? mockRoles : [DEFAULT_SUPER_ADMIN_ROLE];
+  const initialUser = mockUsers.length > 0 ? mockUsers[0] : DEFAULT_SUPER_ADMIN_USER;
+
+  const [roles, setRoles] = useState<RoleDefinition[]>(initialRoles);
+  const [currentUser, setCurrentUser] = useState<SuperAdminUser>(initialUser);
+  const [activeRoleId, setActiveRoleId] = useState<string>(
+    initialRoles.find((r) => r.code === 'SUPER_ADMIN')?.id || initialRoles[0]?.id || DEFAULT_SUPER_ADMIN_ROLE.id
+  );
 
   // Active role entity
   const activeRole = useMemo(() => {
-    return roles.find((r) => r.id === activeRoleId) || roles[0];
+    return roles.find((r) => r.id === activeRoleId) || roles[0] || DEFAULT_SUPER_ADMIN_ROLE;
   }, [roles, activeRoleId]);
 
   // Current effective permissions derived from active role
   const effectivePermissions = useMemo(() => {
-    return activeRole.permissions;
+    return activeRole?.permissions || ALL_PERMISSION_IDS;
   }, [activeRole]);
 
   // Memoized Permission Checking Functions
@@ -130,11 +163,20 @@ export function AuthRbacProvider({ children }: { children: React.ReactNode }) {
     [roles]
   );
 
-  // Update role permissions in memory
+  // Update role permissions in memory & sync with Supabase PostgreSQL DB
   const updateRolePermissions = useCallback((roleId: string, newPermissions: PermissionId[]) => {
     setRoles((prev) =>
       prev.map((r) => (r.id === roleId ? { ...r, permissions: newPermissions } : r))
     );
+
+    // Asynchronously synchronize with Enterprise Backend DB
+    fetch(`http://localhost:4000/api/portals/roles/${roleId}/permissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissions: newPermissions }),
+    }).catch(() => {
+      // Backend sync fallback
+    });
   }, []);
 
   const logout = useCallback(() => {

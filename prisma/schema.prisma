@@ -139,11 +139,137 @@ enum CompletionRuleEnum {
   PASS_QUIZ
 }
 
+
+// ============================================================================
+// ISML MASTER CURRICULUM & SCHEDULING ENUMS (Single Source of Truth)
+// ============================================================================
+
+enum LanguageCodeEnum {
+  FRENCH
+  GERMAN
+  SPANISH
+  KOREAN
+  JAPANESE
+}
+
+enum CefrSubLevelEnum {
+  A1_1 // 60h | 4 Assessments | 10m Human Speaking/2wks | 2x Daily AI
+  A1_2 // 60h | 4 Assessments | 10m Human Speaking/2wks | 2x Daily AI
+  A2_1 // 80h | 5 Assessments | 15m Human Speaking/2wks | 3x Daily AI
+  A2_2 // 80h | 5 Assessments | 15m Human Speaking/2wks | 3x Daily AI
+  A2_3 // 80h | 5 Assessments | 15m Human Speaking/2wks | 3x Daily AI
+  B1_1 // 100h | 6 Assessments | 20m Human Speaking/2wks | 4x Daily AI
+  B1_2 // 100h | 6 Assessments | 20m Human Speaking/2wks | 4x Daily AI
+  B1_3 // 100h | 6 Assessments | 20m Human Speaking/2wks | 4x Daily AI
+  B1_4 // 100h | 6 Assessments | 20m Human Speaking/2wks | 4x Daily AI
+  // Broad CEFR & JLPT Tracks
+  A1_L1 // 80h | 4 Assessments | 10m Human Speaking/wk | 3x Daily AI
+  A2_L2 // 100h | 4 Assessments | 20m Human Speaking/wk | 5x Daily AI
+  B1_L3 // 140h | 5 Assessments | 30m Human Speaking/wk | 7x Daily AI
+  B2_L4 // 180h | 5 Assessments | 40m Human Speaking/wk | 10x Daily AI
+  JLPT_N5 // 100h | 5 Assessments | 10m Human Speaking/wk | 3x Daily AI
+  JLPT_N4 // 120h | 5 Assessments | 20m Human Speaking/wk | 5x Daily AI
+  JLPT_N3 // 160h | 6 Assessments | 30m Human Speaking/wk | 7x Daily AI
+  JLPT_N2 // 200h | 6 Assessments | 40m Human Speaking/wk | 10x Daily AI
+}
+
+enum PeriodCategoryEnum {
+  CAT_1_35M // 35 minutes per period
+  CAT_2_40M // 40 minutes per period
+  CAT_3_45M // 45 minutes per period
+  CAT_4_50M // 50 minutes per period
+  CAT_5_55M // 55 minutes per period
+  CAT_6_60M // 60 minutes per period
+}
+
+enum CoursePacingTrackEnum {
+  STANDARD // 60m per session
+  INTENSIVE // 90m per session
+  SUPER_INTENSIVE // 120m per session
+}
+
+enum ExamDeliveryProtocolEnum {
+  OFFLINE_CENTER_ONLY // Final Exam Protocol strictly in physical examination halls
+  ONLINE_HUMAN_SPEAKING_SLOT // 1:1 Live Viva Voice with CEFR certified human examiner
+  ONLINE_ASSESSMENT // Continuous assessments conducted during course
+}
+
 enum DurationPatternTypeEnum {
+  STANDARD_PACING // 60m session
+  INTENSIVE_PACING // 90m session
+  SUPER_INTENSIVE_PACING // 120m session
   TWELVE_MONTHS // Option 1: 1 day/wk, 2 hrs/day (~50 weeks)
   SIX_MONTHS // Option 2: 2 days/wk, 2 hrs/day (~25 weeks)
   THREE_MONTHS // Option 3: 3 days/wk, 2 hrs/day (~13 weeks)
   CUSTOM
+}
+
+enum FeeStructureTypeEnum {
+  DURATION_BASED // 3 Months / 6 Months / 12 Months Track
+  SEMESTER_BASED // University Autonomous Semester System
+  ANNUAL
+  CUSTOM
+}
+
+enum FeeComponentTypeEnum {
+  TUITION_FEE
+  EXAMINATION_FEE
+  LAB_LANGUAGE_STUDIO_FEE
+  LSRW_COURSE_MATERIAL_FEE
+  AI_SPEAKING_PLATFORM_FEE
+  LIBRARY_EBOOK_FEE
+  CERTIFICATION_ASSESSMENT_FEE
+  STUDENT_ACTIVITY_FEE
+  OTHER
+}
+
+enum ApprovalRequestTypeEnum {
+  FEE_STRUCTURE_CREATION
+  FEE_STRUCTURE_UPDATE
+  COURSE_CREATION
+  SUBJECT_VERIFICATION
+  SCHOLARSHIP_GRANT
+  DISCOUNT_WAIVER
+  PAYMENT_POLICY_CHANGE
+  REFUND_REQUEST
+  ROLE_PERMISSION_CHANGE
+  TUTOR_ASSIGNMENT
+  TIMETABLE_CHANGE
+}
+
+enum ApprovalStatusEnum {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+  CANCELLED
+}
+
+enum AdmissionTypeEnum {
+  COLLEGE_STUDENT // UG / PG
+  SCHOOL_STUDENT // K-12 Senior Secondary
+  CORPORATE_PROFESSIONAL
+  DIRECT_INDIVIDUAL
+}
+
+enum AdmissionStatusEnum {
+  DRAFT
+  SUBMITTED
+  DOCUMENTS_VERIFIED
+  FEE_PAID
+  ENROLLED
+  REJECTED
+}
+
+enum OneToOneSessionStatusEnum {
+  REQUESTED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  RESCHEDULED
+  CANCELLED
+  NO_SHOW
 }
 
 enum BatchStatusEnum {
@@ -1023,22 +1149,28 @@ model CourseCategories {
 }
 
 model Courses {
-  id           String           @id @default(uuid())
-  tenantId     String?
-  languageId   String
-  categoryId   String?
-  code         String
-  name         String
-  displayName  String
-  description  String?
-  totalHours   Int              @default(100)
-  courseType   CourseTypeEnum   @default(REGULAR)
-  status       CourseStatusEnum @default(DRAFT)
-  displayOrder Int              @default(1)
-  isSystem     Boolean          @default(false)
-  isActive     Boolean          @default(true)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id                         String                 @id @default(uuid())
+  tenantId                   String?
+  languageId                 String
+  categoryId                 String?
+  code                       String
+  name                       String
+  displayName                String
+  description                String?
+  totalHours                 Int                    @default(100)
+  teachingHours              Int                    @default(80) // Exclusive of assessments & final exam
+  assessmentsCount           Int                    @default(4) // Required continuous assessments before final exam
+  humanSpeakingMinutes       Int                    @default(10) // 10, 15, 20, 30, 40 mins
+  aiSpeakingPracticeDaily    Int                    @default(3) // 2, 3, 4, 5, 7, 10 times daily
+  defaultPeriodCategory      PeriodCategoryEnum     @default(CAT_3_45M)
+  defaultPacingTrack         CoursePacingTrackEnum  @default(STANDARD)
+  courseType                 CourseTypeEnum         @default(REGULAR)
+  status                     CourseStatusEnum       @default(DRAFT)
+  displayOrder               Int                    @default(1)
+  isSystem                   Boolean                @default(false)
+  isActive                   Boolean                @default(true)
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
 
   language         Languages                @relation(fields: [languageId], references: [id], onDelete: Restrict)
   category         CourseCategories?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -1054,12 +1186,16 @@ model Courses {
 }
 
 model CourseLevels {
-  id         String   @id @default(uuid())
-  courseId   String
-  levelCode  String
-  name       String
-  totalHours Int      @default(100)
-  createdAt  DateTime @default(now())
+  id                         String             @id @default(uuid())
+  courseId                   String
+  levelCode                  String             // e.g. "A1.1", "A2.1", "B1.1", "N5"
+  cefrEnum                   CefrSubLevelEnum?
+  name                       String
+  totalHours                 Int                @default(80) // Teaching hours exclusive of exam
+  assessmentsBeforeFinalExam Int                @default(4)
+  humanSpeakingMinutes       Int                @default(10)
+  aiSpeakingTimesPerDay      Int                @default(3)
+  createdAt                  DateTime           @default(now())
 
   course    Courses           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   subLevels CourseSubLevels[]
@@ -1068,13 +1204,30 @@ model CourseLevels {
 }
 
 model CourseSubLevels {
-  id             String   @id @default(uuid())
-  courseLevelId  String
-  subLevelCode   String
-  name           String
-  hoursAllocated Int      @default(50)
-  displayOrder   Int      @default(1)
-  createdAt      DateTime @default(now())
+  id                         String             @id @default(uuid())
+  courseLevelId              String
+  subLevelCode               String             // e.g. "A1.1", "A1.2"
+  name                       String
+  hoursAllocated             Int                @default(60)
+  assessmentsBeforeFinalExam Int                @default(4)
+  humanSpeakingMinutesPer2Wk Int                @default(10)
+  aiSpeakingPracticePerDay   Int                @default(2)
+  displayOrder               Int                @default(1)
+  createdAt                  DateTime           @default(now())
+
+  // Period Category Breakdown (Cat 1 to Cat 6)
+  cat1PeriodsPerWeek         Int                @default(3)
+  cat1TotalPeriods           Int                @default(103)
+  cat2PeriodsPerWeek         Int                @default(3)
+  cat2TotalPeriods           Int                @default(90)
+  cat3PeriodsPerWeek         Int                @default(3)
+  cat3TotalPeriods           Int                @default(80)
+  cat4PeriodsPerWeek         Int                @default(3)
+  cat4TotalPeriods           Int                @default(72)
+  cat5PeriodsPerWeek         Int                @default(2)
+  cat5TotalPeriods           Int                @default(70)
+  cat6PeriodsPerWeek         Int                @default(2)
+  cat6TotalPeriods           Int                @default(70)
 
   courseLevel CourseLevels @relation(fields: [courseLevelId], references: [id], onDelete: Cascade)
 
@@ -2182,18 +2335,23 @@ model QuestionDifficultyLevels {
 // ============================================================================
 
 model Exams {
-  id           String         @id @default(uuid())
-  tenantId     String?
-  batchId      String
-  courseId     String
-  title        String
-  examType     ExamTypeEnum   @default(QUIZ)
-  totalMarks   Decimal        @default(100.00) @db.Decimal(5, 2)
-  passingMarks Decimal        @default(40.00) @db.Decimal(5, 2)
-  durationMins Int            @default(60)
-  examStatus   ExamStatusEnum @default(DRAFT)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id                    String                    @id @default(uuid())
+  tenantId              String?
+  batchId               String
+  courseId              String
+  title                 String
+  examType              ExamTypeEnum              @default(QUIZ)
+  deliveryProtocol      ExamDeliveryProtocolEnum  @default(OFFLINE_CENTER_ONLY) // Final exams strictly offline center only
+  offlineCenterName     String?                   // Physical Examination Hall
+  offlineCenterAddress  String?                   // Center Address & Campus
+  isSpeakingVivaSlot    Boolean                   @default(false) // 1:1 Live oral viva voce with human faculty
+  liveMeetingUrl        String?                   // Secure live viva link for human tutor
+  totalMarks            Decimal                   @default(100.00) @db.Decimal(5, 2)
+  passingMarks          Decimal                   @default(40.00) @db.Decimal(5, 2)
+  durationMins          Int                       @default(60)
+  examStatus            ExamStatusEnum            @default(DRAFT)
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
 
   sections  ExamSections[]
   schedules ExamSchedules[]
@@ -2201,6 +2359,7 @@ model Exams {
   results   ExamResults[]
 
   @@index([batchId, examStatus])
+  @@index([deliveryProtocol])
 }
 
 model ExamSections {
@@ -3374,4 +3533,449 @@ model MaintenanceWindows {
   endTime   DateTime
   status    String   @default("SCHEDULED")
   createdAt DateTime @default(now())
+}
+
+// ============================================================================
+// DOMAIN 37: ENTERPRISE APPROVALS & MULTI-TENANT WORKFLOW ENGINE
+// Powers: Super Admin Approvals (/super-admin/approvals), Academic Approvals
+// (/academic-manager/approvals), Finance Approvals (/finance-manager/approvals)
+// ============================================================================
+
+model ApprovalRequests {
+  id                 String                  @id @default(uuid())
+  tenantId           String?
+  institutionId      String?
+  requestType        ApprovalRequestTypeEnum
+  title              String
+  description        String?
+  entityType         String                  // "FEE_STRUCTURE", "COURSE", "SCHOLARSHIP", "TUTOR_ASSIGNMENT", "POLICY"
+  entityId           String?
+  currentStatus      ApprovalStatusEnum      @default(PENDING)
+  priority           String                  @default("NORMAL") // "LOW", "NORMAL", "HIGH", "URGENT"
+  requestedByUserId  String
+  reviewedByUserId   String?
+  reviewerRemarks    String?
+  changeSummary      Json?                   // Difference / delta of requested changes
+  submittedPayload   Json?                   // Full form payload submitted
+  reviewedAt         DateTime?
+  rejectionReason    String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  history            ApprovalHistories[]
+
+  @@index([tenantId, currentStatus])
+  @@index([institutionId, requestType])
+}
+
+model ApprovalHistories {
+  id                String             @id @default(uuid())
+  approvalRequestId String
+  actionTaken       ApprovalStatusEnum
+  actorUserId       String
+  comments          String?
+  metadata          Json?
+  recordedAt        DateTime           @default(now())
+
+  approvalRequest   ApprovalRequests   @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+
+  @@index([approvalRequestId])
+}
+
+// ============================================================================
+// DOMAIN 38: FINANCE MANAGEMENT, FEE STRUCTURES & STUDENT LEDGERS
+// Powers: /finance-manager/fee-structures, /finance-manager/student-fees,
+// /finance-manager/transactions, /finance-manager/approvals, /parent/fees
+// ============================================================================
+
+model FeeStructures {
+  id                String                 @id @default(uuid())
+  tenantId          String?
+  institutionId     String?
+  courseId          String?
+  academicLevelId   String?
+  structureName     String
+  structureType     FeeStructureTypeEnum   @default(DURATION_BASED)
+  durationPattern   DurationPatternTypeEnum @default(STANDARD_PACING)
+  totalFeeAmount    Float
+  currency          String                 @default("INR")
+  academicYear      String                 @default("2026-2027")
+  isDefault         Boolean                @default(false)
+  isActive          Boolean                @default(true)
+  effectiveFrom     DateTime?
+  effectiveTo       DateTime?
+  approvalStatus    ApprovalStatusEnum     @default(APPROVED)
+  approvalRequestId String?
+  createdById       String?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  components        FeeStructureComponents[]
+  studentLedgers    StudentFeeLedgers[]
+
+  @@index([tenantId, institutionId, courseId])
+}
+
+model FeeStructureComponents {
+  id              String               @id @default(uuid())
+  feeStructureId  String
+  componentType   FeeComponentTypeEnum @default(TUITION_FEE)
+  name            String
+  description     String?
+  amount          Float
+  isMandatory     Boolean              @default(true)
+  displayOrder    Int                  @default(1)
+  createdAt       DateTime             @default(now())
+
+  feeStructure    FeeStructures        @relation(fields: [feeStructureId], references: [id], onDelete: Cascade)
+
+  @@index([feeStructureId])
+}
+
+model StudentFeeLedgers {
+  id                String              @id @default(uuid())
+  tenantId          String?
+  institutionId     String?
+  studentUserId     String
+  feeStructureId    String?
+  totalFeeDue       Float
+  scholarshipAmount Float               @default(0.0)
+  netPayable        Float
+  totalPaid         Float               @default(0.0)
+  balanceDue        Float
+  status            String              @default("PENDING") // "PAID", "PARTIALLY_PAID", "OVERDUE", "PENDING"
+  dueDate           DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  feeStructure      FeeStructures?      @relation(fields: [feeStructureId], references: [id])
+  payments          FeePaymentTransactions[]
+
+  @@index([tenantId, studentUserId])
+  @@index([institutionId, status])
+}
+
+model FeePaymentTransactions {
+  id                   String            @id @default(uuid())
+  tenantId             String?
+  studentFeeLedgerId   String
+  studentUserId        String
+  institutionId        String?
+  transactionReference String            @unique
+  paymentGatewayTxnId  String?
+  amount               Float
+  currency             String            @default("INR")
+  paymentMethod        String            @default("UPI") // "UPI", "CREDIT_CARD", "NET_BANKING", "CHALLAN", "CASH"
+  paymentStatus        String            @default("SUCCESS") // "SUCCESS", "PENDING", "FAILED", "REFUNDED"
+  paidAt               DateTime          @default(now())
+  receiptNumber        String?           @unique
+  receiptUrl           String?
+  collectedByUserId    String?
+  notes                String?
+
+  studentFeeLedger     StudentFeeLedgers @relation(fields: [studentFeeLedgerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, studentUserId])
+  @@index([transactionReference])
+}
+
+model ScholarshipDiscounts {
+  id                String             @id @default(uuid())
+  tenantId          String?
+  institutionId     String?
+  title             String
+  code              String             @unique
+  description       String?
+  discountType      String             @default("PERCENTAGE") // "PERCENTAGE", "FIXED_AMOUNT"
+  discountValue     Float
+  criteriaRules     Json?
+  maxBeneficiaries  Int?
+  usedCount         Int                @default(0)
+  validFrom         DateTime
+  validTo           DateTime
+  approvalStatus    ApprovalStatusEnum @default(APPROVED)
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([code, isActive])
+}
+
+model PaymentPolicies {
+  id                   String   @id @default(uuid())
+  tenantId             String?
+  institutionId        String?
+  policyName           String
+  allowInstallments    Boolean  @default(true)
+  maxInstallmentsCount Int      @default(3)
+  installmentGapDays   Int      @default(30)
+  lateFeeDailyPenalty  Float    @default(50.0)
+  gracePeriodDays      Int      @default(7)
+  autoReminderDays     Json?    // e.g. [7, 3, 1] days before due date
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model RefundPolicies {
+  id                  String   @id @default(uuid())
+  tenantId            String?
+  institutionId       String?
+  policyName          String
+  beforeCommencePct   Float    @default(90.0) // 90% refund before batch commencement
+  withinFirstWeekPct  Float    @default(50.0) // 50% refund within first week
+  afterFirstWeekPct   Float    @default(0.0)  // 0% refund after 1st week
+  processingFeeAmount Float    @default(1000.0)
+  rulesJson           Json?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ============================================================================
+// DOMAIN 39: SALES MANAGEMENT, CRM & MULTI-CAMPUS ADMISSIONS DESK
+// Powers: /sales-manager/dashboard, /sales-manager/register-college,
+// /sales-manager/register-school, /sales-manager/admissions, /sales-manager/reports
+// ============================================================================
+
+model AdmissionApplications {
+  id                  String              @id @default(uuid())
+  tenantId            String?
+  institutionId       String
+  admissionType       AdmissionTypeEnum   @default(COLLEGE_STUDENT)
+  applicationNumber   String              @unique
+  firstName           String
+  lastName            String
+  email               String
+  mobileNumber        String
+  parentOrGuardianName String?
+  parentContactNumber String?
+  collegeRollNumber   String?
+  department          String?
+  yearOfStudy         String?             // "1st Year", "2nd Year", "3rd Year", "Final Year"
+  schoolGradeLevel    String?             // "Grade 11", "Grade 12"
+  targetLanguage      LanguageCodeEnum    @default(FRENCH)
+  targetLevel         CefrSubLevelEnum    @default(A1_1)
+  periodCategory      PeriodCategoryEnum  @default(CAT_6_60M)
+  pacingTrack         CoursePacingTrackEnum @default(STANDARD)
+  allocatedBatchId    String?
+  currentStatus       AdmissionStatusEnum @default(SUBMITTED)
+  applicationFeePaid  Boolean             @default(false)
+  kycDocumentsJson    Json?               // ID proof, College ID Card, Grade certificate
+  salesAgentUserId    String?
+  leadSource          String?             @default("CAMPUS_DRIVE") // "CAMPUS_DRIVE", "SEMINAR", "WEBSITE_DIRECT", "REFERRAL"
+  enrollmentDate      DateTime?
+  createdStudentId    String?             // Links to Students table when converted
+  remarks             String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([institutionId, currentStatus])
+  @@index([applicationNumber])
+  @@index([email])
+}
+
+model CollegeAdmissionsBatches {
+  id               String   @id @default(uuid())
+  tenantId         String?
+  institutionId    String
+  academicYear     String   @default("2026-2027")
+  semesterName     String   @default("ODD_SEMESTER")
+  targetIntakeCap  Int      @default(120)
+  confirmedCount   Int      @default(0)
+  deskLeadUserId   String?  // Sales Manager / Admissions Officer
+  registrationOpen DateTime
+  registrationClose DateTime
+  status           String   @default("OPEN")
+  createdAt        DateTime @default(now())
+}
+
+// ============================================================================
+// DOMAIN 40: TUTOR SCHEDULING, LIVE WEBINARS & 1-TO-1 HUMAN SPEAKING SESSIONS
+// Powers: /tutor/schedule, /tutor/live-classes, /tutor/doubts, /tutor/assessments,
+// /academic-manager/scheduling, /student/speaking-practice (1:1 Human Viva)
+// ============================================================================
+
+model OneToOneHumanSessions {
+  id                   String                    @id @default(uuid())
+  tenantId             String?
+  institutionId        String?
+  studentUserId        String
+  tutorUserId          String
+  courseId             String?
+  batchId              String?
+  sessionType          String                    @default("SPEAKING_VIVA") // "SPEAKING_VIVA", "DOUBT_CLEARANCE", "REMEDIAL_COACHING"
+  scheduledStartTime   DateTime
+  scheduledEndTime     DateTime
+  durationMinutes      Int                       @default(10) // 10m to 40m as per CEFR Matrix
+  meetingPlatform      String                    @default("LIVEKIT_ROOM") // "LIVEKIT_ROOM", "ZOOM", "GOOGLE_MEET"
+  meetingRoomUrl       String?
+  status               OneToOneSessionStatusEnum @default(SCHEDULED)
+  studentAttended      Boolean                   @default(false)
+  tutorAttended        Boolean                   @default(false)
+  studentFeedback      String?
+  tutorFeedback        String?
+  pronunciationScore   Float?
+  fluencyScore         Float?
+  vocabularyScore      Float?
+  overallCefrRating    String?                   // e.g. "A1.1 Competent"
+  rescheduledCount     Int                       @default(0)
+  cancellationReason   String?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  @@index([studentUserId, status])
+  @@index([tutorUserId, scheduledStartTime])
+  @@index([institutionId])
+}
+
+model TutorCollegeAssignments {
+  id                       String   @id @default(uuid())
+  tenantId                 String?
+  tutorUserId              String
+  institutionId            String
+  isDedicatedCollegeTutor  Boolean  @default(true) // Cross-campus clash protection
+  maxWeeklyTeachingPeriods Int      @default(24)
+  allowWebinarBroadcasting Boolean  @default(true)
+  allowOneToOneViva        Boolean  @default(true)
+  effectiveFrom            DateTime @default(now())
+  effectiveTo              DateTime?
+  isActive                 Boolean  @default(true)
+  createdAt                DateTime @default(now())
+
+  @@unique([tutorUserId, institutionId])
+  @@index([institutionId, isActive])
+}
+
+model DoubtClearanceTickets {
+  id                 String   @id @default(uuid())
+  tenantId           String?
+  institutionId      String?
+  studentUserId      String
+  assignedTutorId    String?
+  courseId           String?
+  batchId            String?
+  topicChapter       String
+  questionText       String
+  audioNoteUrl       String?
+  screenshotUrl      String?
+  status             String   @default("OPEN") // "OPEN", "ANSWERED", "CLOSED"
+  answerText         String?
+  answerAudioUrl     String?
+  answeredAt         DateTime?
+  studentSatisfied   Boolean?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([assignedTutorId, status])
+  @@index([studentUserId])
+}
+
+// ============================================================================
+// DOMAIN 41: PARENT PORTAL MONITORING & EMERGENCY NOTIFICATIONS
+// Powers: /parent/dashboard, /parent/attendance, /parent/grades, /parent/fees,
+// /parent/tutor-connect, /parent/live-classes
+// ============================================================================
+
+model ParentStudentLinks {
+  id                  String   @id @default(uuid())
+  tenantId            String?
+  parentUserId        String
+  studentUserId       String
+  relationship        String   @default("FATHER") // "FATHER", "MOTHER", "LEGAL_GUARDIAN"
+  isPrimaryContact    Boolean  @default(true)
+  receiveAttendanceSms Boolean @default(true)
+  receiveFeeAlerts    Boolean  @default(true)
+  receiveExamAlerts   Boolean  @default(true)
+  emergencyContactNum String?
+  verifiedAt          DateTime?
+  createdAt           DateTime @default(now())
+
+  @@unique([parentUserId, studentUserId])
+  @@index([parentUserId])
+  @@index([studentUserId])
+}
+
+model ParentTutorInteractions {
+  id              String   @id @default(uuid())
+  tenantId        String?
+  parentUserId    String
+  tutorUserId     String
+  studentUserId   String
+  scheduledAt     DateTime
+  durationMinutes Int      @default(15)
+  mode            String   @default("ONLINE_CALL") // "ONLINE_CALL", "CAMPUS_MEETING"
+  meetingUrl      String?
+  parentNotes     String?
+  tutorRemarks    String?
+  status          String   @default("SCHEDULED") // "SCHEDULED", "COMPLETED", "CANCELLED"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([parentUserId, studentUserId])
+  @@index([tutorUserId])
+}
+
+// ============================================================================
+// DOMAIN 42: COLLEGE ADMIN PORTAL — CAMPUS MANAGEMENT & BULK OPERATIONS
+// Powers: /college-admin/dashboard, /college-admin/fees (Bulk Pay & Unlock),
+// /college-admin/students, /college-admin/batches, /college-admin/faculty
+// ============================================================================
+
+model CollegeBulkFeePayments {
+  id                    String   @id @default(uuid())
+  tenantId              String?
+  institutionId         String
+  batchId               String?
+  paymentReference      String   @unique
+  paymentMethod         String   @default("NEFT_RTGS") // "NEFT_RTGS", "ONLINE_GATEWAY", "DEMAND_DRAFT", "CHEQUE"
+  totalStudentsCount    Int
+  totalAmountPaid       Float
+  currency              String   @default("INR")
+  bankReferenceNumber   String?
+  paymentProofDocUrl    String?
+  approvedByAdminUserId String?
+  clearedAt             DateTime @default(now())
+  accessAutoUnlocked    Boolean  @default(true)
+  remarks               String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  items                 CollegeBulkFeePaymentItems[]
+
+  @@index([institutionId, clearedAt])
+  @@index([paymentReference])
+}
+
+model CollegeBulkFeePaymentItems {
+  id                     String                 @id @default(uuid())
+  bulkPaymentId          String
+  studentUserId          String
+  studentRollNumber      String?
+  courseId               String?
+  amountPaid             Float
+  previousDueAmount      Float
+  newBalanceAmount       Float                  @default(0.0)
+  accessUnlockedAt       DateTime?
+
+  bulkPayment            CollegeBulkFeePayments @relation(fields: [bulkPaymentId], references: [id], onDelete: Cascade)
+
+  @@index([bulkPaymentId])
+  @@index([studentUserId])
+}
+
+model CampusStudentAccessControls {
+  id              String    @id @default(uuid())
+  tenantId        String?
+  institutionId   String
+  studentUserId   String
+  batchId         String?
+  isLmsLocked     Boolean   @default(false)
+  lockReason      String?   // "FEE_PENDING", "DISCIPLINARY", "ADMIN_HOLD"
+  unlockedAt      DateTime?
+  unlockedByUserId String?
+  lastSyncAt      DateTime  @default(now())
+
+  @@unique([institutionId, studentUserId])
+  @@index([institutionId, isLmsLocked])
 }

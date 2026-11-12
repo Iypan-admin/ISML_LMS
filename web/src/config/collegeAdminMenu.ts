@@ -19,75 +19,45 @@ export const COLLEGE_ADMIN_NAV_SECTIONS: CollegeAdminNavSection[] = [
     title: 'Overview',
     items: [
       {
-        label: 'Campus Dashboard',
+        label: 'Dashboard',
         route: '/college-admin/dashboard',
         iconName: 'LayoutDashboard',
       },
     ],
   },
   {
-    title: 'Students & Enrollment',
+    title: 'Students & Admissions',
     items: [
       {
-        label: 'Student Directory',
+        label: 'Students Directory',
         route: '/college-admin/students',
         iconName: 'GraduationCap',
       },
       {
-        label: 'Enroll New Student',
-        route: '/college-admin/students/enroll',
-        iconName: 'UserPlus',
+        label: 'Parents Directory',
+        route: '/college-admin/parents',
+        iconName: 'Users',
       },
-    ],
-  },
-  {
-    title: 'Fees & Bulk Clearance',
-    items: [
       {
-        label: 'Bulk Fees Pay & Unlock',
+        label: 'Fees & Unlock',
         route: '/college-admin/fees',
         iconName: 'CreditCard',
         badge: 'Pay & Unlock',
       },
-      {
-        label: 'Payment Ledger',
-        route: '/college-admin/fees/ledger',
-        iconName: 'Receipt',
-      },
     ],
   },
   {
-    title: 'Academics & Cohorts',
+    title: 'Academics',
     items: [
       {
-        label: 'Campus Courses',
-        route: '/college-admin/courses',
-        iconName: 'BookOpen',
-      },
-      {
-        label: 'Active Batches',
+        label: 'Courses & Batches',
         route: '/college-admin/batches',
         iconName: 'Layers',
       },
       {
-        label: 'Faculty & Tutors',
-        route: '/college-admin/faculty',
-        iconName: 'Users',
-      },
-    ],
-  },
-  {
-    title: 'Attendance & Performance',
-    items: [
-      {
-        label: 'Attendance Monitor',
+        label: 'Attendance & Marks',
         route: '/college-admin/attendance',
         iconName: 'UserCheck',
-      },
-      {
-        label: 'Exam & Assessment Marks',
-        route: '/college-admin/assessments',
-        iconName: 'Award',
       },
     ],
   },

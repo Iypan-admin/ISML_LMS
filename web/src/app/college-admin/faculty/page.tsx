@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -17,15 +17,36 @@ import {
   Layers,
   Award,
   Sparkles,
+  Building2,
 } from 'lucide-react';
-import { mockInstitutions } from '@/mock/superAdminData';
-import { mockFacultyMembers, mockFacultyAllocations } from '@/mock/facultyAssignments';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function CollegeAdminFacultyPage() {
-  const currentCollege = mockInstitutions[0];
+  const [facultyList, setFacultyList] = useState<any[]>([]);
+  const [allocations, setAllocations] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [collegeName, setCollegeName] = useState('The American College');
 
-  const filteredFaculty = mockFacultyMembers.filter(
+  useEffect(() => {
+    let code = 'AMER-COL';
+    try {
+      const stored = localStorage.getItem('isml_admin_user') || localStorage.getItem('isml_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.campusName) setCollegeName(u.campusName);
+        if (u.institutionCode) code = u.institutionCode;
+      }
+    } catch {}
+
+    fastFetch(`/api/portals/faculty?collegeId=${encodeURIComponent(code)}`, (json) => {
+      if (json && json.data) {
+        setFacultyList(json.data);
+        if (json.allocations) setAllocations(json.allocations);
+      }
+    });
+  }, []);
+
+  const filteredFaculty = facultyList.filter(
     (f) =>
       f.name.toLowerCase().includes(search.toLowerCase()) ||
       f.primaryLanguage.toLowerCase().includes(search.toLowerCase()) ||
@@ -33,7 +54,7 @@ export default function CollegeAdminFacultyPage() {
   );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -45,7 +66,7 @@ export default function CollegeAdminFacultyPage() {
             Language Faculty & Tutor Oversight
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            View certified native language trainers and instructional tutors assigned to {currentCollege.name}.
+            View certified native language trainers and instructional tutors assigned to <strong className="text-slate-800">{collegeName}</strong>.
           </p>
         </div>
       </div>
@@ -67,7 +88,7 @@ export default function CollegeAdminFacultyPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredFaculty.map((faculty) => {
-          const allocations = mockFacultyAllocations.filter((a) => a.facultyId === faculty.id);
+          const facultyAllocs = allocations.filter((a) => a.facultyId === faculty.id || a.facultyName === faculty.name);
           return (
             <div
               key={faculty.id}
@@ -81,7 +102,7 @@ export default function CollegeAdminFacultyPage() {
                     </div>
                     <div>
                       <h3 className="font-extrabold text-[#0B2447] text-sm">{faculty.name}</h3>
-                      <p className="text-[11px] text-slate-500 font-medium">{faculty.designation}</p>
+                      <p className="text-[11px] text-slate-500 font-medium line-clamp-1">{faculty.designation}</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -107,20 +128,22 @@ export default function CollegeAdminFacultyPage() {
                 {/* Assigned Batches */}
                 <div className="mt-4 pt-3 border-t border-slate-100">
                   <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block mb-1.5">
-                    Assigned Campus Cohorts ({allocations.length})
+                    Assigned Campus Cohorts ({facultyAllocs.length})
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {allocations.length > 0 ? (
-                      allocations.map((alloc) => (
+                    {facultyAllocs.length > 0 ? (
+                      facultyAllocs.map((alloc) => (
                         <span
                           key={alloc.id}
                           className="px-2 py-0.5 rounded-md bg-blue-50 text-[#0052CC] text-[10px] font-bold border border-blue-100"
                         >
-                          {alloc.batchName} ({alloc.tutorRole.replace('_', ' ')})
+                          {alloc.batchName} ({alloc.tutorRole?.replace(/_/g, ' ') || 'Tutor'})
                         </span>
                       ))
                     ) : (
-                      <span className="text-[11px] text-slate-400 italic">Open for allocation</span>
+                      <span className="text-[11px] text-blue-700 font-medium bg-blue-50/60 px-2 py-0.5 rounded border border-blue-100">
+                        Assigned to {collegeName}
+                      </span>
                     )}
                   </div>
                 </div>

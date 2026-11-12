@@ -8,7 +8,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   MessageSquare,
@@ -31,6 +31,7 @@ import {
   Volume2,
   Paperclip,
   Check,
+  CheckCheck,
   Phone,
   Mail,
   ShieldCheck,
@@ -39,6 +40,8 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import FacultyRoleSwitcherBar from '@/components/tutor/FacultyRoleSwitcherBar';
 import { useTutor } from '@/context/TutorContext';
 import { useToast } from '@/context/ToastContext';
+import { fastFetch } from '@/lib/fastCache';
+import { playMessageSound } from '@/lib/soundEffects';
 
 export interface DoubtMessage {
   id: string;
@@ -86,301 +89,297 @@ interface CourseDoubtGroup {
   batches: BatchDoubtGroup[];
 }
 
-// Master Hierarchical Course & Batch Doubts Dataset
-const COURSE_DOUBTS_DATA: CourseDoubtGroup[] = [
+const PASTEL_STYLES = [
   {
-    id: 'crs-fr-a1',
-    code: 'FR-101',
-    levelBadge: 'CEFR A1',
-    name: 'French A1: Beginner Foundations & Phonetics',
-    pastelBg: 'bg-blue-50/70',
-    pastelBorder: 'border-blue-200',
-    accentColor: 'text-[#0052CC]',
-    iconBg: 'bg-blue-100 text-[#0052CC]',
-    batches: [
-      {
-        batchId: 'batch-2026-fr-a1-morning',
-        batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-        sectionCode: 'Section A (Morning)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        doubts: [
-          {
-            id: 'dbt-a1-01',
-            ticketNo: 'DBT-FR-A1-101',
-            batchId: 'batch-2026-fr-a1-morning',
-            studentName: 'Bharathi M',
-            studentRollNo: '2026-FR-8942',
-            studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Anna University, Chennai',
-            topicTitle: "Difference between 'C'est un professeur' vs 'Il est professeur'",
-            category: 'Grammar',
-            status: 'RESOLVED',
-            priority: 'MEDIUM',
-            createdAt: 'Yesterday, 3:45 PM',
-            messages: [
-              {
-                id: 'msg-1',
-                sender: 'STUDENT',
-                senderName: 'Bharathi M',
-                text: "Hi Jay Sir! When should I use 'C'est un professeur' versus 'Il est professeur'? In today's live lecture slide 14, both were mentioned.",
-                timestamp: 'Yesterday, 3:45 PM',
-              },
-              {
-                id: 'msg-2',
-                sender: 'AI_ASSISTANT',
-                senderName: 'AI Grammar Assistant',
-                text: "Quick Rule: Use 'C'est' + Article + Noun (e.g. C'est un professeur). Use 'Il est' directly with professions without an article (e.g. Il est professeur).",
-                timestamp: 'Yesterday, 3:46 PM',
-              },
-              {
-                id: 'msg-3',
-                sender: 'TUTOR',
-                senderName: 'Jay (Foreign Language Faculty)',
-                text: "Excellent observation Bharathi! AI suggestion is spot on. Remember: If an adjective modifies the profession (e.g. 'un bon professeur'), you MUST use 'C'est un bon professeur'. Keep practicing!",
-                timestamp: 'Yesterday, 4:02 PM',
-              },
-            ],
-          },
-          {
-            id: 'dbt-a1-02',
-            ticketNo: 'DBT-FR-A1-102',
-            batchId: 'batch-2026-fr-a1-morning',
-            studentName: 'Naveen Kumar B',
-            studentRollNo: '2026-FR-8945',
-            studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'PSG College of Technology',
-            topicTitle: 'Phonetic drill on nasal vowels "an", "on", "in" in French words',
-            category: 'Pronunciation',
-            status: 'OPEN',
-            priority: 'HIGH',
-            createdAt: 'Today, 10:15 AM',
-            messages: [
-              {
-                id: 'msg-11',
-                sender: 'STUDENT',
-                senderName: 'Naveen Kumar B',
-                text: "Bonjour Sir! When pronouncing 'croissant' and 'restaurant', my audio submission got flagged for mouth shape. How should I place my tongue?",
-                timestamp: 'Today, 10:15 AM',
-              },
-            ],
-          },
-        ],
-      },
-    ],
+    pastelBg: 'bg-indigo-50/70',
+    pastelBorder: 'border-indigo-200',
+    accentColor: 'text-indigo-700',
+    iconBg: 'bg-indigo-100 text-indigo-700',
   },
   {
-    id: 'crs-fr-a2',
-    code: 'FR-102',
-    levelBadge: 'CEFR A2',
-    name: 'French A2: Elementary Narrative & Passé Composé',
-    pastelBg: 'bg-amber-50/70',
-    pastelBorder: 'border-amber-200',
-    accentColor: 'text-amber-800',
-    iconBg: 'bg-amber-100 text-amber-800',
-    batches: [
-      {
-        batchId: 'batch-fr-a2',
-        batchName: 'French A2 Cohort (Section B - Standby Coverage)',
-        sectionCode: 'Section B (Afternoon)',
-        dutyRole: 'Substitute Standby',
-        dutyBadgeColor: 'bg-amber-50 text-amber-900 border-amber-200',
-        doubts: [
-          {
-            id: 'dbt-a2-01',
-            ticketNo: 'DBT-FR-A2-201',
-            batchId: 'batch-fr-a2',
-            studentName: 'Alex D\'Souza',
-            studentRollNo: '2026-FR-A2-101',
-            studentAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Loyola College (Autonomous)',
-            topicTitle: 'Agreement of past participle with auxiliary "Être" vs "Avoir"',
-            category: 'Grammar',
-            status: 'OPEN',
-            priority: 'HIGH',
-            createdAt: 'Today, 09:30 AM',
-            messages: [
-              {
-                id: 'msg-21',
-                sender: 'STUDENT',
-                senderName: 'Alex D\'Souza',
-                text: "Sir, in Passé Composé, why does 'Elle est allée' add an extra 'e', but 'Elle a mangé' does not? When does auxiliary Avoir agree with the direct object?",
-                timestamp: 'Today, 09:30 AM',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b1',
-    code: 'FR-201',
-    levelBadge: 'CEFR B1',
-    name: 'French B1: Independent Fluency & Subjunctive Mood',
     pastelBg: 'bg-emerald-50/70',
     pastelBorder: 'border-emerald-200',
-    accentColor: 'text-emerald-800',
-    iconBg: 'bg-emerald-100 text-emerald-800',
-    batches: [
-      {
-        batchId: 'batch-fr-b1',
-        batchName: 'French B1 Executive Cohort (1-on-1 Q&A Desk)',
-        sectionCode: 'Section Q (Evening Clinic)',
-        dutyRole: 'Doubt Clearance Specialist',
-        dutyBadgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-        doubts: [
-          {
-            id: 'dbt-b1-01',
-            ticketNo: 'DBT-FR-B1-301',
-            batchId: 'batch-fr-b1',
-            studentName: 'Sophie Martin',
-            studentRollNo: '2026-FR-B1-201',
-            studentAvatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'ISML Global Executive Track',
-            topicTitle: 'Why does "Je pense que" take Indicative but "Je ne pense pas que" takes Subjunctive?',
-            category: 'Grammar',
-            status: 'OPEN',
-            priority: 'HIGH',
-            createdAt: 'Today, 09:15 AM',
-            messages: [
-              {
-                id: 'msg-31',
-                sender: 'STUDENT',
-                senderName: 'Sophie Martin',
-                text: "Bonjour Jay Sir! In my B1 oral practice, why is 'Je pense qu'il vient' in indicative, but when negated 'Je ne pense pas qu'il vienne', it takes the subjunctive mood? Please clarify the nuance for viva.",
-                timestamp: 'Today, 09:15 AM',
-              },
-            ],
-          },
-          {
-            id: 'dbt-b1-02',
-            ticketNo: 'DBT-FR-B1-302',
-            batchId: 'batch-fr-b1',
-            studentName: 'Dinesh Kumar',
-            studentRollNo: '2026-FR-B1-202',
-            studentAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'PSG Tech Coimbatore',
-            topicTitle: 'Mandatory liaison sound difference in "Ils ont" [il z‿ɔ̃] vs "Ils sont" [il sɔ̃]',
-            category: 'Pronunciation',
-            status: 'IN_PROGRESS',
-            priority: 'MEDIUM',
-            createdAt: 'Today, 10:45 AM',
-            messages: [
-              {
-                id: 'msg-41',
-                sender: 'STUDENT',
-                senderName: 'Dinesh Kumar',
-                text: "Sir, students in my group keep confusing the 'Z' buzz sound in 'Ils ont' and the crisp 'S' hiss in 'Ils sont'. Is there any oral practice drill you recommend?",
-                timestamp: 'Today, 10:45 AM',
-              },
-              {
-                id: 'msg-42',
-                sender: 'TUTOR',
-                senderName: 'Jay (Foreign Language Faculty)',
-                text: "Hello Dinesh! Absolutely. Practice with a vocal buzz: put your fingers gently on your throat — 'Ils ont' causes vocal cord vibration [z]. In 'Ils sont', the [s] is completely unvoiced and unvibrating. Try recording a 10-second clip and send here!",
-                timestamp: 'Today, 11:05 AM',
-              },
-            ],
-          },
-        ],
-      },
-    ],
+    accentColor: 'text-emerald-700',
+    iconBg: 'bg-emerald-100 text-emerald-700',
   },
   {
-    id: 'crs-fr-b2',
-    code: 'FR-202',
-    levelBadge: 'CEFR B2',
-    name: 'French B2: Advanced Oral Discourse & DELF Synthesis',
-    pastelBg: 'bg-purple-50/70',
-    pastelBorder: 'border-purple-200',
-    accentColor: 'text-purple-800',
-    iconBg: 'bg-purple-100 text-purple-800',
-    batches: [
-      {
-        batchId: 'batch-fr-b2',
-        batchName: 'French B2 Advanced Cohort (Evaluation Desk)',
-        sectionCode: 'Section V (Evaluation)',
-        dutyRole: 'Assistant Evaluator',
-        dutyBadgeColor: 'bg-purple-50 text-purple-900 border-purple-200',
-        doubts: [
-          {
-            id: 'dbt-b2-01',
-            ticketNo: 'DBT-FR-B2-401',
-            batchId: 'batch-fr-b2',
-            studentName: 'Akash Sundaram',
-            studentRollNo: '2026-FR-B2-301',
-            studentAvatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Anna University Guindy',
-            topicTitle: 'Structuring DELF B2 formal essay with thesis, antithesis & synthesis connectors',
-            category: 'Homework',
-            status: 'OPEN',
-            priority: 'HIGH',
-            createdAt: 'Yesterday, 06:20 PM',
-            messages: [
-              {
-                id: 'msg-51',
-                sender: 'STUDENT',
-                senderName: 'Akash Sundaram',
-                text: "Sir, in the DELF B2 Dossier Synthèse, can I use 'Cependant' and 'Néanmoins' in the same transition paragraph or does it cause redundancy?",
-                timestamp: 'Yesterday, 06:20 PM',
-              },
-            ],
-          },
-        ],
-      },
-    ],
+    pastelBg: 'bg-amber-50/70',
+    pastelBorder: 'border-amber-200',
+    accentColor: 'text-amber-700',
+    iconBg: 'bg-amber-100 text-amber-700',
+  },
+  {
+    pastelBg: 'bg-rose-50/70',
+    pastelBorder: 'border-rose-200',
+    accentColor: 'text-rose-700',
+    iconBg: 'bg-rose-100 text-rose-700',
   },
 ];
 
 export default function TutorDoubtsPage() {
   const { showSuccess, showInfo } = useToast();
-  const { currentFaculty } = useTutor();
+  const { currentFaculty, myAllocations } = useTutor();
 
-  // STEP 1: Selected Course ID (Defaults to French B1 where Jay has active Doubt Clearance Desk)
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('crs-fr-b1');
+  const [coursesData, setCoursesData] = useState<CourseDoubtGroup[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('');
+  const [batchDoubts, setBatchDoubts] = useState<Record<string, CourseBatchDoubtItem[]>>({});
+  const [activeDoubtId, setActiveDoubtId] = useState<string>('');
+  const [replyText, setReplyText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'Grammar' | 'Pronunciation' | 'Homework'>('ALL');
 
-  // STEP 2: Selected Batch ID (Defaults to French B1 Executive Cohort)
-  const [selectedBatchId, setSelectedBatchId] = useState<string>('batch-fr-b1');
+  const [isStudentTyping, setIsStudentTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const broadcastTutorTyping = () => {
+    try {
+      const bc = new BroadcastChannel('isml_doubts_webhook');
+      bc.postMessage({ type: 'TYPING', sender: 'TUTOR', threadId: activeDoubt?.id });
+      bc.close();
+    } catch { }
+  };
+
+  // Load dynamically assigned courses, batches, and doubt inquiries for this tutor
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadDoubtDesk() {
+      try {
+        let rawCourses: any[] = [];
+        let rawBatches: any[] = [];
+
+        await Promise.all([
+          fastFetch('/api/portals/courses', (cJson) => {
+            if (cJson?.data) rawCourses = cJson.data;
+          }),
+          fastFetch('/api/portals/batches', (bJson) => {
+            if (bJson?.data) rawBatches = bJson.data;
+          }),
+        ]);
+
+        if (isCancelled) return;
+
+        // Filter strictly to courses & batches assigned to this tutor (e.g. Joy JK)
+        const allocatedCourseIds = new Set(myAllocations.map((a) => a.courseId).filter(Boolean));
+        const allocatedCourseNames = new Set(myAllocations.map((a) => a.courseName?.toLowerCase()).filter(Boolean));
+        const allocatedSubjectCodes = new Set(myAllocations.map((a) => a.subjectCode?.toLowerCase()).filter(Boolean));
+        const allocatedBatchIds = new Set(myAllocations.map((a) => a.batchId).filter(Boolean));
+        const allocatedBatchNames = new Set(myAllocations.map((a) => a.batchName?.toLowerCase()).filter(Boolean));
+
+        const assignedCourses = rawCourses.filter((c: any) => {
+          if (myAllocations.length === 0) return true;
+          return (
+            allocatedCourseIds.has(c.id) ||
+            allocatedCourseNames.has(c.name?.toLowerCase()) ||
+            allocatedSubjectCodes.has(c.code?.toLowerCase())
+          );
+        });
+
+        // Check if student raised any doubts stored in DB (/api/portals/doubts) or shared localStorage
+        let studentRaisedThreads: any[] = [];
+        try {
+          const dbtRes = await fetch('/api/portals/doubts');
+          const dbtJson = await dbtRes.json();
+          if (dbtJson?.data && Array.isArray(dbtJson.data)) {
+            studentRaisedThreads = dbtJson.data;
+          }
+        } catch { }
+
+        if (studentRaisedThreads.length === 0) {
+          try {
+            if (typeof window !== 'undefined') {
+              const raw = localStorage.getItem('isml_student_doubts');
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) studentRaisedThreads = parsed;
+              }
+            }
+          } catch { }
+        }
+
+        const initialDoubtsMap: Record<string, CourseBatchDoubtItem[]> = {};
+
+        const parsedCourses: CourseDoubtGroup[] = assignedCourses.map((c: any, idx: number) => {
+          const style = PASTEL_STYLES[idx % PASTEL_STYLES.length];
+          const courseBatches: BatchDoubtGroup[] = rawBatches
+            .filter((b: any) => {
+              const matchesCourse =
+                b.programId === c.id ||
+                b.courseIds?.includes(c.id) ||
+                (b.programName && c.name && b.programName.toLowerCase() === c.name.toLowerCase()) ||
+                (b.code && c.code && b.code.toLowerCase().includes(c.code.toLowerCase()));
+              const matchesAllocation =
+                myAllocations.length === 0 ||
+                allocatedBatchIds.has(b.id) ||
+                allocatedBatchNames.has(b.name?.toLowerCase());
+              return matchesCourse || matchesAllocation;
+            })
+            .map((b: any, bIdx: number) => {
+              const matchedAlloc = myAllocations.find(
+                (a) => a.batchId === b.id || a.batchName?.toLowerCase() === b.name?.toLowerCase()
+              );
+              const dutyRole =
+                matchedAlloc?.tutorRole === 'LEAD_TRAINER'
+                  ? 'Lead Native Trainer'
+                  : matchedAlloc?.tutorRole === 'SUBSTITUTE_TUTOR'
+                    ? 'Substitute Standby'
+                    : matchedAlloc?.tutorRole === 'DOUBT_SOLVING_TUTOR'
+                      ? 'Doubt Solving Tutor'
+                      : 'Assistant Evaluator';
+
+              // Map doubts assigned strictly to this tutor or this batch or available doubts
+              const assignedDoubts: CourseBatchDoubtItem[] = studentRaisedThreads
+                .filter((th: any) => {
+                  const tutorMatch =
+                    !th.assignedTutorName ||
+                    th.assignedTutorName.toLowerCase().includes(currentFaculty.name.toLowerCase()) ||
+                    currentFaculty.name.toLowerCase().includes((th.assignedTutorName || '').toLowerCase());
+                  const batchMatch =
+                    !th.batchName ||
+                    th.batchName.toLowerCase().trim() === b.name?.toLowerCase().trim() ||
+                    th.batchId === b.id;
+                  const courseMatch =
+                    !th.courseName ||
+                    th.courseName.toLowerCase().trim() === c.name?.toLowerCase().trim();
+                  return tutorMatch || batchMatch || courseMatch || studentRaisedThreads.length === 1;
+                })
+                .map((th: any, tIdx: number) => ({
+                  id: th.id || `dbt-${b.id}-${tIdx + 1}`,
+                  ticketNo: th.ticketNo || `TKT-${th.id?.slice(-4) || '9102'}`,
+                  batchId: b.id,
+                  studentName: th.studentName || th.messages?.[0]?.senderName || 'Muthu Pandian',
+                  studentRollNo: th.studentRollNo || 'AMER-COL-STD-23',
+                  studentAvatar: th.studentAvatar || `https://images.unsplash.com/photo-1534528741775?w=150`,
+                  collegeName: th.collegeName || 'The American College',
+                  topicTitle: th.topicTitle || 'Live Session Inquiry',
+                  category: (th.category || 'Grammar') as any,
+                  status: (th.status || 'OPEN') as any,
+                  priority: (th.priority || 'HIGH') as const,
+                  createdAt: th.createdAt || 'Today',
+                  messages: (th.messages || []).map((m: any, mIdx: number) => ({
+                    id: m.id || `msg-${mIdx}`,
+                    sender: m.sender || 'STUDENT',
+                    senderName: m.senderName || 'Student',
+                    text: m.text || '',
+                    timestamp: m.timestamp || 'Just now',
+                  })),
+                }));
+
+              initialDoubtsMap[b.id] = assignedDoubts;
+
+              return {
+                batchId: b.id,
+                batchName: b.name,
+                sectionCode: `SEC-${String.fromCharCode(65 + bIdx)}`,
+                dutyRole,
+                dutyBadgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                doubts: assignedDoubts,
+              };
+            });
+
+          return {
+            id: c.id,
+            code: c.code || `CRS-${idx + 1}`,
+            levelBadge: c.program || 'Certificate',
+            name: c.name,
+            ...style,
+            batches: courseBatches,
+          };
+        });
+
+        if (!isCancelled) {
+          setCoursesData(parsedCourses);
+          setBatchDoubts(initialDoubtsMap);
+          if (parsedCourses.length > 0) {
+            setSelectedCourseId(parsedCourses[0].id);
+            if (parsedCourses[0].batches.length > 0) {
+              const firstBatch = parsedCourses[0].batches[0];
+              setSelectedBatchId(firstBatch.batchId);
+              const bDoubts = initialDoubtsMap[firstBatch.batchId] || [];
+              if (bDoubts.length > 0) {
+                setActiveDoubtId(bDoubts[0].id);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load doubt desk:', err);
+      }
+    }
+
+    loadDoubtDesk();
+
+    // 1. Cross-tab BroadcastChannel webhook
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('isml_doubts_webhook');
+      channel.onmessage = (event) => {
+        if (event?.data?.type === 'DOUBTS_UPDATED') {
+          setIsStudentTyping(false);
+          loadDoubtDesk();
+        } else if (event?.data?.type === 'TYPING' && event?.data?.sender === 'STUDENT') {
+          setIsStudentTyping(true);
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsStudentTyping(false), 2500);
+        }
+      };
+    } catch { }
+
+    // 2. Window event listeners
+    const handleDoubtUpdated = (e: any) => {
+      loadDoubtDesk();
+    };
+    window.addEventListener('isml-doubt-thread-updated', handleDoubtUpdated);
+    window.addEventListener('isml-realtime-event', handleDoubtUpdated);
+
+    // 3. Ultra-fast 1.5s live polling webhook (zero page refresh needed)
+    const interval = setInterval(loadDoubtDesk, 1500);
+
+    return () => {
+      isCancelled = true;
+      channel?.close();
+      window.removeEventListener('isml-doubt-thread-updated', handleDoubtUpdated);
+      window.removeEventListener('isml-realtime-event', handleDoubtUpdated);
+      clearInterval(interval);
+    };
+  }, [myAllocations, currentFaculty.name]);
 
   // Active selected Course
   const activeCourse = useMemo(() => {
-    return COURSE_DOUBTS_DATA.find((c) => c.id === selectedCourseId) || COURSE_DOUBTS_DATA[0];
-  }, [selectedCourseId]);
+    return coursesData.find((c) => c.id === selectedCourseId) || coursesData[0] || {
+      id: 'crs-none',
+      code: 'COURSE',
+      levelBadge: 'CEFR',
+      name: 'No Active Courses Assigned',
+      pastelBg: 'bg-slate-50',
+      pastelBorder: 'border-slate-200',
+      accentColor: 'text-slate-600',
+      iconBg: 'bg-slate-100 text-slate-600',
+      batches: []
+    };
+  }, [coursesData, selectedCourseId]);
 
   // Available batches under selected course
-  const availableBatches = activeCourse.batches;
+  const availableBatches = activeCourse?.batches || [];
 
   // Active selected Batch
   const activeBatch = useMemo(() => {
-    return availableBatches.find((b) => b.batchId === selectedBatchId) || availableBatches[0];
+    return availableBatches.find((b) => b.batchId === selectedBatchId) || availableBatches[0] || {
+      batchId: 'batch-none',
+      batchName: 'No Batches Assigned',
+      sectionCode: 'Section',
+      dutyRole: 'Tutor',
+      dutyBadgeColor: 'bg-slate-50 text-slate-600 border-slate-200',
+      doubts: []
+    };
   }, [availableBatches, selectedBatchId]);
 
-  // All doubts in active batch
-  const [batchDoubts, setBatchDoubts] = useState<Record<string, CourseBatchDoubtItem[]>>(() => {
-    const initial: Record<string, CourseBatchDoubtItem[]> = {};
-    COURSE_DOUBTS_DATA.forEach((crs) => {
-      crs.batches.forEach((b) => {
-        initial[b.batchId] = b.doubts;
-      });
-    });
-    return initial;
-  });
-
-  const currentDoubts = batchDoubts[activeBatch.batchId] || [];
-
-  // Active Selected Doubt Thread
-  const [activeDoubtId, setActiveDoubtId] = useState<string>(() => {
-    return currentDoubts[0]?.id || 'dbt-b1-01';
-  });
+  const currentDoubts = (activeBatch?.batchId && batchDoubts[activeBatch.batchId]) || [];
 
   const activeDoubt = useMemo(() => {
     return currentDoubts.find((d) => d.id === activeDoubtId) || currentDoubts[0];
   }, [currentDoubts, activeDoubtId]);
-
-  const [replyText, setReplyText] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'Grammar' | 'Pronunciation' | 'Homework'>('ALL');
 
   // Filtered Doubts in list
   const filteredDoubts = useMemo(() => {
@@ -401,7 +400,7 @@ export default function TutorDoubtsPage() {
   // Course Switch handler
   const handleSelectCourse = (courseId: string) => {
     setSelectedCourseId(courseId);
-    const crs = COURSE_DOUBTS_DATA.find((c) => c.id === courseId);
+    const crs = coursesData.find((c) => c.id === courseId);
     if (crs && crs.batches.length > 0) {
       const firstBatch = crs.batches[0];
       setSelectedBatchId(firstBatch.batchId);
@@ -417,21 +416,33 @@ export default function TutorDoubtsPage() {
     if (bDoubts.length > 0) setActiveDoubtId(bDoubts[0].id);
   };
 
+  const tutorMessagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToTutorBottom = () => {
+    tutorMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToTutorBottom();
+  }, [activeDoubt?.messages, isStudentTyping]);
+
   // Reply submission
   const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() || !activeDoubt) return;
+
+    const formattedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date().toLocaleDateString([], { month: 'short', day: 'numeric' });
 
     const newMsg: DoubtMessage = {
       id: `msg-${Date.now()}`,
       sender: 'TUTOR',
       senderName: currentFaculty.name,
       text: replyText,
-      timestamp: 'Just now',
+      timestamp: formattedTime,
     };
 
     setBatchDoubts((prev) => {
-      const updatedList = prev[activeBatch.batchId].map((d) => {
+      const updatedList = (prev[activeBatch.batchId] || []).map((d) => {
         if (d.id === activeDoubt.id) {
           return {
             ...d,
@@ -447,8 +458,48 @@ export default function TutorDoubtsPage() {
       };
     });
 
+    // Sync back to student thread storage & API
+    try {
+      fetch('/api/portals/doubts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'REPLY',
+          threadId: activeDoubt.id,
+          status: 'IN_PROGRESS',
+          message: newMsg,
+        }),
+      }).catch(() => null);
+
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('isml_student_doubts');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const updated = parsed.map((th: any) => {
+            if (th.id === activeDoubt.id) {
+              return {
+                ...th,
+                status: 'IN_PROGRESS',
+                messages: [...(th.messages || []), newMsg],
+              };
+            }
+            return th;
+          });
+          localStorage.setItem('isml_student_doubts', JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent('isml-doubt-thread-updated', { detail: updated }));
+          window.dispatchEvent(new CustomEvent('isml-realtime-event', { detail: { type: 'DOUBTS_UPDATED' } }));
+          try {
+            const bc = new BroadcastChannel('isml_doubts_webhook');
+            bc.postMessage({ type: 'DOUBTS_UPDATED' });
+            bc.close();
+          } catch { }
+        }
+      }
+    } catch { }
+
     setReplyText('');
-    showSuccess('Explanation sent to student inquiry thread.');
+    playMessageSound('SENT');
+    showSuccess(`Explanation sent to ${activeDoubt.studentName}'s inquiry thread.`);
   };
 
   // Mark Resolved
@@ -456,7 +507,7 @@ export default function TutorDoubtsPage() {
     if (!activeDoubt) return;
 
     setBatchDoubts((prev) => {
-      const updatedList = prev[activeBatch.batchId].map((d) => {
+      const updatedList = (prev[activeBatch.batchId] || []).map((d) => {
         if (d.id === activeDoubt.id) {
           return {
             ...d,
@@ -470,6 +521,23 @@ export default function TutorDoubtsPage() {
         [activeBatch.batchId]: updatedList,
       };
     });
+
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('isml_student_doubts');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const updated = parsed.map((th: any) => {
+            if (th.id === activeDoubt.id) {
+              return { ...th, status: 'RESOLVED' };
+            }
+            return th;
+          });
+          localStorage.setItem('isml_student_doubts', JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent('isml-doubt-thread-updated', { detail: updated }));
+        }
+      }
+    } catch { }
 
     showSuccess(`Doubt ticket ${activeDoubt.ticketNo} marked as resolved!`);
   };
@@ -495,7 +563,7 @@ export default function TutorDoubtsPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="px-3 py-1.5 bg-blue-50 text-[#0052CC] border border-blue-200 rounded-xl text-xs font-bold">
-            {COURSE_DOUBTS_DATA.reduce((acc, c) => acc + c.batches.reduce((bAcc, b) => bAcc + b.doubts.length, 0), 0)} Total Doubt Tickets
+            {coursesData.reduce((acc, c) => acc + c.batches.reduce((bAcc, b) => bAcc + (batchDoubts[b.batchId]?.length || 0), 0), 0)} Total Doubt Tickets
           </span>
         </div>
       </div>
@@ -518,7 +586,7 @@ export default function TutorDoubtsPage() {
 
         {/* 4 Mild Pastel Course Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {COURSE_DOUBTS_DATA.map((crs) => {
+          {coursesData.map((crs) => {
             const isSelected = selectedCourseId === crs.id;
             const courseTotalDoubts = crs.batches.reduce(
               (acc, b) => acc + (batchDoubts[b.batchId]?.length || 0),
@@ -529,11 +597,10 @@ export default function TutorDoubtsPage() {
               <button
                 key={crs.id}
                 onClick={() => handleSelectCourse(crs.id)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
-                  isSelected
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${isSelected
                     ? `${crs.pastelBg} border-[#0052CC] ring-2 ring-blue-500/20 shadow-md`
                     : 'bg-white hover:bg-slate-50/80 border-slate-200/90 shadow-2xs'
-                }`}
+                  }`}
               >
                 {/* Active selection ribbon */}
                 {isSelected && (
@@ -600,11 +667,10 @@ export default function TutorDoubtsPage() {
               <button
                 key={b.batchId}
                 onClick={() => handleSelectBatch(b.batchId)}
-                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                  isSelected
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${isSelected
                     ? 'bg-blue-50/90 border-[#0052CC] ring-2 ring-blue-500/20 shadow-xs'
                     : 'bg-slate-50/70 hover:bg-slate-100/70 border-slate-200'
-                }`}
+                  }`}
               >
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -670,11 +736,10 @@ export default function TutorDoubtsPage() {
                 <button
                   key={cat}
                   onClick={() => setCategoryFilter(cat)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
-                    categoryFilter === cat
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${categoryFilter === cat
                       ? 'bg-[#0052CC] text-white shadow-xs'
                       : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   {cat === 'ALL' ? 'All Queries' : cat}
                 </button>
@@ -695,11 +760,10 @@ export default function TutorDoubtsPage() {
                   <div
                     key={t.id}
                     onClick={() => setActiveDoubtId(t.id)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
-                      isSelected
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${isSelected
                         ? 'border-[#0052CC] bg-blue-50/50 ring-2 ring-blue-500/10 shadow-xs'
                         : 'border-slate-200/80 hover:bg-slate-50/70 bg-white'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -711,13 +775,12 @@ export default function TutorDoubtsPage() {
                         <span className="text-xs font-bold text-slate-900">{t.studentName}</span>
                       </div>
                       <span
-                        className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                          t.status === 'RESOLVED'
+                        className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${t.status === 'RESOLVED'
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                             : t.status === 'IN_PROGRESS'
-                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                            : 'bg-amber-100 text-amber-900 border border-amber-200'
-                        }`}
+                              ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                              : 'bg-amber-100 text-amber-900 border border-amber-200'
+                          }`}
                       >
                         {t.status}
                       </span>
@@ -783,58 +846,100 @@ export default function TutorDoubtsPage() {
               </div>
 
               {/* Messages Stream */}
-              <div className="flex-1 p-4 space-y-3.5 overflow-y-auto max-h-[420px]">
-                {activeDoubt.messages.map((m) => {
+              <div className="flex-1 p-4 sm:p-5 space-y-4 overflow-y-auto max-h-[440px] bg-slate-50/70 font-sans">
+                {activeDoubt.messages.map((m, mIdx) => {
                   const isStudent = m.sender === 'STUDENT';
                   const isAI = m.sender === 'AI_ASSISTANT';
 
                   return (
                     <div
-                      key={m.id}
-                      className={`flex flex-col ${
-                        isStudent ? 'items-start' : isAI ? 'items-center' : 'items-end'
-                      }`}
+                      key={m.id || mIdx}
+                      className={`flex items-end gap-2 ${isStudent ? 'justify-start' : isAI ? 'justify-center' : 'justify-end'
+                        } animate-in fade-in slide-in-from-bottom-2 duration-150`}
                     >
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1">
-                        <span className="font-bold text-slate-600">{m.senderName}</span>
-                        <span>•</span>
-                        <span>{m.timestamp}</span>
-                      </div>
+                      {isStudent && (
+                        <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-blue-200 shadow-2xs">
+                          {activeDoubt.studentName?.[0] || 'M'}
+                        </div>
+                      )}
 
                       <div
-                        className={`p-3.5 rounded-2xl text-xs max-w-lg leading-relaxed ${
-                          isStudent
-                            ? 'bg-slate-100 text-slate-800 rounded-tl-xs border border-slate-200'
+                        className={`group relative max-w-[85%] sm:max-w-md p-3.5 sm:p-4 rounded-2xl space-y-1.5 text-xs sm:text-[13px] shadow-sm transition-all ${isStudent
+                            ? 'bg-white text-slate-800 rounded-bl-xs border border-slate-200 shadow-slate-200/50'
                             : isAI
-                            ? 'bg-amber-50 text-amber-900 border border-amber-200 rounded-xl text-[11px]'
-                            : 'bg-[#0052CC] text-white rounded-tr-xs shadow-xs'
-                        }`}
+                              ? 'bg-purple-50 text-purple-950 border border-purple-200 rounded-xl text-xs max-w-sm'
+                              : 'bg-gradient-to-br from-[#0052CC] to-[#1E3A8A] text-white rounded-br-xs shadow-blue-500/10'
+                          }`}
                       >
-                        {m.text}
+                        <div className={`flex items-center justify-between text-[11px] gap-2 pb-1 border-b ${!isStudent && !isAI ? 'border-white/15 text-blue-100 font-semibold' : 'border-slate-100 text-slate-500 font-bold'
+                          }`}>
+                          <span className="flex items-center gap-1.5 truncate">
+                            {isAI ? 'AI Assistant' : isStudent ? `${activeDoubt.studentName} (${activeDoubt.studentRollNo})` : `You (${currentFaculty.name})`}
+                          </span>
+                          <span className="text-[10px] font-mono opacity-80 shrink-0">{m.timestamp}</span>
+                        </div>
+
+                        <p className="leading-relaxed whitespace-pre-line font-normal tracking-wide">
+                          {m.text}
+                        </p>
+
+                        {!isStudent && !isAI && (
+                          <div className="flex justify-end pt-0.5">
+                            <CheckCheck className="w-3.5 h-3.5 text-cyan-300 opacity-90" />
+                          </div>
+                        )}
                       </div>
+
+                      {!isStudent && !isAI && (
+                        <div className="w-8 h-8 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-emerald-200 shadow-2xs">
+                          T
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+
+                {/* 💬 Messenger Typing Indicator Dot Animation for Tutor View */}
+                {isStudentTyping && (
+                  <div className="flex items-end gap-2 justify-start animate-in fade-in slide-in-from-bottom-1 duration-150">
+                    <div className="w-8 h-8 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-blue-200 shadow-2xs">
+                      {activeDoubt.studentName?.[0] || 'M'}
+                    </div>
+                    <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-xs shadow-sm flex items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 mr-1">{activeDoubt.studentName} is typing</span>
+                      <span className="w-2 h-2 rounded-full bg-[#0052CC] animate-bounce [animation-delay:-0.3s]"></span>
+                      <span className="w-2 h-2 rounded-full bg-[#0052CC] animate-bounce [animation-delay:-0.15s]"></span>
+                      <span className="w-2 h-2 rounded-full bg-[#0052CC] animate-bounce"></span>
+                    </div>
+                  </div>
+                )}
+                <div ref={tutorMessagesEndRef} />
               </div>
 
               {/* Reply Form Console */}
               <form
                 onSubmit={handleSendReply}
-                className="p-3 bg-slate-50 border-t border-slate-200 flex items-center gap-2"
+                className="p-3 sm:p-3.5 bg-white border-t border-slate-200 flex items-center gap-2 shadow-lg"
               >
-                <input
-                  type="text"
-                  placeholder="Type pedagogical explanation or French grammar rule..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  className="flex-1 px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#0052CC] text-slate-900"
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Type reply or explanation to student... (Press Enter to Send)"
+                    value={replyText}
+                    onChange={(e) => {
+                      setReplyText(e.target.value);
+                      broadcastTutorTyping();
+                    }}
+                    className="w-full bg-slate-100/90 hover:bg-slate-100 border border-slate-200 rounded-2xl pl-4 pr-10 py-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all shadow-inner"
+                  />
+                </div>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 bg-[#0052CC] hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs shrink-0"
+                  disabled={!replyText.trim()}
+                  className="px-5 py-3 bg-[#0052CC] hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-[#0052CC] text-white rounded-2xl text-xs sm:text-sm font-extrabold flex items-center gap-2 shadow-md cursor-pointer transition-all active:scale-95 shrink-0"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Send Reply</span>
+                  <Send className="w-4 h-4" />
+                  <span className="hidden sm:inline">Send Reply</span>
                 </button>
               </form>
             </>

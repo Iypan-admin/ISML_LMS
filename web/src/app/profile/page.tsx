@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,57 @@ import { currentStudent } from '@/mock/students';
 export default function ProfilePage() {
   const router = useRouter();
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [student, setStudent] = useState({
+    name: currentStudent.name,
+    avatarUrl: currentStudent.avatarUrl,
+    rollNo: currentStudent.rollNo,
+    enrolledCourse: currentStudent.enrolledCourse,
+    subLevel: currentStudent.subLevel,
+    email: currentStudent.email,
+    academicYear: currentStudent.academicYear,
+    mainTutor: currentStudent.mainTutor,
+    collegeName: currentStudent.collegeName,
+  });
+
+  useEffect(() => {
+    // 1. Check logged in user from localStorage
+    try {
+      const stored = localStorage.getItem('isml_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.name) {
+          setStudent((prev) => ({
+            ...prev,
+            name: u.name,
+            email: u.email || prev.email,
+            collegeName: u.campusName || prev.collegeName,
+          }));
+        }
+      }
+    } catch {}
+
+    // 2. Fetch genuine profile from DB API
+    fetch('http://localhost:4000/api/portals/student/profile')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.status === 'success' && json.data) {
+          setStudent((prev) => ({
+            ...prev,
+            name: json.data.name || prev.name,
+            email: json.data.email || prev.email,
+            rollNo: json.data.rollNo || prev.rollNo,
+            avatarUrl: json.data.avatarUrl || prev.avatarUrl,
+            collegeName: json.data.collegeName || prev.collegeName,
+            enrolledCourse: json.data.enrolledCourse || prev.enrolledCourse,
+            subLevel: json.data.subLevel || prev.subLevel,
+            academicYear: json.data.academicYear || prev.academicYear,
+            mainTutor: json.data.mainTutor || prev.mainTutor,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="space-y-6 pb-8">
       {/* Banner */}
@@ -29,29 +80,33 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs text-center space-y-4">
           <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-[#0052CC] shadow-md">
-            <Image src={currentStudent.avatarUrl} alt={currentStudent.name} fill className="object-cover" />
+            <Image src={student.avatarUrl} alt={student.name} fill className="object-cover" />
           </div>
 
           <div>
-            <h2 className="text-xl font-extrabold text-[#0B2447]">{currentStudent.name}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">{currentStudent.rollNo}</p>
+            <h2 className="text-xl font-extrabold text-[#0B2447]">{student.name}</h2>
+            <p className="text-xs text-slate-500 font-mono mt-0.5">{student.rollNo}</p>
             <span className="inline-block mt-2 px-3 py-1 bg-blue-50 text-[#0052CC] text-xs font-bold rounded-full border border-blue-200">
-              {currentStudent.enrolledCourse} ({currentStudent.subLevel})
+              {student.enrolledCourse} ({student.subLevel})
             </span>
           </div>
 
           <div className="pt-4 border-t border-slate-200 text-xs text-slate-600 space-y-2 text-left">
             <p className="flex justify-between">
               <span className="text-slate-500">Email:</span>
-              <span className="font-semibold text-slate-800">{currentStudent.email}</span>
+              <span className="font-semibold text-slate-800">{student.email}</span>
+            </p>
+            <p className="flex justify-between">
+              <span className="text-slate-500">College / Institution:</span>
+              <span className="font-semibold text-slate-800">{student.collegeName}</span>
             </p>
             <p className="flex justify-between">
               <span className="text-slate-500">Academic Year:</span>
-              <span className="font-semibold text-slate-800">{currentStudent.academicYear}</span>
+              <span className="font-semibold text-slate-800">{student.academicYear}</span>
             </p>
             <p className="flex justify-between">
               <span className="text-slate-500">Main Tutor:</span>
-              <span className="font-semibold text-[#0052CC]">{currentStudent.mainTutor}</span>
+              <span className="font-semibold text-[#0052CC]">{student.mainTutor}</span>
             </p>
           </div>
 

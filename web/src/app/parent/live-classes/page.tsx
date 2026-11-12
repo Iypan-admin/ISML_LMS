@@ -24,6 +24,7 @@ import { useParent } from '@/context/ParentContext';
 
 export default function ParentLiveClassesPage() {
   const { selectedChild, selectChild, allChildren } = useParent();
+  const upcomingClasses = selectedChild?.upcomingLiveClasses || [];
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -58,10 +59,10 @@ export default function ParentLiveClassesPage() {
             <span>Live Interactive Lectures & Web Conferences</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-[#0B2447] tracking-tight">
-            Live Schedule: {selectedChild.name}
+            Live Schedule: {selectedChild?.name || 'Muthu Pandian'}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {selectedChild.primaryCourse.courseCode} • {selectedChild.primaryCourse.batchName} ({selectedChild.primaryCourse.sectionCode})
+            {selectedChild?.primaryCourse?.courseCode || 'ET-GER'} • {selectedChild?.primaryCourse?.batchName || 'MRNG BATCH'} ({selectedChild?.primaryCourse?.sectionCode || 'SEC-A'})
           </p>
         </div>
 
@@ -76,43 +77,67 @@ export default function ParentLiveClassesPage() {
       <div className="space-y-4">
         <h3 className="text-sm font-black text-[#0B2447]">Upcoming & This Week's Live Classes</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {selectedChild.upcomingLiveClasses.map((live) => (
-            <div
-              key={live.id}
-              className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-blue-100 text-[#0052CC]">
-                    {live.courseCode}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                    {live.status}
-                  </span>
+        {upcomingClasses.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-2">
+            <Video className="w-8 h-8 text-slate-300 mx-auto" />
+            <p className="text-xs font-bold text-slate-700">No Live Classes Scheduled</p>
+            <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+              LiveKit interactive classroom sessions and workshops will appear here once scheduled by the conducting tutor.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {upcomingClasses.map((live) => (
+              <div
+                key={live.id}
+                className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4 flex flex-col justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-blue-100 text-[#0052CC]">
+                      {live.courseCode}
+                    </span>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                        live.status === 'LIVE NOW'
+                          ? 'bg-rose-100 text-rose-700 animate-pulse'
+                          : live.status === 'COMPLETED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {live.status}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm font-black text-[#0B2447]">{live.topic}</h4>
+
+                  <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold pt-1">
+                    <Clock className="w-4 h-4 text-slate-400" />
+                    <span>{live.scheduledTime} ({live.duration})</span>
+                  </div>
                 </div>
 
-                <h4 className="text-sm font-black text-[#0B2447]">{live.topic}</h4>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Conducting Tutor</p>
+                    <p className="text-xs font-black text-slate-800">{live.tutorName}</p>
+                  </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold pt-1">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  <span>{live.scheduledTime} ({live.duration})</span>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${
+                      live.status === 'COMPLETED'
+                        ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                        : 'text-slate-500 bg-slate-100'
+                    }`}
+                  >
+                    {live.status === 'COMPLETED' ? 'Session Completed & Archived' : 'Ward Access Link Active'}
+                  </span>
                 </div>
               </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Conducting Tutor</p>
-                  <p className="text-xs font-black text-slate-800">{live.tutorName}</p>
-                </div>
-
-                <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-                  Ward Access Link Active
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* RECORDED SESSIONS ARCHIVE NOTICE */}

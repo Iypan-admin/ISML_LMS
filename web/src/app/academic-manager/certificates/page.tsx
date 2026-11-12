@@ -6,7 +6,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Award,
@@ -34,12 +34,38 @@ import { mockCertificates, DigitalCertificate } from '@/mock/certificates';
 
 export default function AcademicManagerCertificatesPage() {
   const { showSuccess } = useToast();
-  const [certificates, setCertificates] = useState<DigitalCertificate[]>(mockCertificates);
+  const [certificates, setCertificates] = useState<DigitalCertificate[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedBatchFilter, setSelectedBatchFilter] = useState<string>('ALL');
   const [selectedLanguageFilter, setSelectedLanguageFilter] = useState<string>('ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [previewCert, setPreviewCert] = useState<DigitalCertificate | null>(null);
+
+  // Fetch real certificates from backend API
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCerts() {
+      try {
+        setIsLoading(true);
+        const res = await fetch('http://localhost:4000/api/portals/certificates');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setCertificates(Array.isArray(data) ? data : (data.data || []));
+          }
+        } else {
+          if (isMounted) setCertificates([]);
+        }
+      } catch {
+        if (isMounted) setCertificates([]);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadCerts();
+    return () => { isMounted = false; };
+  }, []);
 
   // Extract distinct batches
   const batchOptions = useMemo(() => {

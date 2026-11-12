@@ -1,7 +1,7 @@
 // ============================================================================
 // ISML COLLEGE LMS — SCHEDULE ONLINE LIVEKIT MEETING DRAWER
 // 100% Automated LiveKit Meeting Link Generation & One-Click Room Scheduling
-// No Manual Link Pasting Required — Zero-Friction Academic Management
+// Pure Dynamic Database Hydration: Live Courses & Live Batches
 // ============================================================================
 
 "use client";
@@ -27,9 +27,9 @@ import {
   RefreshCw,
   ExternalLink
 } from 'lucide-react';
-import { ClassSessionItem } from '@/types/rbac';
-import { mockSubjects, mockBatches, mockPrograms } from '@/mock/superAdminData';
+import { ClassSessionItem, CourseSummary, Batch } from '@/types/rbac';
 import { useToast } from '@/context/ToastContext';
+import { useCollege } from '@/context/CollegeContext';
 
 interface ScheduleOnlineMeetingDrawerProps {
   isOpen: boolean;
@@ -47,31 +47,69 @@ export default function ScheduleOnlineMeetingDrawer({
   onSessionUpdated,
 }: ScheduleOnlineMeetingDrawerProps) {
   const { showSuccess } = useToast();
+  const { isSchoolMode, selectedCollege, institutions } = useCollege();
 
   const isEditMode = Boolean(editSession);
 
-  const [subjectName, setSubjectName] = useState(mockSubjects[0]?.name || 'French Phonetics & Oral Comprehension');
-  const [facultyName, setFacultyName] = useState('Dr. Anandhakumar V.');
-  const [programName, setProgramName] = useState(mockPrograms[0]?.name || 'Diploma in French Language Studies');
-  const [batchName, setBatchName] = useState(mockBatches[0]?.name || 'French A1 Intensive — Weekend Batch');
-  const [date, setDate] = useState('2026-10-14');
-  const [timeSlot, setTimeSlot] = useState('10:00 AM – 11:30 AM');
-  const [attendeesCount, setAttendeesCount] = useState(45);
-  const [status, setStatus] = useState<'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED'>('UPCOMING');
+  // Live dynamic lists from API
+  const [coursesList, setCoursesList] = useState<CourseSummary[]>([]);
+  const [batchesList, setBatchesList] = useState<Batch[]>([]);
+
+  const [institutionId, setInstitutionId] = useState(selectedCollege?.id || institutions[0]?.id || 'inst-01');
+  const [subjectName, setSubjectName] = useState('');
+  const [facultyName, setFacultyName] = useState('Joy Jk');
+  const [programName, setProgramName] = useState('Language Certification');
+  const [batchName, setBatchName] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [timeSlot, setTimeSlot] = useState(
+    isSchoolMode ? '08:30 AM – 09:15 AM (Period 1 • 45m)' : '09:00 AM – 10:30 AM (90m Intensive)'
+  );
+  const [attendeesCount, setAttendeesCount] = useState(isSchoolMode ? 35 : 45);
+  const [status, setStatus] = useState<'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED' | 'DRAFT'>('UPCOMING');
   const [copiedLink, setCopiedLink] = useState(false);
   const [roomSlugSeed, setRoomSlugSeed] = useState(() => Math.random().toString(36).substring(2, 7));
 
+  // Fetch live courses and batches when drawer opens
+  useEffect(() => {
+    if (!isOpen) return;
+
+    Promise.all([
+      fetch('http://localhost:4000/api/portals/courses')
+        .then((r) => r.json())
+        .catch(() => ({ data: [] })),
+      fetch('http://localhost:4000/api/portals/batches')
+        .then((r) => r.json())
+        .catch(() => ({ data: [] })),
+    ]).then(([coursesRes, batchesRes]) => {
+      const liveCourses: CourseSummary[] = Array.isArray(coursesRes.data) ? coursesRes.data : [];
+      const liveBatches: Batch[] = Array.isArray(batchesRes.data) ? batchesRes.data : [];
+
+      setCoursesList(liveCourses);
+      setBatchesList(liveBatches);
+
+      if (!editSession) {
+        if (liveCourses.length > 0 && !subjectName) {
+          setSubjectName(liveCourses[0].name);
+          setProgramName(liveCourses[0].name);
+          if (liveCourses[0].facultyName) setFacultyName(liveCourses[0].facultyName);
+        }
+        if (liveBatches.length > 0 && !batchName) {
+          setBatchName(liveBatches[0].name);
+        }
+      }
+    });
+  }, [isOpen, editSession]);
+
   // ⚡ AUTOMATED LIVEKIT ROOM & MEETING LINK ENGINE
-  // Automatically generated from Batch, Subject and Date parameters — No Manual Pasting!
   const generatedRoomToken = useMemo(() => {
-    const batchPart = batchName
+    const batchPart = (batchName || 'cohort')
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '-')
       .split('-')
       .filter(Boolean)
       .slice(0, 3)
       .join('-');
-    const subPart = subjectName
+    const subPart = (subjectName || 'lecture')
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '-')
       .split('-')
@@ -97,18 +135,14 @@ export default function ScheduleOnlineMeetingDrawer({
         setAttendeesCount(editSession.attendeesCount || 45);
         setStatus(editSession.status);
       } else {
-        setSubjectName(mockSubjects[0]?.name || 'French Phonetics & Oral Comprehension');
-        setFacultyName('Dr. Anandhakumar V.');
-        setProgramName(mockPrograms[0]?.name || 'Diploma in French Language Studies');
-        setBatchName(mockBatches[0]?.name || 'French A1 Intensive — Weekend Batch');
-        setDate('2026-10-14');
-        setTimeSlot('10:00 AM – 11:30 AM');
+        setDate(new Date().toISOString().split('T')[0]);
+        setTimeSlot(isSchoolMode ? '08:30 AM – 09:10 AM (Period 1 • 40m)' : '08:30 AM – 10:00 AM (90m Intensive)');
         setAttendeesCount(45);
         setStatus('UPCOMING');
         setRoomSlugSeed(Math.random().toString(36).substring(2, 7));
       }
     }
-  }, [isOpen, editSession]);
+  }, [isOpen, editSession, isSchoolMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -162,23 +196,43 @@ export default function ScheduleOnlineMeetingDrawer({
       return;
     }
 
+    const effectiveTitle = subjectName || 'Online Lecture Session';
+    const effectiveBatch = batchName || 'Cohort Batch Alpha';
+
     const newSession: ClassSessionItem = {
       id: `session-live-${Date.now().toString().slice(-4)}`,
-      subjectName,
+      subjectName: effectiveTitle,
       facultyName,
       programName,
-      batchName,
+      batchName: effectiveBatch,
       deliveryMode: 'ONLINE',
       meetingUrl: autoGeneratedLiveKitUrl,
       roomOrLink: autoGeneratedLiveKitUrl,
       date,
       timeSlot,
       attendeesCount,
-      status,
+      status: 'DRAFT', // Default to DRAFT awaiting Super Admin approval
     };
 
+    // Persist to backend and Supabase database (Syncs with Super Admin Approval Center)
+    fetch('http://localhost:4000/api/live-classes/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: effectiveTitle,
+        courseName: programName,
+        batchName: effectiveBatch,
+        tutorName: facultyName,
+        meetingUrl: autoGeneratedLiveKitUrl,
+        roomName: generatedRoomToken,
+        enrolledStudentsCount: attendeesCount,
+        scheduledStartTime: `${date}T${timeSlot.split('–')[0]?.trim() || '10:00'}:00.000Z`,
+        scheduledEndTime: `${date}T${timeSlot.split('–')[1]?.trim() || '11:30'}:00.000Z`,
+      }),
+    }).catch(() => null);
+
     onSessionScheduled(newSession);
-    showSuccess(`LiveKit room automatically scheduled for "${subjectName}"!`);
+    showSuccess(`Live session "${effectiveTitle}" submitted in DRAFT to Super Admin for approval.`);
     onClose();
   };
 
@@ -193,22 +247,21 @@ export default function ScheduleOnlineMeetingDrawer({
       />
 
       {/* Drawer Container */}
-      <div className="relative w-full max-w-lg bg-white shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-lg bg-white shadow-2xl z-10 flex flex-col h-full border-l border-slate-200 animate-in slide-in-from-right duration-300">
+        
         {/* Drawer Header */}
-        <div className="px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-900 via-[#0B2447] to-[#1E3A8A] text-white flex items-center justify-between shrink-0">
+        <div className="p-5 sm:p-6 bg-gradient-to-r from-[#0052CC] via-[#0B2447] to-[#041124] text-white flex items-center justify-between border-b border-blue-900 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center shrink-0">
-              <Zap className="w-5 h-5 text-cyan-300" />
+            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 text-cyan-300 shadow-inner">
+              <Video className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  {isEditMode ? 'Edit Live Class' : 'Schedule Live Class'}
-                </h2>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-cyan-500 text-slate-950 uppercase tracking-wider">
-                  AUTO LIVEKIT
+              <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+                <span>{isEditMode ? 'Edit Live Class' : 'Schedule Online Live Class'}</span>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-extrabold uppercase">
+                  100% Online
                 </span>
-              </div>
+              </h2>
               <p className="text-[11px] text-blue-200 mt-0.5">
                 Instant encrypted WebRTC video room generator
               </p>
@@ -273,41 +326,75 @@ export default function ScheduleOnlineMeetingDrawer({
               </div>
             </div>
 
-            {/* Subject / Course Topic */}
+            {/* Subject / Course Topic (Populated from Live DB Courses) */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 Curriculum Subject / Topic <span className="text-rose-500">*</span>
               </label>
-              <select
-                value={subjectName}
-                onChange={(e) => setSubjectName(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-              >
-                {mockSubjects.map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.code} — {s.name}
-                  </option>
-                ))}
-              </select>
+              {coursesList.length > 0 ? (
+                <select
+                  value={subjectName}
+                  onChange={(e) => {
+                    setSubjectName(e.target.value);
+                    setProgramName(e.target.value);
+                    const matched = coursesList.find((c) => c.name === e.target.value);
+                    if (matched?.facultyName) setFacultyName(matched.facultyName);
+                  }}
+                  required
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                >
+                  <option value="" disabled>-- Select Created Course Curriculum --</option>
+                  {coursesList.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={subjectName}
+                  onChange={(e) => {
+                    setSubjectName(e.target.value);
+                    setProgramName(e.target.value);
+                  }}
+                  placeholder="e.g. French A1 Oral Comprehension"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  required
+                />
+              )}
             </div>
 
-            {/* Target Cohort Batch & Trainer */}
+            {/* Target Cohort Batch & Trainer (Populated from Live DB Batches) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Target Cohort Batch <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  value={batchName}
-                  onChange={(e) => setBatchName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                >
-                  {mockBatches.map((b) => (
-                    <option key={b.id} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                {batchesList.length > 0 ? (
+                  <select
+                    value={batchName}
+                    onChange={(e) => setBatchName(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                  >
+                    <option value="" disabled>-- Select Created Cohort Batch --</option>
+                    {batchesList.map((b) => (
+                      <option key={b.id} value={b.name}>
+                        {b.name} ({b.studentsCount || 40} Seats)
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={batchName}
+                    onChange={(e) => setBatchName(e.target.value)}
+                    placeholder="e.g. Cohort Batch Alpha"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                    required
+                  />
+                )}
               </div>
 
               <div>
@@ -342,20 +429,33 @@ export default function ScheduleOnlineMeetingDrawer({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Schedule Time Slot <span className="text-rose-500">*</span>
+                  Schedule Time Slot {isSchoolMode ? '(School Periods: 35m–45m)' : '(College Sessions: 60m–90m)'} <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={timeSlot}
                   onChange={(e) => setTimeSlot(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                 >
-                  <option value="08:30 AM – 10:00 AM">Morning Slot 1 (08:30 AM – 10:00 AM)</option>
-                  <option value="10:00 AM – 11:30 AM">Morning Slot 2 (10:00 AM – 11:30 AM)</option>
-                  <option value="11:45 AM – 01:15 PM">Afternoon Slot 1 (11:45 AM – 01:15 PM)</option>
-                  <option value="02:00 PM – 03:30 PM">Afternoon Slot 2 (02:00 PM – 03:30 PM)</option>
-                  <option value="04:00 PM – 05:30 PM">Evening Slot 1 (04:00 PM – 05:30 PM)</option>
-                  <option value="06:00 PM – 07:30 PM">Evening Slot 2 (06:00 PM – 07:30 PM)</option>
-                  <option value="07:30 PM – 09:00 PM">Night Intensive (07:30 PM – 09:00 PM)</option>
+                  {isSchoolMode ? (
+                    <>
+                      <option value="08:30 AM – 09:10 AM (Period 1 • 40m)">Period 1 • 08:30 AM – 09:10 AM (40m Cat 2)</option>
+                      <option value="09:15 AM – 09:55 AM (Period 2 • 40m)">Period 2 • 09:15 AM – 09:55 AM (40m Cat 2)</option>
+                      <option value="10:15 AM – 10:55 AM (Period 3 • 40m)">Period 3 • 10:15 AM – 10:55 AM (40m Cat 2)</option>
+                      <option value="11:00 AM – 11:45 AM (Period 4 • 45m)">Period 4 • 11:00 AM – 11:45 AM (45m Cat 3)</option>
+                      <option value="12:30 PM – 01:10 PM (Period 5 • 40m)">Period 5 • 12:30 PM – 01:10 PM (40m Cat 2)</option>
+                      <option value="01:15 PM – 01:55 PM (Period 6 • 40m)">Period 6 • 01:15 PM – 01:55 PM (40m Cat 2)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="08:30 AM – 10:00 AM (90m Intensive)">Morning Slot 1 (08:30 AM – 10:00 AM • 90m Intensive)</option>
+                      <option value="10:00 AM – 11:30 AM (90m Intensive)">Morning Slot 2 (10:00 AM – 11:30 AM • 90m Intensive)</option>
+                      <option value="11:45 AM – 01:15 PM (90m Standard)">Afternoon Slot 1 (11:45 AM – 01:15 PM • 90m Standard)</option>
+                      <option value="02:00 PM – 03:30 PM (90m Standard)">Afternoon Slot 2 (02:00 PM – 03:30 PM • 90m Standard)</option>
+                      <option value="04:00 PM – 05:30 PM (90m Fast-Track)">Evening Slot 1 (04:00 PM – 05:30 PM • 90m Fast-Track)</option>
+                      <option value="06:00 PM – 07:30 PM (90m Professional)">Evening Slot 2 (06:00 PM – 07:30 PM • 90m Professional)</option>
+                      <option value="07:30 PM – 09:00 PM (90m Night Intensive)">Night Intensive (07:30 PM – 09:00 PM • 90m Night Intensive)</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
@@ -387,34 +487,34 @@ export default function ScheduleOnlineMeetingDrawer({
                 >
                   <option value="UPCOMING">Upcoming (Scheduled)</option>
                   <option value="LIVE_NOW">Live Now (Stream Active)</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="CANCELLED">Cancelled</option>
                 </select>
               </div>
             </div>
+
+            <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
+              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                Session will be created in <strong>DRAFT</strong> status awaiting Super Admin authorization. Once approved, the Google Meet / WebRTC inspection opens automatically.
+              </span>
+            </div>
           </div>
 
-          {/* Drawer Footer Actions */}
-          <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
-            <span className="text-[11px] text-slate-500 font-medium">
-              Zero manual input • LiveKit ready
-            </span>
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
-              >
-                <Zap className="w-4 h-4 text-cyan-300" />
-                <span>{isEditMode ? 'Update Meeting' : 'Schedule Auto LiveKit'}</span>
-              </button>
-            </div>
+          {/* Drawer Actions */}
+          <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{isEditMode ? 'Update Online Class' : 'Submit for Approval'}</span>
+            </button>
           </div>
         </form>
       </div>

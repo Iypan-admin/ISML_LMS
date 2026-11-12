@@ -48,7 +48,7 @@ interface ViewResourceDetailDrawerProps {
   onPublish: (id: string) => void;
   onArchive: (id: string) => void;
   onEdit: (resource: ResourceItem) => void;
-  onDelete: (resource: ResourceItem) => void;
+  onDelete?: (resource: ResourceItem) => void;
 }
 
 export default function ViewResourceDetailDrawer({
@@ -484,16 +484,18 @@ export default function ViewResourceDetailDrawer({
               <span>Edit</span>
             </button>
 
-            <button
-              onClick={() => {
-                onClose();
-                onDelete(resource);
-              }}
-              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete</span>
-            </button>
+            {onDelete && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onDelete(resource);
+                }}
+                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

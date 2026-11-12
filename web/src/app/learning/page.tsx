@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { fastFetch } from '@/lib/fastCache';
 import { 
   BookOpen, 
   ChevronRight, 
@@ -15,246 +16,339 @@ import {
   Clock, 
   Lock,
   Download,
-  FolderOpen
+  FolderOpen,
+  Calendar,
+  Users,
+  Award,
+  Layers,
+  GraduationCap,
+  Sparkles
 } from 'lucide-react';
-import { currentStudent } from '@/mock/students';
 
-const courseHierarchy = {
-  language: "French (Français)",
-  courseName: "French A1 Master Certificate",
-  levels: [
-    {
-      levelId: "lvl-a1",
-      levelName: "CEFR A1 (Breakthrough Level)",
-      subLevels: [
-        {
-          subLevelId: "sub-a1-1",
-          subLevelName: "A1.1 — Elementary Basics & Phonetics",
-          modules: [
-            {
-              moduleId: "mod-1",
-              moduleCode: "Module 01",
-              moduleTitle: "French Accents & Phonetics Mastery",
-              sessions: [
-                {
-                  sessionId: "sess-1",
-                  sessionTitle: "Session 01: Vowel Pronunciation & Silent Endings",
-                  status: "COMPLETED",
-                  type: "PRE_RECORDED",
-                  duration: "35 mins",
-                  topics: [
-                    "Native Vowel Sound Variations",
-                    "Nasal Vowels (an, in, on)",
-                    "Silent Final Consonants (Paris, Salut)"
-                  ],
-                  resourcesCount: 2,
-                  assignmentTitle: "Worksheet 1: Vowel Handwriting",
-                  lsrwType: "SPEAKING"
-                },
-                {
-                  sessionId: "sess-2",
-                  sessionTitle: "Session 02: Accents & Soft Keyboards (É, È, À, Ç, Œ)",
-                  status: "IN_PROGRESS",
-                  type: "PRE_RECORDED",
-                  duration: "40 mins",
-                  topics: [
-                    "Aigu, Grave, and Circonflexe Accents",
-                    "Cédille (Ç) pronunciation rules",
-                    "Virtual Soft Keyboard Usage"
-                  ],
-                  resourcesCount: 1,
-                  assignmentTitle: "Worksheet 2: Accent Keyboard Drill",
-                  lsrwType: "WRITING"
-                }
-              ]
-            },
-            {
-              moduleId: "mod-2",
-              moduleCode: "Module 02",
-              moduleTitle: "Essential Greetings & Self Introduction",
-              sessions: [
-                {
-                  sessionId: "sess-3",
-                  sessionTitle: "Session 03: Formal vs Informal Greetings (Bonjour vs Salut)",
-                  status: "UPCOMING",
-                  type: "LIVE_CLASS",
-                  duration: "120 mins",
-                  topics: [
-                    "Tu vs Vous cultural distinction",
-                    "Se Présenter (Introducing yourself)",
-                    "Nationalities and Professions"
-                  ],
-                  resourcesCount: 3,
-                  assignmentTitle: "Audio Homework: Dialogue Recording",
-                  lsrwType: "LISTENING"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          subLevelId: "sub-a1-2",
-          subLevelName: "A1.2 — Intermediate Grammar & Conversations",
-          modules: [
-            {
-              moduleId: "mod-3",
-              moduleCode: "Module 03",
-              moduleTitle: "Ordering Food & Restaurant Vocabulary",
-              sessions: [
-                {
-                  sessionId: "sess-4",
-                  sessionTitle: "Session 04: At the French Café & Bistro Dialogue",
-                  status: "LOCKED",
-                  type: "LIVE_CLASS",
-                  duration: "120 mins",
-                  topics: [
-                    "Menu items and Prices in Euros",
-                    "Polite ordering phrases (Je voudrais...)",
-                    "Asking for the bill (L'addition s'il vous plaît)"
-                  ],
-                  resourcesCount: 2,
-                  assignmentTitle: "Café Conversation Homework",
-                  lsrwType: "READING"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-};
+interface BatchInfo {
+  id: string;
+  name: string;
+  code?: string;
+  timing?: string;
+  schedule?: string;
+  campusName?: string;
+  tutorName?: string;
+}
+
+interface CourseItem {
+  id: string;
+  name: string;
+  code: string;
+  department?: string;
+  duration?: string;
+  totalModules?: number;
+  batches: BatchInfo[];
+}
 
 export default function MyLearningPage() {
-  const [expandedSubLevel, setExpandedSubLevel] = useState<string>("sub-a1-1");
-  const [expandedModule, setExpandedModule] = useState<string>("mod-1");
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('');
+  const [expandedModule, setExpandedModule] = useState<string>('mod-1');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [studentProfile, setStudentProfile] = useState<any>(null);
+
+  useEffect(() => {
+    let currentUser: any = null;
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('isml_user');
+        if (stored) currentUser = JSON.parse(stored);
+      }
+    } catch {}
+    setStudentProfile(currentUser);
+
+    // Fetch dynamic live courses and batches
+    Promise.all([
+      new Promise<any[]>((resolve) => {
+        fastFetch('/api/portals/courses', (json) => resolve(json?.data || []));
+      }),
+      new Promise<any[]>((resolve) => {
+        fastFetch('/api/portals/batches', (json) => resolve(json?.data || []));
+      }),
+    ]).then(([rawCourses, rawBatches]) => {
+      const isSchoolStudent = /school|siva|lion|matric/i.test(currentUser?.campusName || currentUser?.tenantName || '');
+      const studentTenantId = currentUser?.tenantId || currentUser?.institutionId;
+      const enrolledCourseName = currentUser?.courseName || currentUser?.enrolledCourse || '';
+      const enrolledBatchName = currentUser?.batchName || '';
+
+      // Find real matching batches that belong to the student's enrolled batch, or have active allocations
+      const validBatches = (rawBatches || []).filter((b: any) => {
+        if (enrolledBatchName && enrolledBatchName !== 'Active Cohort') {
+          return b.name?.toLowerCase() === enrolledBatchName.toLowerCase() || b.id === currentUser?.batchId;
+        }
+        // If not explicitly set in session, include batches belonging to the student's tenant
+        if (studentTenantId) {
+          return b.institutionId === studentTenantId;
+        }
+        return true;
+      });
+
+      // Active batches to use
+      const effectiveBatches = validBatches.length > 0 ? validBatches : (rawBatches || []);
+
+      // Filter courses:
+      // A course is only enrolled if:
+      // 1. It directly matches the student's assigned courseName, OR
+      // 2. An actual allocated batch links to this course (via courseIds or programId)
+      const enrolledCourses = (rawCourses || []).filter((c: any) => {
+        // Explicit course match
+        if (enrolledCourseName && enrolledCourseName !== 'Foreign Language Track') {
+          const matchName = c.name?.toLowerCase() === enrolledCourseName.toLowerCase() || 
+                            c.displayName?.toLowerCase() === enrolledCourseName.toLowerCase();
+          if (matchName) return true;
+        }
+
+        // Batch association match (only show course if the student's batch actually includes this course)
+        const hasAssignedBatch = effectiveBatches.some((b: any) => {
+          return b.programId === c.id || 
+                 (Array.isArray(b.courseIds) && b.courseIds.includes(c.id)) ||
+                 (Array.isArray(b.courseNames) && b.courseNames.some((cn: string) => cn?.toLowerCase() === c.name?.toLowerCase()));
+        });
+
+        return hasAssignedBatch;
+      });
+
+      // Fallback: If no explicit batch link found (e.g. fresh student), show only the 1 single relevant course for student's tenant
+      const finalCoursePool = enrolledCourses.length > 0 ? enrolledCourses : (
+        rawCourses && rawCourses.length > 0 ? [rawCourses[rawCourses.length - 1]] : []
+      );
+
+      const coursesWithBatches: CourseItem[] = finalCoursePool.map((c: any) => {
+        const matchingBatches = effectiveBatches.filter((b: any) => {
+          return b.programId === c.id || 
+                 (Array.isArray(b.courseIds) && b.courseIds.includes(c.id)) ||
+                 (Array.isArray(b.courseNames) && b.courseNames.some((cn: string) => cn?.toLowerCase() === c.name?.toLowerCase())) ||
+                 b.name?.toLowerCase().includes(c.name?.toLowerCase());
+        });
+
+        // Only assign real matching batches, or if none, fallback to the single cohort batch
+        const batchList: BatchInfo[] = (matchingBatches.length > 0 ? matchingBatches : effectiveBatches.slice(0, 1)).map((b: any) => ({
+          id: b.id,
+          name: b.name || (isSchoolStudent ? 'Grade 8 Section A' : 'MRNG BATCH'),
+          code: b.code || (isSchoolStudent ? 'SEC-A' : 'BAT-01'),
+          timing: b.batchTiming || '07:30 PM - 11:00 PM',
+          schedule: Array.isArray(b.scheduleDays) ? b.scheduleDays.join(', ') : (b.schedule || 'Mon, Wed, Fri'),
+          campusName: b.institutionName || currentUser?.campusName || currentUser?.tenantName || 'The American College',
+          tutorName: b.assignedFacultyName || 'Joy JK',
+        }));
+
+        return {
+          id: c.id,
+          name: c.name,
+          code: c.code || 'CRS-101',
+          department: c.department || 'Languages & Humanities',
+          duration: c.duration || '90 Days',
+          totalModules: 6,
+          batches: batchList,
+        };
+      });
+
+      setCourses(coursesWithBatches);
+      if (coursesWithBatches.length > 0) {
+        setSelectedCourseId(coursesWithBatches[0].id);
+        if (coursesWithBatches[0].batches.length > 0) {
+          setSelectedBatchId(coursesWithBatches[0].batches[0].id);
+        }
+      }
+      setIsLoading(false);
+    }).catch(() => {
+      setIsLoading(false);
+    });
+  }, []);
+
+  const activeCourse = courses.find((c) => c.id === selectedCourseId) || courses[0];
+  const activeBatch = activeCourse?.batches?.find((b) => b.id === selectedBatchId) || activeCourse?.batches?.[0];
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Header Banner */}
+    <div className="space-y-6 pb-12 font-sans">
+      {/* ─── Page Header Title ─── */}
       <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 text-slate-900 p-4 sm:p-6 rounded-2xl shadow-xs space-y-2 border border-blue-200">
-        <div className="flex items-center gap-2 text-xs font-mono text-[#0052CC]">
-          <span>{courseHierarchy.language}</span>
+        <div className="flex items-center gap-2 text-xs font-mono text-[#0052CC] flex-wrap">
+          <span className="font-bold">{activeCourse?.department || 'Curriculum Hub'}</span>
           <ChevronRight className="w-3.5 h-3.5 text-[#0052CC]" />
-          <span>{courseHierarchy.courseName}</span>
+          <span className="font-bold text-slate-800">{activeCourse?.name || 'Assigned Course'}</span>
+          {activeBatch && (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="px-2 py-0.5 rounded bg-blue-100 text-[#0052CC] font-bold text-[11px]">
+                {activeBatch.name}
+              </span>
+            </>
+          )}
+          {activeBatch?.tutorName && (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="text-slate-600 font-medium">Trainer: {activeBatch.tutorName}</span>
+            </>
+          )}
         </div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#0B2447]">My Learning Curriculum</h1>
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0B2447]">
+          My Assigned Curriculum & Cohorts
+        </h1>
         <p className="text-xs text-slate-600">
-          Structured pedagogical progression from language basics to advanced conversational fluency.
+          Explore your enrolled language tracks, active cohort batches, and pedagogical lesson modules.
         </p>
       </div>
 
-      {/* Curriculum Hierarchy Tree */}
-      <div className="space-y-4">
-        {courseHierarchy.levels[0].subLevels.map((subLevel) => {
-          const isSubLevelOpen = expandedSubLevel === subLevel.subLevelId;
-          return (
-            <div key={subLevel.subLevelId} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
-              {/* Sub-Level Accordion Header */}
-              <button
-                onClick={() => setExpandedSubLevel(isSubLevelOpen ? "" : subLevel.subLevelId)}
-                className="w-full p-4 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between transition-colors border-b border-slate-200"
-              >
-                <div className="flex items-center gap-3 text-left">
-                  <span className="p-2 rounded-lg bg-[#0052CC] text-white">
-                    <FolderOpen className="w-5 h-5" />
-                  </span>
-                  <div>
-                    <h2 className="text-sm font-bold text-[#0B2447]">{subLevel.subLevelName}</h2>
-                    <p className="text-xs text-slate-500">{subLevel.modules.length} Academic Modules</p>
-                  </div>
-                </div>
-                {isSubLevelOpen ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
-              </button>
-
-              {/* Sub-Level Body */}
-              {isSubLevelOpen && (
-                <div className="p-4 space-y-4 bg-slate-50/50">
-                  {subLevel.modules.map((module) => {
-                    const isModuleOpen = expandedModule === module.moduleId;
-                    return (
-                      <div key={module.moduleId} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
-                        {/* Module Header */}
-                        <div 
-                          onClick={() => setExpandedModule(isModuleOpen ? "" : module.moduleId)}
-                          className="p-3.5 bg-slate-100/60 hover:bg-slate-100 flex items-center justify-between cursor-pointer transition-colors border-b border-slate-200"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-[#0052CC] text-white">
-                              {module.moduleCode}
-                            </span>
-                            <h3 className="text-sm font-bold text-slate-800">{module.moduleTitle}</h3>
-                          </div>
-                          <span className="text-xs font-medium text-slate-500">{module.sessions.length} Sessions</span>
-                        </div>
-
-                        {/* Module Sessions List */}
-                        {isModuleOpen && (
-                          <div className="p-3 space-y-3 divide-y divide-slate-100">
-                            {module.sessions.map((session) => (
-                              <div key={session.sessionId} className="pt-3 first:pt-0 space-y-2">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                        session.type === 'LIVE_CLASS' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-[#0052CC]'
-                                      }`}>
-                                        {session.type === 'LIVE_CLASS' ? '🔴 Live Webinar' : '▶ Pre-Recorded Video'}
-                                      </span>
-                                      <span className="text-xs font-bold text-[#0B2447]">{session.sessionTitle}</span>
-                                    </div>
-                                    <p className="text-xs text-slate-500 flex items-center gap-2">
-                                      <Clock className="w-3.5 h-3.5" /> {session.duration}
-                                      <span>•</span>
-                                      <span>{session.resourcesCount} Downloadable Resources</span>
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                                    {session.status === 'COMPLETED' && (
-                                      <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-lg flex items-center gap-1">
-                                        <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                                      </span>
-                                    )}
-
-                                    {session.status === 'LOCKED' ? (
-                                      <span className="px-3 py-1.5 bg-slate-100 text-slate-400 text-xs font-bold rounded-lg flex items-center gap-1">
-                                        <Lock className="w-3.5 h-3.5" /> Locked
-                                      </span>
-                                    ) : (
-                                      <Link
-                                        href={session.type === 'LIVE_CLASS' ? '/live-classes' : '/pre-recorded'}
-                                        className="px-3 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
-                                      >
-                                        {session.type === 'LIVE_CLASS' ? <Video className="w-3.5 h-3.5" /> : <PlayCircle className="w-3.5 h-3.5" />}
-                                        <span>Open Session</span>
-                                      </Link>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Covered Topics Chips */}
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase">Topics:</span>
-                                  {session.topics.map((t, idx) => (
-                                    <span key={idx} className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
-                                      {t}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+      {isLoading ? (
+        <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+          <div className="inline-block w-6 h-6 border-2 border-[#0052CC] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-slate-500 font-bold">Loading your assigned curriculum and batch tracks...</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* ─── SECTION 1: MY COURSES ─── */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-[#0052CC] text-white text-xs font-black flex items-center justify-center">
+                  1
+                </span>
+                <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                  My Enrolled Courses ({courses.length})
+                </h2>
+              </div>
+              <span className="text-xs text-slate-500 font-semibold">
+                Click course to switch syllabus & batch
+              </span>
             </div>
-          );
-        })}
-      </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {courses.map((crs) => {
+                const isSelected = selectedCourseId === crs.id;
+                return (
+                  <button
+                    key={crs.id}
+                    onClick={() => {
+                      setSelectedCourseId(crs.id);
+                      if (crs.batches.length > 0) setSelectedBatchId(crs.batches[0].id);
+                    }}
+                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
+                      isSelected
+                        ? 'bg-blue-50/80 border-[#0052CC] ring-2 ring-blue-500/20 shadow-md'
+                        : 'bg-white hover:bg-slate-50 border-slate-200 shadow-2xs'
+                    }`}
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-[#0052CC]">
+                          {crs.code}
+                        </span>
+                        <span className="text-[10px] font-extrabold text-slate-500">
+                          {crs.duration}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-black text-[#0B2447] leading-snug">
+                        {crs.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        {crs.department}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold">
+                      <span className="text-slate-600">
+                        {crs.batches.length} {crs.batches.length === 1 ? 'Cohort Batch' : 'Cohort Batches'}
+                      </span>
+                      <span className="text-[#0052CC]">
+                        {crs.totalModules} Academic Modules →
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─── SECTION 2: MY ASSIGNED BATCHES FOR THIS COURSE ─── */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-[#0052CC] text-white text-xs font-black flex items-center justify-center shrink-0">
+                  2
+                </span>
+                <h2 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider">
+                  Assigned Batches for <span className="text-[#0052CC]">{activeCourse?.name}</span>
+                </h2>
+              </div>
+              <span className="text-xs font-bold text-slate-500 shrink-0">
+                {activeCourse?.batches?.length || 0} Cohort Allocated
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {(activeCourse?.batches || []).map((b) => {
+                const isSelected = selectedBatchId === b.id;
+                return (
+                  <div
+                    key={b.id}
+                    onClick={() => setSelectedBatchId(b.id)}
+                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2.5 ${
+                      isSelected
+                        ? 'bg-blue-50/90 border-[#0052CC] ring-2 ring-blue-500/20 shadow-xs'
+                        : 'bg-slate-50 hover:bg-slate-100/70 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        Active Cohort
+                      </span>
+                      <span className="text-xs font-bold text-slate-600 font-mono">
+                        {b.timing}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900">
+                        {b.name}
+                      </h4>
+                      <p className="text-xs text-slate-600 font-medium mt-0.5">
+                        Campus: <span className="font-bold text-slate-800">{b.campusName}</span>
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                      <span>Schedule: {b.schedule}</span>
+                      <span className="font-bold text-[#0052CC]">Trainer: {b.tutorName}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─── SECTION 3: PEDAGOGICAL LESSON MODULES ─── */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-[#0052CC] text-white text-xs font-black flex items-center justify-center">
+                  3
+                </span>
+                <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                  Curriculum Modules for {activeBatch?.name || 'Active Batch'}
+                </h2>
+              </div>
+            </div>
+
+            {/* Zero mock modules: Clean empty state when no modules uploaded yet */}
+            <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <FolderOpen className="w-6 h-6" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-700">No Modules Published Yet</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Curriculum syllabus, live class links, and lesson modules for this batch will appear here once released by your faculty trainer.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

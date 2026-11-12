@@ -8,7 +8,7 @@ import { currentStudent } from '@/mock/students';
 
 export default function CertificatePage() {
   const [showQrModal, setShowQrModal] = useState(false);
-  const cert = mockCertificates[0];
+  const cert = mockCertificates[0] || null;
 
   return (
     <div className="space-y-6 pb-8 font-sans">
@@ -20,12 +20,22 @@ export default function CertificatePage() {
         </div>
         <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0B2447]">Digital Certificate & Verification</h1>
         <p className="text-xs text-slate-600">
-          Official French A1 Language Certificate issued under joint authority of ISML & Anna University.
+          Official CEFR Language Certificates issued under joint authority of ISML & Partner Institutions.
         </p>
       </div>
 
-      {/* 🖼 LIGHT-COLORED WARM IVORY DIPLOMA CERTIFICATE TEMPLATE */}
-      <div className="w-full bg-gradient-to-b from-[#FFFDF9] via-white to-[#FFFDF9] rounded-2xl border-4 sm:border-8 border-[#0B2447] p-4 sm:p-8 md:p-10 relative shadow-xl space-y-6 select-none overflow-hidden border-[#0B2447]">
+      {!cert ? (
+        <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+          <Award className="w-12 h-12 text-slate-300 mx-auto" />
+          <h3 className="text-base font-bold text-slate-800">No Certificates Issued Yet</h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            Your official CEFR language certificate will be generated and signed here once you complete all course modules and pass your final examination.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* 🖼 LIGHT-COLORED WARM IVORY DIPLOMA CERTIFICATE TEMPLATE */}
+          <div className="w-full bg-gradient-to-b from-[#FFFDF9] via-white to-[#FFFDF9] rounded-2xl border-4 sm:border-8 border-[#0B2447] p-4 sm:p-8 md:p-10 relative shadow-xl space-y-6 select-none overflow-hidden border-[#0B2447]">
         {/* Inner Gold Foil Corner Accents */}
         <div className="absolute inset-2 sm:inset-3 border-2 border-amber-400/70 rounded-xl pointer-events-none" />
 
@@ -165,13 +175,14 @@ export default function CertificatePage() {
               <p className="font-bold flex items-center gap-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Valid Academic Certificate Issued
               </p>
-              <p className="font-mono text-[11px]">Issued To: <span className="font-bold">Bharathi M</span> ({currentStudent.rollNo})</p>
+              <p className="font-mono text-[11px]">Issued To: <span className="font-bold">{studentName}</span> ({currentStudent.rollNo})</p>
               <p className="font-mono text-[11px]">Verification Code: {cert.qrVerificationCode}</p>
-              <p className="text-[11px] text-slate-600 truncate font-mono">Verify Link: {cert.verificationUrl}</p>
             </div>
           </div>
         </div>
       )}
-    </div>
-  );
+    </>
+    )}
+  </div>
+);
 }

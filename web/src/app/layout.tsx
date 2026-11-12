@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
+import { RealtimeSyncProvider } from "@/context/RealtimeSyncContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="overflow-x-hidden max-w-full" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased min-h-screen bg-slate-50 font-sans overflow-x-hidden max-w-full`} suppressHydrationWarning>
-        <AppShell>{children}</AppShell>
+        <RealtimeSyncProvider>
+          <AppShell>{children}</AppShell>
+        </RealtimeSyncProvider>
       </body>
     </html>
   );

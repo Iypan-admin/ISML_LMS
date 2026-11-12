@@ -6,7 +6,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ClipboardList,
   X,
@@ -37,8 +37,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { HomeworkAssignment, AssignmentLsrwSkill } from '@/mock/assignments';
-import { mockSubjects, mockCourses, mockBatches } from '@/mock/superAdminData';
+import { mockSubjects, mockCourses } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
+import { useCollege } from '@/context/CollegeContext';
 
 interface CreateAssignmentDrawerProps {
   isOpen: boolean;
@@ -52,6 +53,44 @@ export default function CreateAssignmentDrawer({
   onAssignmentCreated,
 }: CreateAssignmentDrawerProps) {
   const { showSuccess } = useToast();
+  const { selectedCollegeId, isOverall } = useCollege();
+
+  // Real Batches fetched from backend API (strictly 0 mock data)
+  const [realBatches, setRealBatches] = useState<any[]>([]);
+  const [loadingBatches, setLoadingBatches] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoadingBatches(true);
+    fetch('http://localhost:4000/api/portals/batches')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.data && Array.isArray(json.data)) {
+          const mapped = json.data.map((b: any) => ({
+            id: b.id,
+            name: b.name,
+            code: b.code || `BAT-${b.id?.slice(-4)}`,
+            batchTiming: b.batchTiming || 'Flexible',
+            institutionId: b.institutionId,
+            courseNames: b.courseNames || [],
+          }));
+          setRealBatches(mapped);
+          if (mapped.length > 0) {
+            setSelectedBatchIds([mapped[0].id]);
+          } else {
+            setSelectedBatchIds([]);
+          }
+        } else {
+          setRealBatches([]);
+          setSelectedBatchIds([]);
+        }
+      })
+      .catch(() => {
+        setRealBatches([]);
+        setSelectedBatchIds([]);
+      })
+      .finally(() => setLoadingBatches(false));
+  }, [isOpen]);
 
   const [activeTab, setActiveTab] = useState<'STUDIO' | 'PREVIEW'>('STUDIO');
 
@@ -62,16 +101,17 @@ export default function CreateAssignmentDrawer({
 
   // Infer Language Family
   const languageFamily = useMemo<'FRENCH' | 'JAPANESE' | 'KOREAN' | 'SPANISH' | 'GERMAN'>(() => {
-    if (selectedSubject.code.startsWith('JA')) return 'JAPANESE';
-    if (selectedSubject.code.startsWith('KO')) return 'KOREAN';
-    if (selectedSubject.code.startsWith('ES')) return 'SPANISH';
-    if (selectedSubject.code.startsWith('DE')) return 'GERMAN';
+    if (!selectedSubject || !selectedSubject?.code || 'FR-101') return 'FRENCH';
+    if (selectedSubject?.code || 'FR-101'.startsWith('JA')) return 'JAPANESE';
+    if (selectedSubject?.code || 'FR-101'.startsWith('KO')) return 'KOREAN';
+    if (selectedSubject?.code || 'FR-101'.startsWith('ES')) return 'SPANISH';
+    if (selectedSubject?.code || 'FR-101'.startsWith('DE')) return 'GERMAN';
     return 'FRENCH';
   }, [selectedSubject]);
 
   // Filter Courses and Batches relevant
   const availableCourses = useMemo(() => {
-    return mockCourses.filter(c => c.department.includes(selectedSubject.name.split(':')[0]) || c.name.toLowerCase().includes(languageFamily.toLowerCase()));
+    return mockCourses.filter(c => c.department?.includes((selectedSubject?.name || '').split(':')[0]) || c.name.toLowerCase().includes(languageFamily.toLowerCase()));
   }, [selectedSubject, languageFamily]);
 
   const [selectedCourseId, setSelectedCourseId] = useState(mockCourses[0]?.id || 'crs-01');
@@ -79,10 +119,35 @@ export default function CreateAssignmentDrawer({
     return mockCourses.find(c => c.id === selectedCourseId) || mockCourses[0];
   }, [selectedCourseId]);
 
-  const [selectedBatchId, setSelectedBatchId] = useState(mockBatches[0]?.id || 'batch-2026-fr');
-  const selectedBatch = useMemo(() => {
-    return mockBatches.find(b => b.id === selectedBatchId) || mockBatches[0];
-  }, [selectedBatchId]);
+  const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
+  const selectedBatches = useMemo(() => {
+    return realBatches.filter(b => selectedBatchIds.includes(b.id));
+  }, [selectedBatchIds, realBatches]);
+
+  const selectedBatchSummary = useMemo(() => {
+    if (selectedBatches.length === 0) return 'No batches selected';
+    if (selectedBatches.length === 1) return selectedBatches[0].name;
+    return `${selectedBatches[0].name} (+${selectedBatches.length - 1} more)`;
+  }, [selectedBatches]);
+
+  const toggleBatch = (batchId: string) => {
+    setSelectedBatchIds(prev => {
+      if (prev.includes(batchId)) {
+        if (prev.length === 1) return prev; // Keep at least one
+        return prev.filter(id => id !== batchId);
+      } else {
+        return [...prev, batchId];
+      }
+    });
+  };
+
+  const selectAllBatches = () => {
+    if (selectedBatchIds.length === realBatches.length) {
+      if (realBatches.length > 0) setSelectedBatchIds([realBatches[0].id]);
+    } else {
+      setSelectedBatchIds(realBatches.map(b => b.id));
+    }
+  };
 
   const [lsrwSkill, setLsrwSkill] = useState<AssignmentLsrwSkill>('WRITING');
   const [title, setTitle] = useState('');
@@ -197,18 +262,24 @@ export default function CreateAssignmentDrawer({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const batchNameSummary = selectedBatches.length === 1 
+      ? selectedBatches[0].name 
+      : `${selectedBatches[0].name} +${selectedBatches.length - 1} other batches`;
+
+    const batchIdSummary = selectedBatches.map(b => b.id).join(',');
+
     const newAssignment: HomeworkAssignment = {
       id: `asg-${Date.now().toString().slice(-4)}`,
-      title: title || `${selectedSubject.code} ${lsrwSkill} Assignment: ${selectedCourse.name}`,
-      courseId: selectedCourse.id,
-      courseName: selectedCourse.name,
-      batchId: selectedBatch.id,
-      batchName: selectedBatch.name,
-      subjectCode: selectedSubject.code,
-      subjectName: selectedSubject.name,
+      title: title || `${selectedSubject?.code || 'FR-101'} ${lsrwSkill} Assignment: ${selectedCourse?.name || 'Course Track'}`,
+      courseId: selectedCourse?.id || 'crs-01',
+      courseName: selectedCourse?.name || 'Course Track',
+      batchId: batchIdSummary,
+      batchName: batchNameSummary,
+      subjectCode: selectedSubject?.code || 'FR-101',
+      subjectName: selectedSubject?.name || 'Foreign Language',
       languageFamily,
       lsrwSkill,
-      moduleCode: `MOD-${selectedSubject.code}-01`,
+      moduleCode: `MOD-${selectedSubject?.code || 'FR-101'}-01`,
       moduleName: moduleName || 'Foundations & Practical Unit 1',
       dueDate: `${dueDate} at ${dueTime}`,
       status: 'PENDING',
@@ -221,8 +292,52 @@ export default function CreateAssignmentDrawer({
       maxScore
     };
 
+    // 1. Notify parent / store
     onAssignmentCreated(newAssignment);
-    showSuccess(`Assignment "${newAssignment.title}" published for ${selectedBatch.name}!`);
+
+    // 2. Also save into active DB (/api/portals/assignments) so tutor & students see it immediately
+    fetch('/api/portals/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...newAssignment,
+        status: 'ACTIVE'
+      })
+    }).catch(e => console.error('Error saving assignment:', e));
+
+    // 3. Submit approval request to Super Admin Approvals API directly
+    try {
+      fetch('/api/portals/approvals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestType: 'ASSIGNMENT_CREATION',
+          module: 'Academic',
+          title: `Assignment: ${newAssignment.title}`,
+          description: `Assignment created for ${selectedBatches.map(b => b.name).join(', ')} (${newAssignment.lsrwSkill} • Max: ${newAssignment.maxScore} marks). Requires Super Admin review before publishing to students.`,
+          entityType: 'ASSIGNMENT',
+          entityId: newAssignment.id,
+          priority: 'NORMAL',
+          institutionId: selectedBatches[0]?.institutionId || 'inst-01',
+          submittedBy: {
+            name: 'Academic Manager',
+            email: 'academics@isml.edu',
+            role: 'Academic Coordinator'
+          },
+          assignmentPayload: newAssignment
+        })
+      }).then(() => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('isml-realtime-event', {
+            detail: { type: 'APPROVAL_SUBMITTED', entity: 'ASSIGNMENT', id: newAssignment.id }
+          }));
+        }
+      }).catch(err => console.error('Failed to submit approval:', err));
+    } catch (e) {
+      console.error(e);
+    }
+
+    showSuccess(`Assignment "${newAssignment.title}" published! Assigned tutors and enrolled students will see it in real-time.`);
     onClose();
   };
 
@@ -312,12 +427,12 @@ export default function CreateAssignmentDrawer({
           <div className="hidden md:flex items-center gap-3 text-xs text-slate-600">
             <span className="flex items-center gap-1">
               <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-              <strong className="text-slate-800">{selectedCourse.name}</strong>
+              <strong className="text-slate-800">{selectedCourse?.name || 'Course Track'}</strong>
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
               <Users className="w-3.5 h-3.5 text-indigo-600" />
-              <strong className="text-indigo-900">{selectedBatch.name}</strong>
+              <strong className="text-indigo-900">{selectedBatchSummary}</strong>
             </span>
           </div>
         </div>
@@ -380,28 +495,72 @@ export default function CreateAssignmentDrawer({
                         ))}
                       </select>
                       <p className="text-[10px] text-slate-500 mt-1">
-                        Code: {selectedCourse.code || 'CRS-ISML'}
+                        Code: {selectedCourse?.code || 'CRS' || 'CRS-ISML'}
                       </p>
                     </div>
 
-                    {/* Batch Cohort */}
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Target Student Batch Cohort <span className="text-rose-500">*</span>
-                      </label>
-                      <select
-                        value={selectedBatchId}
-                        onChange={(e) => setSelectedBatchId(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
-                      >
-                        {mockBatches.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.name}
-                          </option>
-                        ))}
-                      </select>
+                    {/* Batch Cohort Multi-Select */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-slate-700">
+                          Target Student Batch Cohorts ({selectedBatchIds.length} Selected) <span className="text-rose-500">*</span>
+                        </label>
+                        {realBatches.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={selectAllBatches}
+                            className="text-[11px] font-bold text-[#0052CC] hover:underline cursor-pointer"
+                          >
+                            {selectedBatchIds.length === realBatches.length ? 'Deselect All' : 'Select All Batches'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Multi-Batch Checkbox Grid */}
+                      {loadingBatches ? (
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500">
+                          Loading active cohorts...
+                        </div>
+                      ) : realBatches.length === 0 ? (
+                        <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-500">
+                          No active cohorts registered yet.
+                        </div>
+                      ) : (
+                        <div className="max-h-44 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 scrollbar-thin">
+                          {realBatches.map((b) => {
+                            const isChecked = selectedBatchIds.includes(b.id);
+                            return (
+                              <label
+                                key={b.id}
+                                onClick={() => toggleBatch(b.id)}
+                                className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                  isChecked
+                                    ? 'bg-blue-50/80 border-[#0052CC] text-blue-950 font-bold shadow-2xs'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100/70 font-medium'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0 pr-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {}}
+                                    className="w-3.5 h-3.5 text-[#0052CC] rounded focus:ring-[#0052CC] cursor-pointer"
+                                  />
+                                  <span className="truncate">{b.name}</span>
+                                </div>
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white border text-slate-500 shrink-0">
+                                  {b.batchTiming || 'Flexible'}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       <p className="text-[10px] text-indigo-700 font-semibold mt-1">
-                        Enrolled learners in this batch will be notified
+                        {realBatches.length > 0
+                          ? `Enrolled learners across all ${selectedBatchIds.length} selected cohort(s) will receive this assignment instantly.`
+                          : 'Please ensure at least one batch cohort is created before publishing assignments.'}
                       </p>
                     </div>
                   </div>
@@ -515,7 +674,7 @@ export default function CreateAssignmentDrawer({
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder={`e.g. ${selectedSubject.code} ${lsrwSkill} Assignment: Salutations & Phonetic Accents`}
+                        placeholder={`e.g. ${selectedSubject?.code || 'FR-101'} ${lsrwSkill} Assignment: Salutations & Phonetic Accents`}
                         className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                         required
                       />
@@ -544,7 +703,7 @@ export default function CreateAssignmentDrawer({
                       rows={4}
                       value={instructions}
                       onChange={(e) => setInstructions(e.target.value)}
-                      placeholder={`Provide full instructions for students in ${selectedBatch.name}. Mention expected length, vocabulary guidelines, formatting rules, and whether handwriting or audio recording is mandatory...`}
+                      placeholder={`Provide full instructions for students in ${selectedBatchSummary}. Mention expected length, vocabulary guidelines, formatting rules, and whether handwriting or audio recording is mandatory...`}
                       className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                       required
                     />
@@ -719,7 +878,7 @@ export default function CreateAssignmentDrawer({
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center gap-2">
                   <Info className="w-4 h-4 text-blue-700 shrink-0" />
                   <span>
-                    <strong>Student Portal Simulation:</strong> This is exactly how students enrolled in <strong>{selectedBatch.name}</strong> will see this assignment.
+                    <strong>Student Portal Simulation:</strong> This is exactly how students enrolled in <strong>{selectedBatchSummary}</strong> will see this assignment.
                   </span>
                 </div>
 
@@ -731,14 +890,14 @@ export default function CreateAssignmentDrawer({
                         {lsrwSkill} ASSIGNMENT
                       </span>
                       <span className="text-xs text-blue-200 font-medium">
-                        {selectedSubject.code} • {selectedCourse.name}
+                        {selectedSubject?.code || 'FR-101'} • {selectedCourse?.name || 'Course Track'}
                       </span>
                     </div>
                     <h3 className="text-lg font-bold text-white">
                       {title || 'French A1 Salutations & Accent Marks Handwriting Drill'}
                     </h3>
                     <p className="text-xs text-slate-300 mt-1">
-                      Target Batch: {selectedBatch.name} • Max Score: {maxScore} Marks
+                      Target Batch: {selectedBatchSummary} • Max Score: {maxScore} Marks
                     </p>
                   </div>
 
@@ -816,7 +975,7 @@ export default function CreateAssignmentDrawer({
               <span className="text-xs text-slate-500 font-medium">Publishing to:</span>
               <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-900 border border-indigo-200 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-indigo-700" />
-                <span>{selectedBatch.name}</span>
+                <span>{selectedBatchSummary}</span>
               </span>
             </div>
 

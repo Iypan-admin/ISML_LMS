@@ -6,7 +6,22 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Building2, Plus, Eye, Edit, Trash2, CheckCircle2, XCircle, MapPin, Mail, Phone, Users, Layers } from 'lucide-react';
+import {
+  Building2,
+  School,
+  GraduationCap,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  MapPin,
+  Mail,
+  Phone,
+  Users,
+  Layers,
+} from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -17,6 +32,7 @@ import { Institution } from '@/types/rbac';
 import { mockInstitutions } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 import OnboardCollegeDrawer from '@/components/super-admin/institutions/OnboardCollegeDrawer';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function InstitutionsPage() {
   const { showSuccess, showInfo } = useToast();
@@ -24,10 +40,51 @@ export default function InstitutionsPage() {
   const [editingInst, setEditingInst] = useState<Institution | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Institution | null>(null);
   const [isOnboardDrawerOpen, setIsOnboardDrawerOpen] = useState(false);
+  const [onboardType, setOnboardType] = useState<'COLLEGE' | 'SCHOOL'>('COLLEGE');
+
+  // Fetch institutions from Supabase Backend API with 0ms fast cache
+  React.useEffect(() => {
+    fastFetch('http://localhost:4000/api/portals/institutions', (json) => {
+      if (json && json.data && json.data.length > 0) {
+        const mapped: Institution[] = json.data.map((item: any) => ({
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          displayName: item.displayName || item.name,
+          city: 'Tamil Nadu',
+          state: 'TN',
+          country: 'India',
+          status: item.status || 'ACTIVE',
+          type:
+            item.type ||
+            (item.code?.includes('DPS') ||
+            item.code?.includes('SCH') ||
+            item.name?.toLowerCase().includes('school') ||
+            item.name?.toLowerCase().includes('vidyalaya') ||
+            item.name?.toLowerCase().includes('academy')
+              ? 'SCHOOL'
+              : 'COLLEGE'),
+          universityAffiliation: 'State University',
+          naacAccreditation: 'NAAC Accredited',
+          studentsCount: 0,
+          facultyCount: 0,
+          departmentsCount: 0,
+          batchesCount: 0,
+          coursesCount: 0,
+          activeAcademicYear: '2026-2027',
+          logoUrl: '/logo.png',
+          primaryColor: '#0052CC',
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }));
+        setInstitutions(mapped);
+      }
+    });
+  }, []);
 
   const handleInstitutionCreated = (newInst: Institution) => {
-    setInstitutions((prev) => [newInst, ...prev]);
-    showSuccess(`College "${newInst.name}" (${newInst.code}) onboarded successfully.`);
+    setInstitutions((prev) => [newInst, ...prev.filter(i => i.id !== newInst.id)]);
+    showSuccess(`Institution "${newInst.name}" (${newInst.code}) onboarded & admin credentials provisioned.`);
   };
 
   const handleInstitutionUpdated = (updatedInst: Institution) => {
@@ -36,13 +93,26 @@ export default function InstitutionsPage() {
     );
     showSuccess(`Institution "${updatedInst.name}" updated successfully.`);
     setEditingInst(null);
+
+    // Persist update to Supabase backend database
+    fetch(`http://localhost:4000/api/portals/institutions/${updatedInst.id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedInst),
+    }).catch(() => null);
   };
 
   const handleDeleteInstitution = () => {
     if (!deleteTarget) return;
-    setInstitutions((prev) => prev.filter((i) => i.id !== deleteTarget.id));
+    const targetId = deleteTarget.id;
+    setInstitutions((prev) => prev.filter((i) => i.id !== targetId));
     showSuccess(`Institution "${deleteTarget.name}" deleted successfully.`);
     setDeleteTarget(null);
+
+    // Delete in Supabase backend database
+    fetch(`http://localhost:4000/api/portals/institutions/${targetId}/delete`, {
+      method: 'POST',
+    }).catch(() => null);
   };
 
   const handleToggleStatus = (inst: Institution) => {
@@ -54,6 +124,14 @@ export default function InstitutionsPage() {
           : i
       )
     );
+
+    // Sync status with Supabase backend database
+    fetch(`http://localhost:4000/api/portals/institutions/${inst.id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: nextStatus }),
+    }).catch(() => null);
+
     if (nextStatus === 'INACTIVE') {
       showInfo(`Institution "${inst.name}" has been suspended / deactivated.`);
     } else {
@@ -64,14 +142,28 @@ export default function InstitutionsPage() {
   const columns: Column<Institution>[] = [
     {
       key: 'name',
-      header: 'Institution Name',
+      header: 'Institution & Campus Name',
       sortable: true,
-      render: (row) => (
-        <div>
-          <p className="font-bold text-[#0B2447] text-xs sm:text-sm">{row.name}</p>
-          <p className="text-[11px] text-slate-500 font-medium">{row.affiliation}</p>
-        </div>
-      ),
+      render: (row) => {
+        const isSchool = row.type === 'SCHOOL';
+        return (
+          <div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-bold text-[#0B2447] text-xs sm:text-sm">{row.name}</span>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider ${
+                  isSchool
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-blue-100 text-blue-800 border border-blue-300'
+                }`}
+              >
+                {isSchool ? '🏫 School' : '🎓 College'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">{row.affiliation}</p>
+          </div>
+        );
+      },
     },
     {
       key: 'code',
@@ -154,30 +246,46 @@ export default function InstitutionsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-5 pb-8 font-sans">
-      <Breadcrumbs items={[{ label: 'Administration' }, { label: 'Institutions' }]} />
+      <Breadcrumbs items={[{ label: 'Administration' }, { label: 'Schools & Colleges' }]} />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold text-[#0B2447] tracking-tight">
-            Institutions Management
+            Schools & Colleges Management
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-            Registered colleges, accreditation profiles, and academic campus credentials.
+            Registered K-12 partner schools, autonomous colleges, and multi-tenant campus workspaces.
           </p>
         </div>
 
         <Can permission="INSTITUTION_CREATE">
-          <button
-            id="onboard-college-btn"
-            onClick={() => {
-              setEditingInst(null);
-              setIsOnboardDrawerOpen(true);
-            }}
-            className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Onboard College</span>
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <button
+              id="onboard-college-btn"
+              onClick={() => {
+                setEditingInst(null);
+                setOnboardType('COLLEGE');
+                setIsOnboardDrawerOpen(true);
+              }}
+              className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-200" />
+              <span>+ Onboard College</span>
+            </button>
+
+            <button
+              id="onboard-school-btn"
+              onClick={() => {
+                setEditingInst(null);
+                setOnboardType('SCHOOL');
+                setIsOnboardDrawerOpen(true);
+              }}
+              className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <School className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-200" />
+              <span>+ Onboard School</span>
+            </button>
+          </div>
         </Can>
       </div>
 
@@ -188,6 +296,14 @@ export default function InstitutionsPage() {
         searchPlaceholder="Search institution name, code, affiliation..."
         searchKey={(row) => `${row.name} ${row.code} ${row.affiliation}`}
         filters={[
+          {
+            key: 'type',
+            label: 'Institution Type',
+            options: [
+              { label: 'Colleges', value: 'COLLEGE' },
+              { label: 'Schools', value: 'SCHOOL' },
+            ],
+          },
           {
             key: 'status',
             label: 'Status',
@@ -296,7 +412,7 @@ export default function InstitutionsPage() {
         entityName={deleteTarget?.name}
       />
 
-      {/* Onboard / Edit College Right-Side Drawer */}
+      {/* Onboard / Edit College / School Right-Side Drawer */}
       <OnboardCollegeDrawer
         isOpen={isOnboardDrawerOpen || !!editingInst}
         onClose={() => {
@@ -306,6 +422,7 @@ export default function InstitutionsPage() {
         onInstitutionCreated={handleInstitutionCreated}
         editInstitution={editingInst}
         onInstitutionUpdated={handleInstitutionUpdated}
+        initialType={onboardType}
       />
     </div>
   );

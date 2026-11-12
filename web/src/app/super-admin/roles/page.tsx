@@ -184,19 +184,6 @@ export const SIDEBAR_PORTAL_SECTIONS: SidebarCrudSection[] = [
           D: ['SUBJECT_DELETE', 'MODULE_DELETE'],
         },
       },
-      {
-        id: 'AM_ACADEMIC_YEARS',
-        label: 'Academic Cycles',
-        route: '/academic-manager/academic-years',
-        icon: Calendar,
-        description: 'Year cycles, term intake periods & active calendars',
-        permissions: {
-          C: ['SEMESTER_CREATE'],
-          R: ['SEMESTER_VIEW'],
-          U: ['SEMESTER_UPDATE'],
-          D: ['SEMESTER_DELETE'],
-        },
-      },
     ],
   },
   {
@@ -213,20 +200,7 @@ export const SIDEBAR_PORTAL_SECTIONS: SidebarCrudSection[] = [
           C: ['STUDENT_CREATE'],
           R: ['STUDENT_VIEW'],
           U: ['STUDENT_STATUS_UPDATE'],
-          D: ['STUDENT_VIEW'],
-        },
-      },
-      {
-        id: 'AM_PARENTS',
-        label: 'Parents & Guardians',
-        route: '/academic-manager/parents',
-        icon: HeartHandshake,
-        description: 'Multi-student guardian links, contacts & progress alerts',
-        permissions: {
-          C: ['USER_CREATE'],
-          R: ['USER_VIEW'],
-          U: ['USER_UPDATE'],
-          D: ['USER_VIEW'],
+          D: ['USER_DELETE'],
         },
       },
       {
@@ -275,37 +249,11 @@ export const SIDEBAR_PORTAL_SECTIONS: SidebarCrudSection[] = [
         },
       },
       {
-        id: 'AM_RESOURCES',
-        label: 'Learning Resources',
-        route: '/academic-manager/resources',
-        icon: FileText,
-        description: 'Curriculum materials, lecture handouts & audio drills',
-        permissions: {
-          C: ['RESOURCE_CREATE'],
-          R: ['RESOURCE_VIEW'],
-          U: ['RESOURCE_UPDATE'],
-          D: ['RESOURCE_DELETE'],
-        },
-      },
-      {
         id: 'AM_ASSIGNMENTS',
         label: 'Assignments',
         route: '/academic-manager/assignments',
         icon: ClipboardList,
         description: 'Course assignments, task submissions & deadlines',
-        permissions: {
-          C: ['ASSESSMENT_CREATE'],
-          R: ['ASSESSMENT_VIEW'],
-          U: ['ASSESSMENT_UPDATE'],
-          D: ['ASSESSMENT_DELETE'],
-        },
-      },
-      {
-        id: 'AM_ASSESSMENTS',
-        label: 'Exams & Assessments',
-        route: '/academic-manager/assessments',
-        icon: Award,
-        description: 'Exams, quizzes, DELF/JLPT tests & evaluation benchmarks',
         permissions: {
           C: ['ASSESSMENT_CREATE'],
           R: ['ASSESSMENT_VIEW'],
@@ -540,19 +488,6 @@ export const SIDEBAR_PORTAL_SECTIONS: SidebarCrudSection[] = [
           D: ['ASSESSMENT_DELETE'],
         },
       },
-      {
-        id: 'TUTOR_HANDOUTS',
-        label: 'Study Materials & Handouts',
-        route: '/academic-manager/resources',
-        icon: FileText,
-        description: 'Share lecture slides, grammar notes & vocabulary files',
-        permissions: {
-          C: ['RESOURCE_CREATE'],
-          R: ['RESOURCE_VIEW'],
-          U: ['RESOURCE_UPDATE'],
-          D: ['RESOURCE_DELETE'],
-        },
-      },
     ],
   },
 
@@ -651,6 +586,25 @@ export const SIDEBAR_PORTAL_SECTIONS: SidebarCrudSection[] = [
   },
 ];
 
+// All recognized Delete-class permissions that are restricted strictly to Super Administrator by default
+export const ALL_DELETE_PERMISSION_IDS: Set<PermissionId> = new Set([
+  'INSTITUTION_DELETE',
+  'USER_DELETE',
+  'ROLE_DELETE',
+  'DEPARTMENT_DELETE',
+  'PROGRAM_DELETE',
+  'BATCH_DELETE',
+  'SEMESTER_DELETE',
+  'SUBJECT_DELETE',
+  'MODULE_DELETE',
+  'TOPIC_DELETE',
+  'COURSE_DELETE',
+  'RESOURCE_DELETE',
+  'ASSESSMENT_DELETE',
+  'TIMETABLE_DELETE',
+  'FEE_COMPONENT_DELETE',
+]);
+
 // Determine role default portal scope
 function detectRolePortal(roleCode: string): PortalScope {
   const code = roleCode.toUpperCase();
@@ -661,12 +615,46 @@ function detectRolePortal(roleCode: string): PortalScope {
   return 'ALL';
 }
 
+// Helper to populate ALL C, R, U permissions in role's scope while strictly omitting D (Delete)
+function sanitizeRolesDefaultPermissions(rolesList: RoleDefinition[]): RoleDefinition[] {
+  return rolesList.map((r) => {
+    if (r.code === 'SUPER_ADMIN') return r; // Super admin keeps unrestricted full permissions
+
+    const rolePortal = detectRolePortal(r.code);
+    const targetSections =
+      rolePortal === 'ALL'
+        ? SIDEBAR_PORTAL_SECTIONS
+        : SIDEBAR_PORTAL_SECTIONS.filter((s) => s.portal === rolePortal);
+
+    // Collect all C, R, U permissions available across the role's scope
+    const cruPerms = targetSections.flatMap((s) =>
+      s.items.flatMap((i) => [
+        ...i.permissions.C,
+        ...i.permissions.R,
+        ...i.permissions.U,
+      ])
+    );
+
+    // Merge with any existing non-delete permissions, strictly excluding ALL delete permissions
+    const mergedPerms = Array.from(
+      new Set([...r.permissions, ...cruPerms].filter((p) => !ALL_DELETE_PERMISSION_IDS.has(p)))
+    );
+
+    return {
+      ...r,
+      permissions: mergedPerms,
+    };
+  });
+}
+
 export default function RolesExactSidebarCrudPage() {
   const { roles: contextRoles, updateRolePermissions } = useRbac();
 
-  // Roles state
-  const [roles, setRoles] = useState<RoleDefinition[]>(contextRoles);
-  const [selectedRoleId, setSelectedRoleId] = useState<string>(contextRoles[0]?.id || 'role-acad-coord');
+  // Roles state — strictly ensure no non-super-admin role has default delete access
+  const [roles, setRoles] = useState<RoleDefinition[]>(() => sanitizeRolesDefaultPermissions(contextRoles));
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(
+    contextRoles.find((r) => r.code === 'SUPER_ADMIN')?.id || contextRoles[0]?.id || 'role-super-admin'
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   // Portal scope filter (Default is AUTO matching selected role)
@@ -783,7 +771,13 @@ export default function RolesExactSidebarCrudPage() {
     if (currentActive) {
       allItemPerms.forEach((p) => rolePermsSet.delete(p));
     } else {
-      allItemPerms.forEach((p) => rolePermsSet.add(p));
+      // By default: grant C, R, U (Delete requires explicit per-action toggle)
+      const safePerms = [
+        ...item.permissions.C,
+        ...item.permissions.R,
+        ...item.permissions.U,
+      ];
+      safePerms.forEach((p) => rolePermsSet.add(p));
     }
 
     const updatedRole: RoleDefinition = {
@@ -796,7 +790,7 @@ export default function RolesExactSidebarCrudPage() {
     updateRolePermissions(activeRole.id, updatedRole.permissions);
   };
 
-  // Toggle entire section
+  // Toggle entire section (grants C-R-U by default; keeps Delete [D] off unless manually toggled)
   const toggleSectionAll = (section: SidebarCrudSection) => {
     if (!activeRole || isSuperAdminRole) return;
     const allSectionPerms = section.items.flatMap((item) => [
@@ -804,6 +798,11 @@ export default function RolesExactSidebarCrudPage() {
       ...item.permissions.R,
       ...item.permissions.U,
       ...item.permissions.D,
+    ]);
+    const safeSectionPerms = section.items.flatMap((item) => [
+      ...item.permissions.C,
+      ...item.permissions.R,
+      ...item.permissions.U,
     ]);
 
     const isAnyActive = section.items.some((item) =>
@@ -814,7 +813,8 @@ export default function RolesExactSidebarCrudPage() {
     if (isAnyActive) {
       allSectionPerms.forEach((p) => rolePermsSet.delete(p));
     } else {
-      allSectionPerms.forEach((p) => rolePermsSet.add(p));
+      // Safe enable without Delete
+      safeSectionPerms.forEach((p) => rolePermsSet.add(p));
     }
 
     const updatedRole: RoleDefinition = {
@@ -825,7 +825,7 @@ export default function RolesExactSidebarCrudPage() {
 
     setRoles((prev) => prev.map((r) => (r.id === activeRole.id ? updatedRole : r)));
     updateRolePermissions(activeRole.id, updatedRole.permissions);
-    showToast(`${isAnyActive ? 'Cleared' : 'Enabled all'} in section "${section.title}".`);
+    showToast(`${isAnyActive ? 'Cleared' : 'Enabled C-R-U'} in section "${section.title}".`);
   };
 
   // Preset: View Only [R] in visible sections
@@ -852,7 +852,30 @@ export default function RolesExactSidebarCrudPage() {
     showToast(`Set "${activeRole.name}" to View-Only [R].`);
   };
 
-  // Preset: Full Access [C-R-U-D] in visible sections
+  // Preset: Standard Full Access [C-R-U] (Default Safe: NO DELETE)
+  const applyStandardAccess = () => {
+    if (!activeRole || isSuperAdminRole) return;
+    const safePerms = visibleSections.flatMap((s) =>
+      s.items.flatMap((i) => [
+        ...i.permissions.C,
+        ...i.permissions.R,
+        ...i.permissions.U,
+      ])
+    );
+    // Remove any Delete permissions in visible sections
+    const deletePerms = new Set(
+      visibleSections.flatMap((s) => s.items.flatMap((i) => i.permissions.D))
+    );
+
+    const retained = activeRole.permissions.filter((p) => !deletePerms.has(p));
+    const updated = Array.from(new Set([...retained, ...safePerms]));
+    const updatedRole = { ...activeRole, permissions: updated, updatedAt: new Date().toISOString() };
+    setRoles((prev) => prev.map((r) => (r.id === activeRole.id ? updatedRole : r)));
+    updateRolePermissions(activeRole.id, updated);
+    showToast(`Default C-R-U enabled for "${activeRole.name}" (Delete protected).`);
+  };
+
+  // Preset: Full Access [C-R-U-D] in visible sections (Includes Delete)
   const applyFullAccess = () => {
     if (!activeRole || isSuperAdminRole) return;
     const allVisiblePerms = visibleSections.flatMap((s) =>
@@ -912,9 +935,15 @@ export default function RolesExactSidebarCrudPage() {
       return;
     }
 
-    // Default permissions based on portal
+    // Default permissions based on portal: C, R, U enabled, DELETE [D] strictly OFF by default
     const targetSections = SIDEBAR_PORTAL_SECTIONS.filter((s) => s.portal === roleForm.portal);
-    const defaultPerms = targetSections.flatMap((s) => s.items.flatMap((i) => i.permissions.R));
+    const defaultPerms = targetSections.flatMap((s) =>
+      s.items.flatMap((i) => [
+        ...i.permissions.C,
+        ...i.permissions.R,
+        ...i.permissions.U,
+      ])
+    );
 
     const newRole: RoleDefinition = {
       id: `role-${Date.now()}`,
@@ -933,6 +962,13 @@ export default function RolesExactSidebarCrudPage() {
     setScopeFilter('AUTO');
     setIsAddRoleModalOpen(false);
     showToast(`Role "${newRole.name}" created! You can now toggle C-U-R-D.`);
+
+    // Persist new role to Supabase backend database
+    fetch('http://localhost:4000/api/portals/roles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newRole),
+    }).catch(() => null);
   };
 
   // ─── EDIT ROLE DETAILS ───
@@ -971,13 +1007,19 @@ export default function RolesExactSidebarCrudPage() {
   const handleDeleteRole = () => {
     if (!roleToDelete) return;
     const deletedName = roleToDelete.name;
-    const remainingRoles = roles.filter((r) => r.id !== roleToDelete.id);
+    const targetId = roleToDelete.id;
+    const remainingRoles = roles.filter((r) => r.id !== targetId);
     setRoles(remainingRoles);
-    if (selectedRoleId === roleToDelete.id) {
+    if (selectedRoleId === targetId) {
       setSelectedRoleId(remainingRoles[0]?.id || '');
     }
     setRoleToDelete(null);
     showToast(`Role "${deletedName}" deleted.`);
+
+    // Delete in Supabase backend database
+    fetch(`http://localhost:4000/api/portals/roles/${targetId}/delete`, {
+      method: 'POST',
+    }).catch(() => null);
   };
 
   // Filtered roles list for sidebar
@@ -1261,7 +1303,7 @@ export default function RolesExactSidebarCrudPage() {
                 </div>
 
                 {!isSuperAdminRole && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       type="button"
                       onClick={applyViewOnly}
@@ -1272,9 +1314,17 @@ export default function RolesExactSidebarCrudPage() {
                     </button>
                     <button
                       type="button"
+                      onClick={applyStandardAccess}
+                      className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[11px] font-bold cursor-pointer shadow-2xs"
+                      title="Default Safe Mode: Enable Create, Read, Update [C-R-U] with Delete Protected [OFF]"
+                    >
+                      Safe [C-R-U]
+                    </button>
+                    <button
+                      type="button"
                       onClick={applyFullAccess}
                       className="px-2 py-1 bg-white hover:bg-blue-50 text-[#0052CC] border border-blue-200 rounded-lg text-[11px] font-bold cursor-pointer"
-                      title="Set All [C-U-R-D] in this portal"
+                      title="Grant full access including Delete [C-R-U-D]"
                     >
                       All [C-U-R-D]
                     </button>
@@ -1290,27 +1340,33 @@ export default function RolesExactSidebarCrudPage() {
                 )}
               </div>
 
-              {/* CURD Legend Banner */}
-              <div className="flex items-center justify-between text-xs px-1">
+              {/* CURD Legend Banner & Default Protection Note */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs px-1 bg-amber-50/60 border border-amber-200/70 p-2.5 rounded-xl">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-slate-600">Permissions:</span>
+                  <span className="font-bold text-[#0B2447]">Permissions:</span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    <strong className="text-emerald-700">[C]</strong> Create / Add
+                    <strong className="text-emerald-700">[C]</strong> Create
                   </span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                    <strong className="text-blue-700">[R]</strong> Read / View
+                    <strong className="text-blue-700">[R]</strong> View
                   </span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                    <strong className="text-amber-700">[U]</strong> Update / Edit
+                    <strong className="text-amber-700">[U]</strong> Edit
                   </span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                    <strong className="text-rose-700">[D]</strong> Delete / Cancel
+                    <strong className="text-rose-700">[D]</strong> Delete
                   </span>
                 </div>
 
-                <span className="text-[11px] font-bold text-slate-500">
-                  {visibleSections.length} sections displayed
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+                    <strong>Default Policy:</strong> [D] Delete is disabled by default; click [D] to grant
+                  </span>
+                  <span className="text-[11px] font-bold text-slate-500">
+                    {visibleSections.length} sections
+                  </span>
+                </div>
               </div>
 
               {/* ─── SIDEBAR SECTIONS & ITEMS C-U-R-D TABLES ─── */}

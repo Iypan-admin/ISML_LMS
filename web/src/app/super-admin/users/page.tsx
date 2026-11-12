@@ -50,6 +50,7 @@ import StatusConfirmDialog from '@/components/super-admin/users/StatusConfirmDia
 import ResetPasswordDialog from '@/components/super-admin/users/ResetPasswordDialog';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import { useCollege } from '@/context/CollegeContext';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function UsersPage() {
   const { hasPermission } = useRbac();
@@ -58,6 +59,30 @@ export default function UsersPage() {
 
   const [users, setUsers] = useState<SuperAdminUser[]>(mockUsers);
   
+  // Fetch users from Supabase backend on mount with 0ms fast cache
+  React.useEffect(() => {
+    fastFetch('http://localhost:4000/api/portals/users', (json) => {
+      if (json?.data && json.data.length > 0) {
+        const mapped: SuperAdminUser[] = json.data.map((u: any) => ({
+          id: u.id,
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Admin User',
+          email: u.email,
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+          roleId: u.userRoles?.[0]?.roleId || 'role-super-admin',
+          roleName: u.userRoles?.[0]?.role?.name || (u.isSuperAdmin ? 'Super Administrator' : 'Staff'),
+          roleCode: u.userRoles?.[0]?.role?.code || (u.isSuperAdmin ? 'SUPER_ADMIN' : 'STAFF'),
+          collegeId: u.tenantId || 'inst-01',
+          collegeName: u.tenant?.displayName || u.tenant?.name || 'Main Campus',
+          status: u.status || 'ACTIVE',
+          permissions: [],
+          lastLoginAt: u.lastLoginAt || new Date().toISOString(),
+          createdAt: u.createdAt || new Date().toISOString(),
+        }));
+        setUsers(mapped);
+      }
+    });
+  }, []);
+
   // Modals state
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [roleModalUser, setRoleModalUser] = useState<SuperAdminUser | null>(null);
@@ -70,9 +95,15 @@ export default function UsersPage() {
 
   const handleDeleteUser = () => {
     if (!deleteUserTarget) return;
-    setUsers((prev) => prev.filter((u) => u.id !== deleteUserTarget.id));
+    const targetId = deleteUserTarget.id;
+    setUsers((prev) => prev.filter((u) => u.id !== targetId));
     showSuccess(`User account for "${deleteUserTarget.name}" has been deleted.`);
     setDeleteUserTarget(null);
+
+    // Sync deletion to Supabase
+    fetch(`http://localhost:4000/api/portals/users/${targetId}/delete`, {
+      method: 'POST',
+    }).catch(() => null);
   };
 
   // Filter States
@@ -117,6 +148,13 @@ export default function UsersPage() {
   const handleUserCreated = (newUser: SuperAdminUser) => {
     setUsers((prev) => [newUser, ...prev]);
     showSuccess(`Account for ${newUser.name} created. Credentials dispatched.`);
+
+    // Persist to Supabase backend API
+    fetch('http://localhost:4000/api/portals/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newUser),
+    }).catch(() => null);
   };
 
   const handleRoleAssigned = (
@@ -133,6 +171,13 @@ export default function UsersPage() {
       )
     );
     showSuccess(`Assigned new role "${newRoleName}" successfully.`);
+
+    // Persist role assignment in Supabase
+    fetch(`http://localhost:4000/api/portals/users/${userId}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roleId: newRoleId }),
+    }).catch(() => null);
   };
 
   const handleStatusUpdated = (userId: string, newStatus: UserStatus) => {
@@ -140,6 +185,13 @@ export default function UsersPage() {
       prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
     );
     showSuccess(`User account status updated to ${newStatus}.`);
+
+    // Sync status update with Supabase
+    fetch(`http://localhost:4000/api/portals/users/${userId}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    }).catch(() => null);
   };
 
   const handleToggleUser = (user: SuperAdminUser) => {
@@ -147,6 +199,14 @@ export default function UsersPage() {
     setUsers((prev) =>
       prev.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u))
     );
+
+    // Sync toggle status with Supabase
+    fetch(`http://localhost:4000/api/portals/users/${user.id}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: nextStatus }),
+    }).catch(() => null);
+
     if (nextStatus === 'SUSPENDED') {
       showInfo(`User "${user.name}" account suspended.`);
     } else {
@@ -314,7 +374,7 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-12 font-sans">
-      <Breadcrumbs items={[{ label: 'Administration' }, { label: 'Users' }]} />
+      <Breadcrumbs items={[{ label: 'Administration' }, { label: 'Administrators & Staff' }]} />
 
       <CollegeFilterBar />
 
@@ -322,10 +382,10 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg sm:text-2xl font-bold text-[#0B2447] tracking-tight">
-            Users
+            Administrators & Staff Management
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-            Manage LMS accounts, roles and access across institutions.
+            Create, provision, and manage executive administrators, academic managers, faculty and campus staff accounts.
           </p>
         </div>
 
@@ -347,7 +407,7 @@ export default function UsersPage() {
               className="text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg sm:rounded-xl font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>+ Create User</span>
+              <span>+ Create Administrator / Staff</span>
             </button>
           </Can>
         </div>

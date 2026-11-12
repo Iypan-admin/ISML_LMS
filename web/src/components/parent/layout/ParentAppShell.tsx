@@ -50,7 +50,7 @@ const iconMap: Record<string, React.ElementType> = {
   Receipt,
 };
 
-export function ParentSidebar() {
+export function ParentSidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {
   const pathname = usePathname();
   const { parent, selectedChild, selectChild, allChildren } = useParent();
   const [showChildPicker, setShowChildPicker] = useState(false);
@@ -81,10 +81,10 @@ export function ParentSidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-72 bg-[#0B2447] text-white border-r border-[#1E3A8A] fixed left-0 top-0 bottom-0 z-40 shadow-xl overflow-hidden font-sans">
+    <aside className="flex flex-col w-72 bg-[#0B2447] text-white border-r border-[#1E3A8A] h-full shadow-xl overflow-hidden font-sans">
       {/* ─── Brand Header ─── */}
       <div className="px-4 py-3.5 bg-[#071730] border-b border-[#1E3A8A] flex items-center justify-between shrink-0">
-        <Link href="/parent/dashboard" className="flex items-center gap-2.5 group">
+        <Link href="/parent/dashboard" onClick={onCloseMobile} className="flex items-center gap-2.5 group">
           <div className="relative w-7 h-7 shrink-0 transition-transform group-hover:scale-105">
             <Image src="/logo.png" alt="ISML Logo" fill sizes="28px" className="object-contain" priority />
           </div>
@@ -95,6 +95,14 @@ export function ParentSidebar() {
             </span>
           </div>
         </Link>
+        {onCloseMobile && (
+          <button
+            onClick={onCloseMobile}
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 lg:hidden"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* ─── ACTIVE MONITORED WARD CARD WITH CLEAN SWITCHER ─── */}
@@ -104,24 +112,21 @@ export function ParentSidebar() {
             <GraduationCap className="w-3.5 h-3.5 text-cyan-300" />
             <span>Monitored Ward</span>
           </span>
-          <button
-            onClick={() => setShowChildPicker(!showChildPicker)}
-            className="text-[10px] text-slate-300 hover:text-white font-bold flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
-          >
-            <span>Switch</span>
-            <ChevronDown className="w-3 h-3 text-cyan-400" />
-          </button>
+          {allChildren.length > 1 && (
+            <button
+              onClick={() => setShowChildPicker(!showChildPicker)}
+              className="text-[10px] text-slate-300 hover:text-white font-bold flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+            >
+              <span>Switch</span>
+              <ChevronDown className="w-3 h-3 text-cyan-400" />
+            </button>
+          )}
         </div>
 
         {/* Selected Child Showcase Card */}
         <div className="p-2.5 rounded-xl bg-gradient-to-r from-[#0052CC]/40 to-[#0052CC]/10 border border-[#0052CC] text-white shadow-md flex items-center gap-3">
-          <div className="relative w-10 h-10 rounded-xl overflow-hidden border-2 border-cyan-400 shrink-0 shadow-xs">
-            <Image
-              src={selectedChild.avatarUrl}
-              alt={selectedChild.name}
-              fill
-              className="object-cover"
-            />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs border border-cyan-400">
+            {selectedChild?.name ? selectedChild.name.charAt(0).toUpperCase() : 'M'}
           </div>
           <div className="truncate flex-1">
             <div className="flex items-center gap-1.5">
@@ -129,7 +134,7 @@ export function ParentSidebar() {
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 ring-2 ring-emerald-300/40" />
             </div>
             <p className="text-[10px] text-cyan-200 font-semibold truncate">
-              {selectedChild.primaryCourse.courseCode} • {selectedChild.primaryCourse.levelBadge}
+              {selectedChild.primaryCourse.courseCode} • {selectedChild.primaryCourse.batchName || 'MRNG BATCH'}
             </p>
             <p className="text-[10px] text-slate-300 truncate">
               {selectedChild.collegeName.split(',')[0]}
@@ -137,8 +142,8 @@ export function ParentSidebar() {
           </div>
         </div>
 
-        {/* Dropdown Popover to pick other children */}
-        {showChildPicker && (
+        {/* Dropdown Popover to pick other children only if multiple wards linked */}
+        {showChildPicker && allChildren.length > 1 && (
           <div className="absolute top-full left-3 right-3 mt-1.5 p-2 bg-[#071730] rounded-xl border border-cyan-500/40 shadow-2xl z-50 space-y-1.5 animate-in fade-in duration-150">
             <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold px-1.5 py-0.5">
               Select Ward to Monitor:
@@ -159,8 +164,8 @@ export function ParentSidebar() {
                   }`}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0 border border-white/30">
-                      <Image src={c.avatarUrl} alt={c.name} fill className="object-cover" />
+                    <div className="w-6 h-6 rounded-full bg-blue-700 text-cyan-300 font-bold text-xs flex items-center justify-center shrink-0 border border-white/30">
+                      {c.name ? c.name.charAt(0).toUpperCase() : 'W'}
                     </div>
                     <div className="truncate">
                       <p className="text-xs font-bold truncate">{c.name}</p>
@@ -178,18 +183,13 @@ export function ParentSidebar() {
       {/* ─── Parent Profile Summary Strip ─── */}
       <div className="px-3.5 py-2.5 bg-[#071730]/60 border-b border-[#1E3A8A] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="relative w-7 h-7 rounded-full overflow-hidden border border-emerald-400/60 shrink-0 shadow-xs">
-            <Image
-              src={parent.avatarUrl}
-              alt={parent.name}
-              fill
-              className="object-cover"
-            />
+          <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs border border-emerald-400">
+            {parent?.name ? parent.name.charAt(0).toUpperCase() : 'P'}
           </div>
           <div className="truncate">
             <p className="text-xs font-bold text-slate-100 truncate">{parent.name}</p>
             <p className="text-[10px] text-emerald-400 font-semibold truncate">
-              Parent of {allChildren.length} Enrolled Learners
+              Authorized Guardian • {selectedChild.collegeName.split(',')[0]}
             </p>
           </div>
         </div>
@@ -230,6 +230,7 @@ export function ParentSidebar() {
                       <Link
                         key={item.id}
                         href={item.route}
+                        onClick={onCloseMobile}
                         className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                           isActive
                             ? 'bg-[#0052CC] text-white font-bold shadow-md shadow-blue-950/50 border-l-4 border-cyan-400'
@@ -277,20 +278,29 @@ export function ParentSidebar() {
   );
 }
 
-export function ParentHeader() {
+export function ParentHeader({ onOpenMobile }: { onOpenMobile?: () => void }) {
   const { parent, selectedChild, selectChild, allChildren } = useParent();
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-2xs font-sans">
       <div className="px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-        {/* Left: Role Scope Badge */}
+        {/* Left: Mobile Toggle & Role Scope Badge */}
         <div className="flex items-center gap-2.5">
+          {onOpenMobile && (
+            <button
+              onClick={onOpenMobile}
+              className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+
           <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Parent Oversight Portal</span>
           </span>
           <span className="text-slate-300 hidden sm:inline">•</span>
-          <span className="text-xs font-bold text-slate-700 hidden sm:inline">
+          <span className="text-xs font-bold text-slate-700 hidden sm:inline truncate max-w-[200px]">
             {selectedChild.collegeName}
           </span>
         </div>
@@ -311,8 +321,8 @@ export function ParentHeader() {
                       : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                   }`}
                 >
-                  <div className="relative w-4 h-4 rounded-full overflow-hidden shrink-0">
-                    <Image src={c.avatarUrl} alt={c.name} fill className="object-cover" />
+                  <div className="w-4 h-4 rounded-full bg-blue-700 text-white font-bold text-[9px] flex items-center justify-center shrink-0">
+                    {c.name ? c.name.charAt(0).toUpperCase() : 'W'}
                   </div>
                   <span>{c.name.split(' ')[0]}</span>
                   <span className={`text-[9px] px-1 rounded ${isSelected ? 'bg-white/20' : 'bg-slate-200 text-slate-700'}`}>
@@ -332,9 +342,9 @@ export function ParentHeader() {
             <span className="hidden sm:inline">Tutor Helpline</span>
           </Link>
 
-          {/* Parent Avatar */}
-          <div className="relative w-8 h-8 rounded-full overflow-hidden border border-[#0052CC] shrink-0 shadow-xs">
-            <Image src={parent.avatarUrl} alt={parent.name} fill className="object-cover" />
+          {/* Parent Avatar / Monogram */}
+          <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center border border-emerald-400 shrink-0 shadow-xs">
+            {parent?.name ? parent.name.charAt(0).toUpperCase() : 'P'}
           </div>
         </div>
       </div>
@@ -343,18 +353,35 @@ export function ParentHeader() {
 }
 
 export default function ParentAppShell({ children }: { children: React.ReactNode }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <AuthRbacProvider>
       <CollegeProvider>
         <ToastProvider>
           <ParentProvider>
             <div className="min-h-screen bg-slate-50 font-sans flex text-slate-800">
-              {/* Desktop Sidebar */}
-              <ParentSidebar />
+              {/* Desktop Sidebar (Fixed left) */}
+              <div className="hidden lg:block fixed left-0 top-0 bottom-0 z-40 w-72">
+                <ParentSidebar />
+              </div>
+
+              {/* Mobile Drawer */}
+              {mobileOpen && (
+                <div className="fixed inset-0 z-50 lg:hidden flex">
+                  <div
+                    className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs"
+                    onClick={() => setMobileOpen(false)}
+                  />
+                  <div className="relative z-10 w-72 h-full">
+                    <ParentSidebar onCloseMobile={() => setMobileOpen(false)} />
+                  </div>
+                </div>
+              )}
 
               {/* Main Content Area */}
               <div className="flex-1 lg:pl-72 flex flex-col min-w-0">
-                <ParentHeader />
+                <ParentHeader onOpenMobile={() => setMobileOpen(true)} />
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
                   {children}
                 </main>

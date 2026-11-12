@@ -1,0 +1,92 @@
+[
+  {
+    "id": "dt-general",
+    "ticketNo": "TKT-1001",
+    "topicTitle": "General Language & Course Doubts",
+    "category": "Grammar",
+    "batchId": "batch-4168",
+    "batchName": "MRNG BATCH",
+    "courseName": "testtt",
+    "studentId": "std-current",
+    "studentName": "Muthu Pandian",
+    "studentRollNo": "AMER-COL-STD-23",
+    "collegeName": "The American College",
+    "assignedTutorName": "Joy JK",
+    "assignedTutorRole": "Lead Native Trainer",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH",
+    "createdAt": "Today • 08:30 PM",
+    "messages": [
+      {
+        "id": "msg-1794425729047",
+        "sender": "STUDENT",
+        "senderName": "Muthu Pandian",
+        "text": "HI DA",
+        "timestamp": "01:05, 12 Nov"
+      },
+      {
+        "id": "msg-1794425746752",
+        "sender": "TUTOR",
+        "senderName": "Prof. Antoine Martin",
+        "text": "FORM TUTOR",
+        "timestamp": "01:05, 12 Nov"
+      },
+      {
+        "id": "msg-1794425942753",
+        "sender": "STUDENT",
+        "senderName": "Muthu Pandian",
+        "text": "OKAY SIR",
+        "timestamp": "01:09, 12 Nov"
+      },
+      {
+        "id": "msg-1794425955370",
+        "sender": "TUTOR",
+        "senderName": "Joy JK",
+        "text": "CHECKING",
+        "timestamp": "01:09, 12 Nov"
+      },
+      {
+        "id": "msg-1794425962833",
+        "sender": "STUDENT",
+        "senderName": "Muthu Pandian",
+        "text": "CHECK",
+        "timestamp": "01:09, 12 Nov"
+      },
+      {
+        "id": "msg-1794425967648",
+        "sender": "TUTOR",
+        "senderName": "Joy JK",
+        "text": "DONE",
+        "timestamp": "01:09, 12 Nov"
+      },
+      {
+        "id": "msg-1794425976236",
+        "sender": "STUDENT",
+        "senderName": "Muthu Pandian",
+        "text": "PAKKA",
+        "timestamp": "01:09, 12 Nov"
+      },
+      {
+        "id": "msg-1794426221633",
+        "sender": "TUTOR",
+        "senderName": "Joy JK",
+        "text": "fefefefefe",
+        "timestamp": "01:13, 12 Nov"
+      },
+      {
+        "id": "msg-1794426226383",
+        "sender": "STUDENT",
+        "senderName": "Muthu Pandian",
+        "text": "check",
+        "timestamp": "01:13, 12 Nov"
+      },
+      {
+        "id": "msg-1794426399726",
+        "sender": "STUDENT",
+        "senderName": "Muthu Pandian",
+        "text": "dwhdwihiwdididwdwdwdwddwdwdwd",
+        "timestamp": "01:16, 12 Nov"
+      }
+    ]
+  }
+]

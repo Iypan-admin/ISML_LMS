@@ -35,21 +35,6 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         iconName: 'CalendarDays',
         description: 'Campus terms, key dates, exams & schedule milestones',
       },
-      {
-        id: 'AM_APPROVALS',
-        label: 'Approvals & Requests',
-        route: '/academic-manager/approvals',
-        iconName: 'CheckSquare',
-        badge: 'Queue',
-        description: 'Tutor allocations, exam blueprints, gradebooks & attendance sign-offs',
-      },
-      {
-        id: 'AM_NOTIFICATIONS',
-        label: 'Notifications',
-        route: '/academic-manager/notifications',
-        iconName: 'Bell',
-        description: 'Circulars, student alerts & academic notices',
-      },
     ],
   },
   {
@@ -78,13 +63,6 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         iconName: 'FolderTree',
         description: 'Complete course curriculum: Subjects, chapters/modules & topics',
       },
-      {
-        id: 'AM_ACADEMIC_YEARS',
-        label: 'Academic Cycles',
-        route: '/academic-manager/academic-years',
-        iconName: 'Calendar',
-        description: 'Year cycles, term intake periods & active calendars',
-      },
     ],
   },
   {
@@ -96,13 +74,6 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         route: '/academic-manager/students',
         iconName: 'GraduationCap',
         description: 'Learner roster, batch progress & personal academic details',
-      },
-      {
-        id: 'AM_PARENTS',
-        label: 'Parents & Guardians',
-        route: '/academic-manager/parents',
-        iconName: 'HeartHandshake',
-        description: 'Multi-student guardian links, contacts & progress alerts',
       },
       {
         id: 'AM_FACULTY',
@@ -132,25 +103,11 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         description: 'Pre-recorded lectures, video catalogs & playback access',
       },
       {
-        id: 'AM_RESOURCES',
-        label: 'Learning Resources',
-        route: '/academic-manager/resources',
-        iconName: 'FileText',
-        description: 'Curriculum materials, lecture handouts & audio drills',
-      },
-      {
         id: 'AM_ASSIGNMENTS',
         label: 'Assignments',
         route: '/academic-manager/assignments',
         iconName: 'ClipboardList',
         description: 'Course assignments, task submissions & deadlines',
-      },
-      {
-        id: 'AM_ASSESSMENTS',
-        label: 'Exams & Assessments',
-        route: '/academic-manager/assessments',
-        iconName: 'Award',
-        description: 'Exams, quizzes, DELF/JLPT tests & evaluation benchmarks',
       },
       {
         id: 'AM_RESULTS',

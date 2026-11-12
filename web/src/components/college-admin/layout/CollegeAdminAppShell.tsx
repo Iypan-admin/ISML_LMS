@@ -31,7 +31,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { COLLEGE_ADMIN_NAV_SECTIONS } from '@/config/collegeAdminMenu';
-import { mockInstitutions } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
 import NotificationDrawer from '@/components/super-admin/layout/NotificationDrawer';
 
@@ -54,9 +53,73 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
   const router = useRouter();
   const { showSuccess } = useToast();
 
-  // Active college state for College Admin (default: Loyola College)
+  // Active college state for College Admin (synced from logged in user session or DB)
+  const [currentUser, setCurrentUser] = useState<{
+    id?: string;
+    email?: string;
+    name?: string;
+    role?: string;
+    campusId?: string;
+    campusName?: string;
+  } | null>(null);
+
   const [activeCollegeId, setActiveCollegeId] = useState<string>('inst-01');
-  const activeCollege = mockInstitutions.find((i) => i.id === activeCollegeId) || mockInstitutions[0];
+  const [activeCollege, setActiveCollege] = useState<{
+    id: string;
+    name: string;
+    code: string;
+    type?: string;
+  }>({
+    id: 'inst-01',
+    name: 'Affiliated College Campus',
+    code: 'COLLEGE',
+    type: 'COLLEGE',
+  });
+
+  const [institutions, setInstitutions] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('isml_admin_user') || localStorage.getItem('isml_user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          setCurrentUser(parsed);
+          const isAmer = (parsed.email && parsed.email.includes('americancollege')) || (parsed.institutionCode === 'AMER-COL') || (parsed.name && parsed.name.includes('American'));
+
+          if (isAmer) {
+            setActiveCollege({
+              id: '521323cd-00da-49a6-98ed-6b7918d181b4',
+              name: 'The American College',
+              code: 'AMER-COL',
+              type: 'COLLEGE',
+            });
+            setActiveCollegeId('AMER-COL');
+          } else if (parsed.campusName || parsed.campusId) {
+            setActiveCollege({
+              id: parsed.campusId || 'inst-user',
+              name: parsed.campusName || 'Partner Institutional Campus',
+              code: parsed.institutionCode || (parsed.campusName ? parsed.campusName.split(' ').map((w: string) => w[0]?.toUpperCase()).join('').slice(0, 6) : 'CAMPUS'),
+              type: parsed.role === 'SCHOOL_ADMIN' ? 'SCHOOL' : 'COLLEGE',
+            });
+            setActiveCollegeId(parsed.campusId || 'inst-user');
+          }
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    // Fetch live institutions from backend (zero mock)
+    fetch('http://localhost:4000/api/portals/institutions')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json && json.data && json.data.length > 0) {
+          setInstitutions(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -86,33 +149,20 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
           </Link>
         </div>
 
-        {/* Campus Scoper Card */}
-        <div className="p-3 border-b border-slate-800 bg-slate-900/60">
-          <div className="flex items-center justify-between mb-1">
+        {/* Active Campus Header */}
+        <div className="p-4 border-b border-slate-800 bg-slate-900/60">
+          <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
               <Building2 className="w-3 h-3 text-blue-400" />
-              <span>Active Campus</span>
+              <span>Campus</span>
             </span>
             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              AFFILIATED
+              {activeCollege.code}
             </span>
           </div>
-
-          <select
-            value={activeCollegeId}
-            onChange={(e) => {
-              setActiveCollegeId(e.target.value);
-              const col = mockInstitutions.find((i) => i.id === e.target.value);
-              showSuccess(`Switched College Campus to: ${col?.name}`);
-            }}
-            className="w-full text-xs font-bold text-white bg-slate-800/90 border border-slate-700 rounded-xl px-2.5 py-1.5 outline-none cursor-pointer hover:bg-slate-800 transition truncate"
-          >
-            {mockInstitutions.map((inst) => (
-              <option key={inst.id} value={inst.id} className="bg-slate-900 text-white">
-                {inst.name}
-              </option>
-            ))}
-          </select>
+          <p className="text-xs font-bold text-white mt-1 leading-snug line-clamp-2">
+            {activeCollege.name}
+          </p>
         </div>
 
         {/* Navigation Sections */}
@@ -218,15 +268,6 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
 
           {/* Right Header Controls */}
           <div className="flex items-center gap-2.5">
-            {/* Quick Link to Super Admin Dashboard */}
-            <Link
-              href="/super-admin/dashboard"
-              className="hidden md:flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#0052CC] px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-200 bg-white transition shadow-2xs"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              <span>Super Admin</span>
-            </Link>
-
             {/* Notifications Trigger */}
             <button
               onClick={() => setIsNotificationOpen(true)}
@@ -240,11 +281,15 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
             {/* Profile Tag */}
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-700 to-indigo-700 text-white font-black text-xs flex items-center justify-center shadow-xs">
-                CA
+                {currentUser?.name ? currentUser.name.slice(0, 2).toUpperCase() : 'CA'}
               </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold text-slate-800 leading-none">Admin Office</p>
-                <p className="text-[10px] text-slate-500 leading-none mt-1">Registrar Portal</p>
+              <div className="hidden sm:block text-left max-w-[160px]">
+                <p className="text-xs font-bold text-slate-800 leading-none truncate">
+                  {currentUser?.name || 'Administrator'}
+                </p>
+                <p className="text-[10px] text-blue-600 font-semibold leading-none mt-1 truncate">
+                  {currentUser?.role === 'SCHOOL_ADMIN' ? 'School Principal' : 'Campus Registrar'}
+                </p>
               </div>
             </div>
           </div>
@@ -288,16 +333,20 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
                   onChange={(e) => {
                     setActiveCollegeId(e.target.value);
                     setIsMobileMenuOpen(false);
-                    const col = mockInstitutions.find((i) => i.id === e.target.value);
-                    showSuccess(`Switched to: ${col?.name}`);
+                    const col = institutions.find((i) => i.id === e.target.value);
+                    showSuccess(`Switched to: ${col?.name || 'Campus'}`);
                   }}
                   className="w-full text-xs font-bold text-white bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 outline-none cursor-pointer truncate"
                 >
-                  {mockInstitutions.map((inst) => (
-                    <option key={inst.id} value={inst.id}>
-                      {inst.name}
-                    </option>
-                  ))}
+                  {institutions.length === 0 ? (
+                    <option value="inst-01">Loyola College of Arts & Science</option>
+                  ) : (
+                    institutions.map((inst) => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -382,7 +431,7 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
                 type="button"
                 onClick={() => {
                   setShowSignOutModal(false);
-                  router.push('/login');
+                  router.push('/auth/login');
                 }}
                 className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-xs"
               >

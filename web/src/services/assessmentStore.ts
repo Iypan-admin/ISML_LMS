@@ -83,87 +83,8 @@ export const GENERATE_PRESET_5_LSRW_QUESTIONS = (examTitle: string): AssessmentQ
 export const GENERATE_PRESET_50_LSRW_QUESTIONS = GENERATE_PRESET_5_LSRW_QUESTIONS;
 
 // Default initial state with approval statuses
-let globalAssessments: AssessmentItem[] = [
-  {
-    id: 'asm-fr-a1-mock-2026',
-    code: 'EXAM-A1-DELF',
-    title: 'DELF A1 National Benchmark CBT Mock Examination 2026',
-    subjectName: 'French Phonetics & Oral Comprehension',
-    programName: 'Diploma in French Language Studies',
-    courseId: 'crs-french-a1',
-    courseName: 'French A1: Beginner Foundations & Phonetics',
-    semester: 1,
-    batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-    batchId: 'batch-2026-fr-a1-morning',
-    facultyName: 'Dr. Anandhakumar V.',
-    type: 'FINAL_EXAM',
-    totalMarks: 100,
-    dueDate: '2026-10-25',
-    durationMins: 90,
-    submissionsCount: 6,
-    status: 'APPROVED',
-    approvalStatus: 'APPROVED_BY_ADMIN',
-    submittedToAdminAt: '2026-10-10 09:30 AM',
-    reviewedByAdminAt: '2026-10-10 02:15 PM',
-    adminReviewRemarks: 'Approved for campus-wide DELF CBT examination rollout. All 50 LSRW questions verified.',
-    questionsCount: 50,
-    questions: GENERATE_PRESET_50_LSRW_QUESTIONS('DELF A1 Mock Examination')
-  },
-  {
-    id: 'asm-fr-a2-midterm-2026',
-    code: 'EXAM-A2-MID',
-    title: 'French A2 Passé Composé & Imparfait Mid-Term Diagnostic',
-    subjectName: 'French Structural Grammar & Syntax',
-    programName: 'Certificate in French Language',
-    courseId: 'crs-french-a2',
-    courseName: 'French A2: Elementary Structural Fluency',
-    semester: 1,
-    batchName: 'French A2 Cohort (Section B - Standby Coverage)',
-    batchId: 'batch-2026-fr-a2-standby',
-    facultyName: 'Prof. Marie Dubois',
-    type: 'MID_TERM',
-    totalMarks: 100,
-    dueDate: '2026-10-28',
-    durationMins: 60,
-    submissionsCount: 3,
-    status: 'PENDING_APPROVAL',
-    approvalStatus: 'PENDING_ADMIN_APPROVAL',
-    submittedToAdminAt: '2026-10-14 11:20 AM',
-    adminReviewRemarks: 'Pending executive review by Super Admin for Section B release.',
-    questionsCount: 50,
-    questions: GENERATE_PRESET_50_LSRW_QUESTIONS('French A2 Mid-Term Diagnostic')
-  },
-  {
-    id: 'asm-fr-b1-viva-2026',
-    code: 'EXAM-B1-VIVA',
-    title: 'DELF B1 Spoken Discourse & Monologue Defense Test',
-    subjectName: 'French Business Communication',
-    programName: 'Advanced Diploma in French',
-    courseId: 'crs-french-b1',
-    courseName: 'French B1: Intermediate Pragmatic Competence',
-    semester: 2,
-    batchName: 'French B1 Executive Cohort (1-on-1 Q&A Desk)',
-    batchId: 'batch-2026-fr-b1-executive',
-    facultyName: 'Dr. Jean-Pierre Lefebvre',
-    type: 'FINAL_EXAM',
-    totalMarks: 100,
-    dueDate: '2026-11-05',
-    durationMins: 90,
-    submissionsCount: 2,
-    status: 'DRAFT',
-    approvalStatus: 'PENDING_ADMIN_APPROVAL',
-    submittedToAdminAt: '2026-10-15 08:45 AM',
-    adminReviewRemarks: 'Draft submitted by Academic Manager; pending final approval.',
-    questionsCount: 50,
-    questions: GENERATE_PRESET_50_LSRW_QUESTIONS('French B1 Monologue Defense Test')
-  },
-  ...mockAssessments.map((a, idx) => ({
-    ...a,
-    approvalStatus: (idx % 2 === 0 ? 'APPROVED_BY_ADMIN' : 'PENDING_ADMIN_APPROVAL') as any,
-    questionsCount: 50,
-    questions: GENERATE_PRESET_50_LSRW_QUESTIONS(a.title)
-  }))
-];
+let globalAssessments: AssessmentItem[] = [];
+
 
 type AssessmentListener = () => void;
 const assessmentListeners: Set<AssessmentListener> = new Set();

@@ -65,142 +65,7 @@ export interface CurriculumBlock {
 }
 
 // Master materials curated from Academic Manager Course Builder Studio
-const mockCurriculumBlocks: Record<string, CurriculumBlock[]> = {
-  'top-fr-01': [
-    {
-      id: 'blk-01',
-      topicId: 'top-fr-01',
-      type: 'KEY_CONCEPT',
-      title: 'Core Linguistic Concept: Nasal Vowels & Mandatory Liaison',
-      lsrwSkill: 'L',
-      data: {
-        text: 'In French phonetics, when a vowel is followed by n or m in the same syllable, the vowel becomes nasalized. Furthermore, liaison connects the silent final consonant of a word to the initial vowel of the following word (e.g., "les étudiants" sounds like [le z‿etydjɑ̃]).',
-      },
-    },
-    {
-      id: 'blk-02',
-      topicId: 'top-fr-01',
-      type: 'IMPORTANT_NOTE',
-      title: 'Formal "Vous" vs Informal "Tu" Politeness Boundary',
-      lsrwSkill: 'S',
-      data: {
-        text: 'Always use "Vous" in professional, academic, or institutional settings with elders, supervisors, or acquaintances. Using "Tu" prematurely is considered impolite in French culture.',
-      },
-    },
-    {
-      id: 'blk-03',
-      topicId: 'top-fr-01',
-      type: 'FORMULA',
-      title: 'Sentence Pattern: Formal Self-Introduction',
-      lsrwSkill: 'S',
-      data: {
-        formula: 'Bonjour, je m\'appelle [Nom] + je suis [Profession/Étudiant] + chez [Institution].',
-        description: 'Standard formula taught across CEFR A1 for meeting academic and professional peers.',
-      },
-    },
-    {
-      id: 'blk-04',
-      topicId: 'top-fr-01',
-      type: 'AUDIO',
-      title: 'Audio Drill: Standard Parisian Pronunciation Guide (MP3)',
-      lsrwSkill: 'L',
-      data: {
-        fileName: 'nasal_vowels_drill_a1.mp3',
-        fileSize: '4.2 MB',
-        description: 'Native speaker pronunciation drill for [ɑ̃], [ɛ̃], [ɔ̃], [œ̃]. Recommended to play during live sessions.',
-        url: 'https://isml.edu/audio/nasal_vowels_drill_a1.mp3',
-      },
-    },
-    {
-      id: 'blk-05',
-      topicId: 'top-fr-01',
-      type: 'PDF',
-      title: 'Class Handout: French Phonetics & Alphabet Chart.pdf',
-      lsrwSkill: 'R',
-      data: {
-        fileName: 'phonetics_alphabet_cheat_sheet.pdf',
-        fileSize: '2.4 MB',
-        description: 'Printable color-coded IPA transcription worksheet for students.',
-        url: 'https://isml.edu/resources/phonetics_alphabet_cheat_sheet.pdf',
-      },
-    },
-    {
-      id: 'blk-06',
-      topicId: 'top-fr-01',
-      type: 'WORKED_EXAMPLE',
-      title: 'Dialogue Example: First Day at ISML Campus',
-      lsrwSkill: 'S',
-      data: {
-        question: 'How to introduce yourself to a professor on the first day of class?',
-        solution: 'Étudiant: Bonjour Professeur, je m\'appelle Anand, je suis étudiant en première année.\nProfesseur: Bonjour Anand, bienvenue à ISML ! Asseyez-vous, s\'il vous plaît.',
-      },
-    },
-    {
-      id: 'blk-07',
-      topicId: 'top-fr-01',
-      type: 'PRACTICE_QUESTION',
-      title: 'Formative Checkpoint: Choosing the Correct Greeting',
-      lsrwSkill: 'GENERAL',
-      data: {
-        question: 'Which greeting is appropriate when meeting a corporate recruiter at 10:00 AM?',
-        options: ['Salut mon ami !', 'Bonjour Monsieur, enchanté.', 'Coucou !', 'Bonne nuit.'],
-        correctAnswer: 'Bonjour Monsieur, enchanté.',
-        explanation: '"Bonjour Monsieur, enchanté" maintains the necessary formal register required in professional settings.',
-      },
-    },
-  ],
-  'top-fr-02': [
-    {
-      id: 'blk-201',
-      topicId: 'top-fr-02',
-      type: 'KEY_CONCEPT',
-      title: 'Greetings & Salutations Etiquette Matrix',
-      lsrwSkill: 'S',
-      data: {
-        text: 'Morning: Bonjour. Evening: Bonsoir. Informal with friends: Salut / Coucou. Taking leave: Au revoir / À bientôt / À demain.',
-      },
-    },
-    {
-      id: 'blk-202',
-      topicId: 'top-fr-02',
-      type: 'PDF',
-      title: 'Dialogue Script: Formal vs Informal Greetings Handout.pdf',
-      lsrwSkill: 'R',
-      data: {
-        fileName: 'greetings_handout_delacroix.pdf',
-        fileSize: '1.8 MB',
-        description: 'Approved by Academic Manager for Section A & B classroom distribution.',
-        url: 'https://isml.edu/resources/greetings-handout.pdf',
-      },
-    },
-  ],
-  'top-fr-03': [
-    {
-      id: 'blk-301',
-      topicId: 'top-fr-03',
-      type: 'FORMULA',
-      title: 'Auxiliary Verb Conjugation: Être & Avoir',
-      lsrwSkill: 'W',
-      data: {
-        formula: 'Être: Je suis, Tu es, Il/Elle est, Nous sommes, Vous êtes, Ils/Elles sont.\nAvoir: J\'ai, Tu as, Il/Elle a, Nous avons, Vous avez, Ils/Elles ont.',
-        description: 'Foundational syntax required for constructing Passé Composé in French A2.',
-      },
-    },
-    {
-      id: 'blk-302',
-      topicId: 'top-fr-03',
-      type: 'PDF',
-      title: 'Conjugation Tables & Practice Drill Sheets.pdf',
-      lsrwSkill: 'W',
-      data: {
-        fileName: 'etre_avoir_mastery.pdf',
-        fileSize: '3.1 MB',
-        description: 'Complete color-coded tables with affirmative, negative, and question forms.',
-        url: 'https://isml.edu/resources/etre-avoir-tables.pdf',
-      },
-    },
-  ],
-};
+const mockCurriculumBlocks: Record<string, CurriculumBlock[]> = {};
 
 interface BatchCohortItem {
   batchId: string;
@@ -226,200 +91,49 @@ interface CoursePortfolioCurriculum {
   batches: BatchCohortItem[];
 }
 
-const COURSES_CURRICULUM_DATA: CoursePortfolioCurriculum[] = [
-  {
-    id: 'crs-fr-a1',
-    code: 'FR-101',
-    levelBadge: 'CEFR A1',
-    levelId: 'lvl-fr-a1',
-    name: 'French A1: Beginner Foundations & Phonetics',
-    cefrTrack: 'DELF A1 Certification Track',
-    pastelBg: 'bg-blue-50/70',
-    pastelBorder: 'border-blue-200',
-    accentColor: 'text-[#0052CC]',
-    iconBg: 'bg-blue-100 text-[#0052CC]',
-    batches: [
-      {
-        batchId: 'batch-2026-fr-a1-morning',
-        batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-        sectionCode: 'Section A (Morning)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        schedule: 'Mon & Wed • 10:00 - 11:30 AM',
-        studentsCount: 6,
-      },
-      {
-        batchId: 'batch-2026-fr-a1-weekend',
-        batchName: 'French A1 Fast-Track Weekend Bootcamp',
-        sectionCode: 'Section B (Weekend)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        schedule: 'Sat & Sun • 11:00 AM - 01:00 PM',
-        studentsCount: 2,
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-a2',
-    code: 'FR-102',
-    levelBadge: 'CEFR A2',
-    levelId: 'lvl-fr-a2',
-    name: 'French A2: Elementary Narrative & Passé Composé',
-    cefrTrack: 'DELF A2 Preparation',
-    pastelBg: 'bg-amber-50/70',
-    pastelBorder: 'border-amber-200',
-    accentColor: 'text-amber-800',
-    iconBg: 'bg-amber-100 text-amber-800',
-    batches: [
-      {
-        batchId: 'batch-fr-a2',
-        batchName: 'French A2 Cohort (Section B - Standby Coverage)',
-        sectionCode: 'Section B (Afternoon)',
-        dutyRole: 'Substitute Standby',
-        dutyBadgeColor: 'bg-amber-50 text-amber-900 border-amber-200',
-        schedule: 'Tue & Thu • 02:00 - 03:30 PM',
-        studentsCount: 3,
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b1',
-    code: 'FR-201',
-    levelBadge: 'CEFR B1',
-    levelId: 'lvl-fr-b1',
-    name: 'French B1: Intermediate & Subjunctive Mood',
-    cefrTrack: 'DELF B1 Intermediate Professional',
-    pastelBg: 'bg-emerald-50/70',
-    pastelBorder: 'border-emerald-200',
-    accentColor: 'text-emerald-800',
-    iconBg: 'bg-emerald-100 text-emerald-800',
-    batches: [
-      {
-        batchId: 'batch-fr-b1',
-        batchName: 'French B1 Executive Cohort (1-on-1 Q&A Desk)',
-        sectionCode: 'Section Q (Executive)',
-        dutyRole: 'Doubt Clearance Specialist',
-        dutyBadgeColor: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-        schedule: 'Tue & Thu • 05:30 - 07:00 PM',
-        studentsCount: 2,
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b2',
-    code: 'FR-202',
-    levelBadge: 'CEFR B2',
-    levelId: 'lvl-fr-b2',
-    name: 'French B2: Advanced Oral Discourse & DELF Synthesis',
-    cefrTrack: 'DELF B2 Advanced Fluency',
-    pastelBg: 'bg-purple-50/70',
-    pastelBorder: 'border-purple-200',
-    accentColor: 'text-purple-800',
-    iconBg: 'bg-purple-100 text-purple-800',
-    batches: [
-      {
-        batchId: 'batch-fr-b2',
-        batchName: 'French B2 Advanced Cohort (Evaluation Desk)',
-        sectionCode: 'Section V (Evaluation)',
-        dutyRole: 'Assistant Evaluator',
-        dutyBadgeColor: 'bg-purple-50 text-purple-900 border-purple-200',
-        schedule: 'Friday • 03:00 - 05:00 PM',
-        studentsCount: 2,
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-c1',
-    code: 'FR-301',
-    levelBadge: 'CEFR C1',
-    levelId: 'lvl-fr-c1',
-    name: 'French C1: Professional Diplomacy & Academic Discourse',
-    cefrTrack: 'DALF C1 Autonomous Masterclass',
-    pastelBg: 'bg-rose-50/70',
-    pastelBorder: 'border-rose-200',
-    accentColor: 'text-rose-800',
-    iconBg: 'bg-rose-100 text-rose-800',
-    batches: [
-      {
-        batchId: 'batch-fr-c1',
-        batchName: 'French C1 Diplomats & Academic Cohort',
-        sectionCode: 'Section D (Evening)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-rose-50 text-rose-900 border-rose-200',
-        schedule: 'Mon & Thu • 06:30 - 08:00 PM',
-        studentsCount: 4,
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-biz',
-    code: 'FR-BIZ',
-    levelBadge: 'DFP B2',
-    levelId: 'lvl-fr-biz',
-    name: 'Business French: Corporate Communications & DFP Prep',
-    cefrTrack: 'Chamber of Commerce (CCIP) Certification',
-    pastelBg: 'bg-cyan-50/70',
-    pastelBorder: 'border-cyan-200',
-    accentColor: 'text-cyan-800',
-    iconBg: 'bg-cyan-100 text-cyan-800',
-    batches: [
-      {
-        batchId: 'batch-fr-biz',
-        batchName: 'Corporate Executive French Masterclass',
-        sectionCode: 'Section E (Executive)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-cyan-50 text-cyan-900 border-cyan-200',
-        schedule: 'Wed & Fri • 07:00 - 08:30 PM',
-        studentsCount: 5,
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-lab',
-    code: 'FR-LAB',
-    levelBadge: 'Phonetics',
-    levelId: 'lvl-fr-lab',
-    name: 'French Pronunciation Clinic & Audio Acoustic Lab',
-    cefrTrack: 'LSRW Acoustic Accent Mastery',
-    pastelBg: 'bg-teal-50/70',
-    pastelBorder: 'border-teal-200',
-    accentColor: 'text-teal-800',
-    iconBg: 'bg-teal-100 text-teal-800',
-    batches: [
-      {
-        batchId: 'batch-fr-lab',
-        batchName: 'Phonetics & Nasal Audio Lab Intensive',
-        sectionCode: 'Section L (Studio Lab)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-teal-50 text-teal-900 border-teal-200',
-        schedule: 'Saturday • 09:30 - 11:30 AM',
-        studentsCount: 8,
-      },
-    ],
-  },
-];
+const COURSES_CURRICULUM_DATA: CoursePortfolioCurriculum[] = [];
 
 export default function TutorCurriculumPage() {
   const { currentFaculty } = useTutor();
 
-  // STEP 1: Selected Course ID (Defaults to French A1)
+  // STEP 1: Selected Course ID
   const [selectedCourseId, setSelectedCourseId] = useState<string>('crs-fr-a1');
 
   // Active Course
   const activeCourse = useMemo(() => {
-    return COURSES_CURRICULUM_DATA.find((c) => c.id === selectedCourseId) || COURSES_CURRICULUM_DATA[0];
+    return COURSES_CURRICULUM_DATA.find((c) => c.id === selectedCourseId) || COURSES_CURRICULUM_DATA[0] || {
+      id: 'crs-none',
+      code: 'COURSE',
+      levelBadge: 'CEFR',
+      levelId: 'lvl-none',
+      name: 'No Assigned Curriculum Courses',
+      cefrTrack: 'Syllabus Track',
+      pastelBg: 'bg-slate-50',
+      pastelBorder: 'border-slate-200',
+      accentColor: 'text-slate-600',
+      iconBg: 'bg-slate-100 text-slate-600',
+      batches: [],
+    };
   }, [selectedCourseId]);
 
   // STEP 2: Selected Batch ID under this Course
-  const [selectedBatchId, setSelectedBatchId] = useState<string>(activeCourse.batches[0]?.batchId || '');
+  const [selectedBatchId, setSelectedBatchId] = useState<string>(activeCourse?.batches?.[0]?.batchId || '');
 
   // Active Batch
   const activeBatch = useMemo(() => {
-    return activeCourse.batches.find((b) => b.batchId === selectedBatchId) || activeCourse.batches[0];
+    return activeCourse?.batches?.find((b) => b.batchId === selectedBatchId) || activeCourse?.batches?.[0] || {
+      batchId: 'batch-none',
+      batchName: 'No Batches Assigned',
+      sectionCode: 'Section',
+      dutyRole: 'Lead Trainer',
+      dutyBadgeColor: 'bg-slate-50 text-slate-600 border-slate-200',
+      schedule: '',
+      studentsCount: 0,
+    };
   }, [activeCourse, selectedBatchId]);
 
   // Available batches for selected course
-  const availableBatches = activeCourse.batches;
+  const availableBatches = activeCourse?.batches || [];
 
   // Selected Topic
   const [selectedTopicId, setSelectedTopicId] = useState<string>('top-fr-01');
@@ -496,7 +210,7 @@ export default function TutorCurriculumPage() {
 
   // Blocks for active topic
   const activeBlocks = useMemo(() => {
-    const list = mockCurriculumBlocks[activeTopic?.id] || mockCurriculumBlocks['top-fr-01'];
+    const list = (activeTopic?.id && mockCurriculumBlocks[activeTopic.id]) || [];
     if (selectedSkillFilter === 'ALL') return list;
     return list.filter((b) => b.lsrwSkill === selectedSkillFilter);
   }, [activeTopic, selectedSkillFilter]);

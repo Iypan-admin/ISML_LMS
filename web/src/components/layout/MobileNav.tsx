@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -23,7 +23,8 @@ import {
   User,
   ShieldCheck,
   LogOut,
-  AlertTriangle
+  AlertTriangle,
+  Compass
 } from 'lucide-react';
 import { currentStudent } from '@/mock/students';
 
@@ -31,21 +32,19 @@ const primaryMobileItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'My Learning', href: '/learning', icon: BookOpen },
   { name: 'Live', href: '/live-classes', icon: Video, badge: 'LIVE' },
-  { name: 'LSRW', href: '/lsrw', icon: Headphones },
+  { name: 'Assignments', href: '/assignments', icon: FileCheck2 },
 ];
 
 const secondaryMobileItems = [
-  { name: 'Pre-Recorded Sessions', href: '/pre-recorded', icon: PlaySquare },
-  { name: 'Class Recordings Archive', href: '/recordings', icon: Film },
+  { name: 'Explore All Courses', href: '/courses', icon: Compass },
+  { name: 'Class Recordings', href: '/recordings', icon: Film },
   { name: 'Assignments & Homework', href: '/assignments', icon: FileCheck2 },
-  { name: 'Exams & Assessments', href: '/exams', icon: GraduationCap },
-  { name: 'Results & Performance', href: '/results', icon: BarChart3 },
-  { name: 'Attendance Tracker', href: '/attendance', icon: CalendarCheck },
+  { name: 'Exams & Tests', href: '/exams', icon: GraduationCap },
+  { name: 'Results & Reports', href: '/results', icon: BarChart3 },
+  { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
+  { name: 'Doubt Support', href: '/doubts', icon: MessageSquare },
   { name: 'Digital Certificate', href: '/certificate', icon: Award },
-  { name: 'Academic Doubt Chat', href: '/doubts', icon: MessageSquare },
-  { name: 'Career Portal', href: '/career', icon: Briefcase },
-  { name: 'Notifications', href: '/notifications', icon: Bell },
-  { name: 'Student Profile & Settings', href: '/profile', icon: User },
+  { name: 'Profile & Settings', href: '/profile', icon: User },
 ];
 
 export default function MobileNav() {
@@ -125,7 +124,7 @@ export default function MobileNav() {
                 <span>Sign Out of Portal</span>
               </button>
 
-              {/* 🔴 COMPACT FLOATING SIGN OUT POPOVER */}
+              {/* ðŸ”´ COMPACT FLOATING SIGN OUT POPOVER */}
               {showSignOutPopover && (
                 <div className="absolute bottom-full left-3 right-3 mb-2 p-3.5 bg-white text-slate-900 rounded-2xl border border-rose-200 shadow-2xl z-50 space-y-2.5 font-sans animate-in fade-in slide-in-from-bottom-2 duration-150">
                   <div className="flex items-center gap-2">
@@ -197,3 +196,4 @@ export default function MobileNav() {
     </>
   );
 }
+

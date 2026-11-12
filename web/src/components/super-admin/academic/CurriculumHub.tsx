@@ -1,1789 +1,1007 @@
 // ============================================================================
-// ISML COLLEGE LMS — UNIFIED CURRICULUM & SYLLABUS HUB
-// Subjects, Chapters (Modules) & Topics — Filtered & Mapped by Teaching Course
+// ISML LMS — UNIFIED CURRICULUM & SYLLABUS MONITORING HUB
+// Strictly Read-Only / Real-time Monitoring for Schools & Colleges
+// Exact Master Architecture based on Official ISML Curriculum Matrix
 // ============================================================================
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   BookOpen,
-  FolderTree,
-  ListTree,
-  Plus,
-  Edit2,
-  Trash2,
-  BookMarked,
-  Filter,
   Layers,
   GraduationCap,
   Sparkles,
   Search,
   CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
-  ChevronRight,
   Clock,
   Award,
-  ChevronLeft,
-  Palette,
+  ChevronRight,
+  School,
+  Building2,
+  Globe,
+  FileText,
+  AlertCircle,
+  ExternalLink,
+  Info,
+  Calendar,
+  Bot,
+  UserCheck,
+  Timer,
+  Hash,
+  Activity
 } from 'lucide-react';
-import Breadcrumbs from '@/components/common/Breadcrumbs';
-import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
-import { Can } from '@/context/AuthRbacContext';
-import { Subject, AcademicLevel, AcademicModule, AcademicTopic } from '@/types/rbac';
-import {
-  mockSubjects,
-  mockLevels,
-  mockModules,
-  mockTopics,
-  mockCourses,
-  mockPrograms,
-  mockDepartments,
-} from '@/mock/superAdminData';
-import CreateSubjectDrawer from '@/components/super-admin/academic/CreateSubjectDrawer';
-import CreateLevelDrawer from '@/components/super-admin/academic/CreateLevelDrawer';
-import CreateModuleDrawer from '@/components/super-admin/academic/CreateModuleDrawer';
-import CreateTopicDrawer from '@/components/super-admin/academic/CreateTopicDrawer';
-import TopicResourceManagerDrawer from '@/components/super-admin/academic/TopicResourceManagerDrawer';
-import DeleteConfirmDrawer from '@/components/common/DeleteConfirmDrawer';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
-import { useCollege } from '@/context/CollegeContext';
-import { useToast } from '@/context/ToastContext';
+import { useCollege, OVERALL_COLLEGE_ID } from '@/context/CollegeContext';
 
-type ActiveTab = 'subjects' | 'levels' | 'modules' | 'topics';
-type ViewMode = 'cards' | 'table';
+// ----------------------------------------------------------------------------
+// DATA SPECIFICATIONS FROM USER MASTER MATRIX
+// ----------------------------------------------------------------------------
 
-interface CurriculumHubProps {
+export interface CollegeTrackOption {
+  trackName: 'Standard' | 'Intensive' | 'Super-Intensive';
+  minutesPerSession: number;
+  sessionsRequired: number;
+  sessionsPerWeek: number;
+  monthsRequired: number;
+}
+
+export interface CollegeLevelSpec {
+  code: string;
+  name: string;
+  durationHours: number;
+  assessmentsCount: number;
+  humanSpeakingMinutesPerWeek: number;
+  aiSpeakingPracticePerDay: number;
+  tracks: {
+    standard?: {
+      minutesPerSession: number;
+      sessionsRequired: number;
+      sessionsPerWeek: number;
+      monthsRequired: number;
+    };
+    intensive?: {
+      minutesPerSession: number;
+      sessionsRequired: number;
+      sessionsPerWeek: number;
+      monthsRequired: number;
+    };
+    superIntensive?: {
+      minutesPerSession: number;
+      sessionsRequired: number;
+      sessionsPerWeek: number;
+      monthsRequired: number;
+    };
+  };
+}
+
+export interface SchoolCategoryPeriodSpec {
+  catName: string;
+  minutesPerPeriod: number;
+  periodsPerWeek: number;
+  totalPeriods: number;
+}
+
+export interface SchoolLevelSpec {
+  code: string;
+  name: string;
+  durationHours: number;
+  assessmentsCount: number;
+  humanSpeakingMinutesOnceIn2Weeks: number;
+  aiSpeakingPracticePerDay: number;
+  categories: {
+    cat1_35min: { periodsPerWeek: number; totalPeriods: number };
+    cat2_40min: { periodsPerWeek: number; totalPeriods: number };
+    cat3_45min: { periodsPerWeek: number; totalPeriods: number };
+    cat4_50min: { periodsPerWeek: number; totalPeriods: number };
+    cat5_55min: { periodsPerWeek: number; totalPeriods: number };
+    cat6_60min: { periodsPerWeek: number; totalPeriods: number };
+  };
+}
+
+// ----------------------------------------------------------------------------
+// COLLEGE CURRICULUM MATRIX (5 Languages: French, German, Spanish, Korean + Japanese)
+// ----------------------------------------------------------------------------
+
+export const COLLEGE_GENERAL_LEVELS: CollegeLevelSpec[] = [
+  {
+    code: 'A1 / L1',
+    name: 'Beginner (A1 / TOPIK L1)',
+    durationHours: 80,
+    assessmentsCount: 4,
+    humanSpeakingMinutesPerWeek: 10,
+    aiSpeakingPracticePerDay: 3,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 80, sessionsPerWeek: 2, monthsRequired: 11 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 54, sessionsPerWeek: 2, monthsRequired: 7 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 40, sessionsPerWeek: 2, monthsRequired: 5 }
+    }
+  },
+  {
+    code: 'A2 / L2',
+    name: 'Elementary (A2 / TOPIK L2)',
+    durationHours: 100,
+    assessmentsCount: 4,
+    humanSpeakingMinutesPerWeek: 20,
+    aiSpeakingPracticePerDay: 5,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 100, sessionsPerWeek: 3, monthsRequired: 8 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 67, sessionsPerWeek: 3, monthsRequired: 6 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 50, sessionsPerWeek: 3, monthsRequired: 4 }
+    }
+  },
+  {
+    code: 'B1 / L3',
+    name: 'Intermediate (B1 / TOPIK L3)',
+    durationHours: 140,
+    assessmentsCount: 5,
+    humanSpeakingMinutesPerWeek: 30,
+    aiSpeakingPracticePerDay: 7,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 140, sessionsPerWeek: 4, monthsRequired: 8 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 94, sessionsPerWeek: 4, monthsRequired: 6 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 70, sessionsPerWeek: 4, monthsRequired: 4 }
+    }
+  },
+  {
+    code: 'B2 / L4',
+    name: 'Upper Intermediate (B2 / TOPIK L4)',
+    durationHours: 180,
+    assessmentsCount: 5,
+    humanSpeakingMinutesPerWeek: 40,
+    aiSpeakingPracticePerDay: 10,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 180, sessionsPerWeek: 5, monthsRequired: 9 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 120, sessionsPerWeek: 5, monthsRequired: 6 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 90, sessionsPerWeek: 5, monthsRequired: 5 }
+    }
+  }
+];
+
+export const COLLEGE_JAPANESE_LEVELS: CollegeLevelSpec[] = [
+  {
+    code: 'N5',
+    name: 'JLPT N5 (Basic Foundation)',
+    durationHours: 100,
+    assessmentsCount: 5,
+    humanSpeakingMinutesPerWeek: 10,
+    aiSpeakingPracticePerDay: 3,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 100, sessionsPerWeek: 2, monthsRequired: 12 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 67, sessionsPerWeek: 2, monthsRequired: 8 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 50, sessionsPerWeek: 3, monthsRequired: 4 }
+    }
+  },
+  {
+    code: 'N4',
+    name: 'JLPT N4 (Elementary Comprehension)',
+    durationHours: 120,
+    assessmentsCount: 5,
+    humanSpeakingMinutesPerWeek: 20,
+    aiSpeakingPracticePerDay: 5,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 120, sessionsPerWeek: 3, monthsRequired: 10 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 80, sessionsPerWeek: 3, monthsRequired: 7 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 60, sessionsPerWeek: 3, monthsRequired: 5 }
+    }
+  },
+  {
+    code: 'N3',
+    name: 'JLPT N3 (Bridge Intermediate)',
+    durationHours: 160,
+    assessmentsCount: 6,
+    humanSpeakingMinutesPerWeek: 30,
+    aiSpeakingPracticePerDay: 7,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 160, sessionsPerWeek: 4, monthsRequired: 10 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 107, sessionsPerWeek: 4, monthsRequired: 7 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 80, sessionsPerWeek: 4, monthsRequired: 5 }
+    }
+  },
+  {
+    code: 'N2',
+    name: 'JLPT N2 (Pre-Advanced Business)',
+    durationHours: 200,
+    assessmentsCount: 6,
+    humanSpeakingMinutesPerWeek: 40,
+    aiSpeakingPracticePerDay: 10,
+    tracks: {
+      standard: { minutesPerSession: 60, sessionsRequired: 200, sessionsPerWeek: 5, monthsRequired: 10 },
+      intensive: { minutesPerSession: 90, sessionsRequired: 134, sessionsPerWeek: 5, monthsRequired: 7 },
+      superIntensive: { minutesPerSession: 120, sessionsRequired: 100, sessionsPerWeek: 5, monthsRequired: 5 }
+    }
+  }
+];
+
+// ----------------------------------------------------------------------------
+// SCHOOL CURRICULUM MATRIX (Strictly 4 Languages: French, German, Spanish, Korean — NO JAPANESE)
+// ----------------------------------------------------------------------------
+
+export const SCHOOL_LEVELS: SchoolLevelSpec[] = [
+  {
+    code: 'A1.1',
+    name: 'Introductory Stage 1',
+    durationHours: 60,
+    assessmentsCount: 4,
+    humanSpeakingMinutesOnceIn2Weeks: 10,
+    aiSpeakingPracticePerDay: 2,
+    categories: {
+      cat1_35min: { periodsPerWeek: 3, totalPeriods: 103 },
+      cat2_40min: { periodsPerWeek: 3, totalPeriods: 90 },
+      cat3_45min: { periodsPerWeek: 3, totalPeriods: 80 },
+      cat4_50min: { periodsPerWeek: 3, totalPeriods: 72 },
+      cat5_55min: { periodsPerWeek: 2, totalPeriods: 70 },
+      cat6_60min: { periodsPerWeek: 2, totalPeriods: 70 }
+    }
+  },
+  {
+    code: 'A1.2',
+    name: 'Introductory Stage 2',
+    durationHours: 60,
+    assessmentsCount: 4,
+    humanSpeakingMinutesOnceIn2Weeks: 10,
+    aiSpeakingPracticePerDay: 2,
+    categories: {
+      cat1_35min: { periodsPerWeek: 3, totalPeriods: 103 },
+      cat2_40min: { periodsPerWeek: 3, totalPeriods: 90 },
+      cat3_45min: { periodsPerWeek: 3, totalPeriods: 80 },
+      cat4_50min: { periodsPerWeek: 3, totalPeriods: 72 },
+      cat5_55min: { periodsPerWeek: 2, totalPeriods: 70 },
+      cat6_60min: { periodsPerWeek: 2, totalPeriods: 70 }
+    }
+  },
+  {
+    code: 'A2.1',
+    name: 'Elementary Stage 1',
+    durationHours: 80,
+    assessmentsCount: 5,
+    humanSpeakingMinutesOnceIn2Weeks: 15,
+    aiSpeakingPracticePerDay: 3,
+    categories: {
+      cat1_35min: { periodsPerWeek: 4, totalPeriods: 138 },
+      cat2_40min: { periodsPerWeek: 4, totalPeriods: 120 },
+      cat3_45min: { periodsPerWeek: 3, totalPeriods: 107 },
+      cat4_50min: { periodsPerWeek: 3, totalPeriods: 96 },
+      cat5_55min: { periodsPerWeek: 3, totalPeriods: 105 },
+      cat6_60min: { periodsPerWeek: 3, totalPeriods: 105 }
+    }
+  },
+  {
+    code: 'A2.2',
+    name: 'Elementary Stage 2',
+    durationHours: 80,
+    assessmentsCount: 5,
+    humanSpeakingMinutesOnceIn2Weeks: 15,
+    aiSpeakingPracticePerDay: 3,
+    categories: {
+      cat1_35min: { periodsPerWeek: 4, totalPeriods: 138 },
+      cat2_40min: { periodsPerWeek: 4, totalPeriods: 120 },
+      cat3_45min: { periodsPerWeek: 3, totalPeriods: 107 },
+      cat4_50min: { periodsPerWeek: 3, totalPeriods: 96 },
+      cat5_55min: { periodsPerWeek: 3, totalPeriods: 105 },
+      cat6_60min: { periodsPerWeek: 3, totalPeriods: 105 }
+    }
+  },
+  {
+    code: 'A2.3',
+    name: 'Elementary Consolidation Stage 3',
+    durationHours: 80,
+    assessmentsCount: 5,
+    humanSpeakingMinutesOnceIn2Weeks: 15,
+    aiSpeakingPracticePerDay: 3,
+    categories: {
+      cat1_35min: { periodsPerWeek: 4, totalPeriods: 138 },
+      cat2_40min: { periodsPerWeek: 4, totalPeriods: 120 },
+      cat3_45min: { periodsPerWeek: 3, totalPeriods: 107 },
+      cat4_50min: { periodsPerWeek: 3, totalPeriods: 96 },
+      cat5_55min: { periodsPerWeek: 3, totalPeriods: 105 },
+      cat6_60min: { periodsPerWeek: 3, totalPeriods: 105 }
+    }
+  },
+  {
+    code: 'B1.1',
+    name: 'Intermediate Stage 1',
+    durationHours: 100,
+    assessmentsCount: 6,
+    humanSpeakingMinutesOnceIn2Weeks: 20,
+    aiSpeakingPracticePerDay: 4,
+    categories: {
+      cat1_35min: { periodsPerWeek: 5, totalPeriods: 172 },
+      cat2_40min: { periodsPerWeek: 4, totalPeriods: 150 },
+      cat3_45min: { periodsPerWeek: 4, totalPeriods: 134 },
+      cat4_50min: { periodsPerWeek: 4, totalPeriods: 120 },
+      cat5_55min: { periodsPerWeek: 4, totalPeriods: 140 },
+      cat6_60min: { periodsPerWeek: 3, totalPeriods: 105 }
+    }
+  },
+  {
+    code: 'B1.2',
+    name: 'Intermediate Stage 2',
+    durationHours: 100,
+    assessmentsCount: 6,
+    humanSpeakingMinutesOnceIn2Weeks: 20,
+    aiSpeakingPracticePerDay: 4,
+    categories: {
+      cat1_35min: { periodsPerWeek: 5, totalPeriods: 172 },
+      cat2_40min: { periodsPerWeek: 4, totalPeriods: 150 },
+      cat3_45min: { periodsPerWeek: 4, totalPeriods: 134 },
+      cat4_50min: { periodsPerWeek: 4, totalPeriods: 120 },
+      cat5_55min: { periodsPerWeek: 4, totalPeriods: 140 },
+      cat6_60min: { periodsPerWeek: 3, totalPeriods: 105 }
+    }
+  },
+  {
+    code: 'B1.3',
+    name: 'Intermediate Stage 3',
+    durationHours: 100,
+    assessmentsCount: 6,
+    humanSpeakingMinutesOnceIn2Weeks: 20,
+    aiSpeakingPracticePerDay: 4,
+    categories: {
+      cat1_35min: { periodsPerWeek: 5, totalPeriods: 172 },
+      cat2_40min: { periodsPerWeek: 4, totalPeriods: 150 },
+      cat3_45min: { periodsPerWeek: 4, totalPeriods: 134 },
+      cat4_50min: { periodsPerWeek: 4, totalPeriods: 120 },
+      cat5_55min: { periodsPerWeek: 4, totalPeriods: 140 },
+      cat6_60min: { periodsPerWeek: 3, totalPeriods: 105 }
+    }
+  },
+  {
+    code: 'B1.4',
+    name: 'Intermediate Consolidation Stage 4',
+    durationHours: 100,
+    assessmentsCount: 6,
+    humanSpeakingMinutesOnceIn2Weeks: 20,
+    aiSpeakingPracticePerDay: 4,
+    categories: {
+      cat1_35min: { periodsPerWeek: 5, totalPeriods: 172 },
+      cat2_40min: { periodsPerWeek: 4, totalPeriods: 150 },
+      cat3_45min: { periodsPerWeek: 4, totalPeriods: 134 },
+      cat4_50min: { periodsPerWeek: 4, totalPeriods: 120 },
+      cat5_55min: { periodsPerWeek: 4, totalPeriods: 140 },
+      cat6_60min: { periodsPerWeek: 3, totalPeriods: 105 }
+    }
+  }
+];
+
+// Supported languages definition
+export interface LanguageMeta {
+  id: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+  availableInSchool: boolean;
+  availableInCollege: boolean;
+  color: string;
+}
+
+export const ALL_SUPPORTED_LANGUAGES: LanguageMeta[] = [
+  { id: 'FRENCH', name: 'French', nativeName: 'Français', flag: '🇫🇷', availableInSchool: true, availableInCollege: true, color: 'text-blue-500' },
+  { id: 'GERMAN', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', availableInSchool: true, availableInCollege: true, color: 'text-amber-500' },
+  { id: 'SPANISH', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', availableInSchool: true, availableInCollege: true, color: 'text-rose-500' },
+  { id: 'KOREAN', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', availableInSchool: true, availableInCollege: true, color: 'text-purple-500' },
+  { id: 'JAPANESE', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', availableInSchool: false, availableInCollege: true, color: 'text-emerald-500' },
+];
+
+export interface CurriculumHubProps {
   portalRole?: 'super-admin' | 'academic-manager';
 }
 
-export default function CurriculumHub({ portalRole = 'super-admin' }: CurriculumHubProps) {
-  const router = useRouter();
-  const { showSuccess } = useToast();
-  const { selectedCollegeId, isOverall } = useCollege();
-  const isSuperAdmin = portalRole === 'super-admin';
+export default function CurriculumHub({ portalRole = 'super-admin' }: CurriculumHubProps = {}) {
+  const {
+    selectedCollegeId,
+    selectedCollege,
+    isOverall,
+    isSchoolMode,
+    isCollegeMode
+  } = useCollege();
 
-  // View presentation mode: 'cards' (drilldown cards) or 'table' (flat table view)
-  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  // Filter available languages based on active mode (School has 4, College has 5)
+  const activeLanguagesList = useMemo(() => {
+    if (isSchoolMode) {
+      // In School mode: strictly French, German, Spanish, Korean. NO Japanese!
+      return ALL_SUPPORTED_LANGUAGES.filter(l => l.availableInSchool);
+    }
+    // In College or Overall mode: all 5 languages available
+    return ALL_SUPPORTED_LANGUAGES;
+  }, [isSchoolMode]);
 
-  // Active Tab state: Subjects, Levels (Tracks), Modules (Chapters), or Topics
-  const [activeTab, setActiveTab] = useState<ActiveTab>('subjects');
+  // Selected Language Tab (default French)
+  const [selectedLanguageId, setSelectedLanguageId] = useState<string>('FRENCH');
 
-  // Selected Course filter: 'ALL' or specific course id
-  const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>('ALL');
+  // When switching to school mode, ensure selected language is valid (not Japanese)
+  useEffect(() => {
+    if (isSchoolMode && selectedLanguageId === 'JAPANESE') {
+      setSelectedLanguageId('FRENCH');
+    }
+  }, [isSchoolMode, selectedLanguageId]);
 
-  // Drilldown hierarchy states: Subject -> Level -> Unit/Chapter (Module) -> Topic
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('ALL');
-  const [selectedLevelId, setSelectedLevelId] = useState<string>('ALL');
-  const [selectedModuleId, setSelectedModuleId] = useState<string>('ALL');
+  // Selected Level inside Language
+  const [selectedLevelCode, setSelectedLevelCode] = useState<string>('');
 
-  // Entities state
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
-  const [levels, setLevels] = useState<AcademicLevel[]>(mockLevels);
-  const [modules, setModules] = useState<AcademicModule[]>(mockModules);
-  const [topics, setTopics] = useState<AcademicTopic[]>(mockTopics);
+  // Selected Track for College (Standard, Intensive, Super-Intensive)
+  const [selectedCollegeTrack, setSelectedCollegeTrack] = useState<'Standard' | 'Intensive' | 'Super-Intensive'>('Standard');
 
-  // Drawers state
-  const [isSubjectDrawerOpen, setIsSubjectDrawerOpen] = useState(false);
-  const [isLevelDrawerOpen, setIsLevelDrawerOpen] = useState(false);
-  const [isModuleDrawerOpen, setIsModuleDrawerOpen] = useState(false);
-  const [isTopicDrawerOpen, setIsTopicDrawerOpen] = useState(false);
-  const [resourceDrawerTopic, setResourceDrawerTopic] = useState<AcademicTopic | null>(null);
+  // Selected Category for School (Cat 1 to Cat 6)
+  const [selectedSchoolCat, setSelectedSchoolCat] = useState<'cat1_35min' | 'cat2_40min' | 'cat3_45min' | 'cat4_50min' | 'cat5_55min' | 'cat6_60min'>('cat1_35min');
 
-  // Edit states
-  const [editSubject, setEditSubject] = useState<Subject | null>(null);
-  const [editLevel, setEditLevel] = useState<AcademicLevel | null>(null);
-  const [editModule, setEditModule] = useState<AcademicModule | null>(null);
-  const [editTopic, setEditTopic] = useState<AcademicTopic | null>(null);
+  const activeLanguage = useMemo(() => {
+    return activeLanguagesList.find(l => l.id === selectedLanguageId) || activeLanguagesList[0];
+  }, [activeLanguagesList, selectedLanguageId]);
 
-  // Delete states
-  const [deleteSubject, setDeleteSubject] = useState<Subject | null>(null);
-  const [deleteLevel, setDeleteLevel] = useState<AcademicLevel | null>(null);
-  const [deleteModule, setDeleteModule] = useState<AcademicModule | null>(null);
-  const [deleteTopic, setDeleteTopic] = useState<AcademicTopic | null>(null);
+  // Determine current levels list based on mode & language
+  const currentLevels = useMemo(() => {
+    if (isSchoolMode) {
+      return SCHOOL_LEVELS;
+    }
+    // College mode
+    if (activeLanguage.id === 'JAPANESE') {
+      return COLLEGE_JAPANESE_LEVELS;
+    }
+    return COLLEGE_GENERAL_LEVELS;
+  }, [isSchoolMode, activeLanguage]);
 
-  // Filtered lists based on Selected Course and College
-  const filteredSubjects = useMemo(() => {
-    return subjects.filter((s) => {
-      // If super-admin selected a specific college, filter by that college or course's college
-      if (portalRole === 'super-admin' && !isOverall) {
-        const crs = mockCourses.find((c) => c.id === s.courseId);
-        if (crs?.collegeId && crs.collegeId !== selectedCollegeId) {
-          const prog = mockPrograms.find((p) => p.id === s.programId);
-          const dept = mockDepartments.find((d) => d.id === prog?.departmentId);
-          if (dept?.institutionId && dept.institutionId !== selectedCollegeId) return false;
+  // Keep selected level code valid
+  useEffect(() => {
+    const exists = currentLevels.some((l: any) => l.code === selectedLevelCode);
+    if (!exists && currentLevels.length > 0) {
+      setSelectedLevelCode(currentLevels[0].code);
+    }
+  }, [currentLevels, selectedLevelCode]);
+
+  const activeLevel = useMemo(() => {
+    return currentLevels.find((l: any) => l.code === selectedLevelCode) || currentLevels[0];
+  }, [currentLevels, selectedLevelCode]);
+
+  // Live Courses loaded from API (no mock data)
+  const [liveCourses, setLiveCourses] = useState<any[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchCourses() {
+      try {
+        setIsLoadingCourses(true);
+        const res = await fetch('http://localhost:4000/api/portals/courses');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setLiveCourses(Array.isArray(data) ? data : (data.courses || []));
+          }
+        } else {
+          if (isMounted) setLiveCourses([]);
         }
+      } catch (err) {
+        if (isMounted) setLiveCourses([]);
+      } finally {
+        if (isMounted) setIsLoadingCourses(false);
       }
-      // Course filtering
-      if (selectedCourseFilter !== 'ALL') {
-        const assignedCourseId = s.courseId || mockCourses[0]?.id;
-        if (assignedCourseId !== selectedCourseFilter) return false;
+    }
+    fetchCourses();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const matchedCourses = useMemo(() => {
+    return liveCourses.filter((course) => {
+      const langName = activeLanguage.name.toLowerCase();
+      const codeMatches = (course.code || '').toLowerCase().includes(langName) ||
+                          (course.name || '').toLowerCase().includes(langName);
+
+      if (!isOverall && selectedCollegeId) {
+        const instMatch = course.institutionId === selectedCollegeId || course.collegeId === selectedCollegeId;
+        return codeMatches && instMatch;
       }
-      return true;
+
+      return codeMatches;
     });
-  }, [subjects, portalRole, isOverall, selectedCollegeId, selectedCourseFilter]);
-
-  // Filtered levels based on Selected Subject
-  const filteredLevels = useMemo(() => {
-    return levels.filter((lvl) => {
-      if (selectedSubjectId !== 'ALL' && lvl.subjectId !== selectedSubjectId) return false;
-      return true;
-    });
-  }, [levels, selectedSubjectId]);
-
-  const filteredModules = useMemo(() => {
-    return modules.filter((m) => {
-      if (portalRole === 'super-admin' && !isOverall) {
-        const sub = subjects.find((s) => s.id === m.subjectId);
-        const crs = mockCourses.find((c) => c.id === sub?.courseId || c.id === m.courseId);
-        if (crs?.collegeId && crs.collegeId !== selectedCollegeId) {
-          const prog = mockPrograms.find((p) => p.id === sub?.programId);
-          const dept = mockDepartments.find((d) => d.id === prog?.departmentId);
-          if (dept?.institutionId && dept.institutionId !== selectedCollegeId) return false;
-        }
-      }
-      if (selectedCourseFilter !== 'ALL') {
-        const sub = subjects.find((s) => s.id === m.subjectId);
-        const assignedCourseId = m.courseId || sub?.courseId || mockCourses[0]?.id;
-        if (assignedCourseId !== selectedCourseFilter) return false;
-      }
-      // Subject Drilldown Filter
-      if (selectedSubjectId !== 'ALL') {
-        if (m.subjectId !== selectedSubjectId) return false;
-      }
-      // Level Drilldown Filter
-      if (selectedLevelId !== 'ALL') {
-        if (m.levelId && m.levelId !== selectedLevelId) return false;
-      }
-      return true;
-    });
-  }, [modules, subjects, portalRole, isOverall, selectedCollegeId, selectedCourseFilter, selectedSubjectId, selectedLevelId]);
-
-  const filteredTopics = useMemo(() => {
-    return topics.filter((t) => {
-      if (portalRole === 'super-admin' && !isOverall) {
-        const mod = modules.find((m) => m.id === t.moduleId);
-        const sub = subjects.find((s) => s.id === mod?.subjectId);
-        const crs = mockCourses.find((c) => c.id === sub?.courseId || c.id === t.courseId);
-        if (crs?.collegeId && crs.collegeId !== selectedCollegeId) {
-          const prog = mockPrograms.find((p) => p.id === sub?.programId);
-          const dept = mockDepartments.find((d) => d.id === prog?.departmentId);
-          if (dept?.institutionId && dept.institutionId !== selectedCollegeId) return false;
-        }
-      }
-      if (selectedCourseFilter !== 'ALL') {
-        const mod = modules.find((m) => m.id === t.moduleId);
-        const sub = subjects.find((s) => s.id === mod?.subjectId);
-        const assignedCourseId = t.courseId || sub?.courseId || mockCourses[0]?.id;
-        if (assignedCourseId !== selectedCourseFilter) return false;
-      }
-      // Subject Drilldown Filter for Topics
-      if (selectedSubjectId !== 'ALL') {
-        const mod = modules.find((m) => m.id === t.moduleId);
-        if (mod && mod.subjectId !== selectedSubjectId) return false;
-      }
-      // Module / Chapter Drilldown Filter for Topics
-      if (selectedModuleId !== 'ALL') {
-        if (t.moduleId !== selectedModuleId) return false;
-      }
-      return true;
-    });
-  }, [topics, modules, subjects, portalRole, isOverall, selectedCollegeId, selectedCourseFilter, selectedSubjectId, selectedModuleId]);
-
-  // Active course item info
-  const activeCourse = useMemo(() => {
-    if (selectedCourseFilter === 'ALL') return null;
-    return mockCourses.find((c) => c.id === selectedCourseFilter) || null;
-  }, [selectedCourseFilter]);
-
-  // Handlers for Subject
-  const handleSubjectCreated = (newSubject: Subject) => {
-    setSubjects((prev) => [newSubject, ...prev]);
-  };
-  const handleSubjectUpdated = (updatedSubject: Subject) => {
-    setSubjects((prev) => prev.map((s) => (s.id === updatedSubject.id ? updatedSubject : s)));
-  };
-  const handleSubjectDeleted = () => {
-    if (!deleteSubject) return;
-    setSubjects((prev) => prev.filter((s) => s.id !== deleteSubject.id));
-    showSuccess(`Subject "${deleteSubject.name}" (${deleteSubject.code}) removed successfully.`);
-    setDeleteSubject(null);
-  };
-
-  // Handlers for Level
-  const handleLevelCreated = (newLevel: AcademicLevel) => {
-    setLevels((prev) => [newLevel, ...prev]);
-  };
-  const handleLevelUpdated = (updatedLevel: AcademicLevel) => {
-    setLevels((prev) => prev.map((l) => (l.id === updatedLevel.id ? updatedLevel : l)));
-  };
-  const handleLevelDeleted = () => {
-    if (!deleteLevel) return;
-    setLevels((prev) => prev.filter((l) => l.id !== deleteLevel.id));
-    showSuccess(`Level "${deleteLevel.name}" (${deleteLevel.levelCode}) removed successfully.`);
-    setDeleteLevel(null);
-  };
-
-  // Handlers for Module
-  const handleModuleCreated = (newMod: AcademicModule) => {
-    setModules((prev) => [newMod, ...prev]);
-  };
-  const handleModuleUpdated = (updatedMod: AcademicModule) => {
-    setModules((prev) => prev.map((m) => (m.id === updatedMod.id ? updatedMod : m)));
-  };
-  const handleModuleDeleted = () => {
-    if (!deleteModule) return;
-    setModules((prev) => prev.filter((m) => m.id !== deleteModule.id));
-    showSuccess(`Module "${deleteModule.title}" removed successfully.`);
-    setDeleteModule(null);
-  };
-
-  // Handlers for Topic
-  const handleTopicCreated = (newTopic: AcademicTopic) => {
-    setTopics((prev) => [newTopic, ...prev]);
-  };
-  const handleTopicUpdated = (updatedTopic: AcademicTopic) => {
-    setTopics((prev) => prev.map((t) => (t.id === updatedTopic.id ? updatedTopic : t)));
-  };
-  const handleTopicDeleted = () => {
-    if (!deleteTopic) return;
-    setTopics((prev) => prev.filter((t) => t.id !== deleteTopic.id));
-    showSuccess(`Topic "${deleteTopic.title}" removed successfully.`);
-    setDeleteTopic(null);
-  };
-
-  // Columns for Subjects
-  const subjectColumns: Column<Subject>[] = [
-    {
-      key: 'name',
-      header: 'Subject & Course Mapping',
-      sortable: true,
-      render: (row) => (
-        <div>
-          <p className="font-bold text-[#0B2447] text-xs leading-snug">{row.name}</p>
-          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 flex items-center gap-1">
-              <BookOpen className="w-2.5 h-2.5" />
-              {row.courseName || mockCourses.find((c) => c.id === row.courseId)?.name || 'French A1 Intensive Certification Program'}
-            </span>
-            <span className="text-[11px] text-slate-500 font-medium">
-              {row.programName} (Term {row.semesterNumber})
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'code',
-      header: 'Code',
-      render: (row) => (
-        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-          {row.code}
-        </span>
-      ),
-    },
-    {
-      key: 'type',
-      header: 'Subject Type',
-      sortable: true,
-      render: (row) => (
-        <span className="text-[11px] font-semibold text-slate-700 uppercase tracking-wide bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-          {row.type}
-        </span>
-      ),
-    },
-    {
-      key: 'facultyName',
-      header: 'Assigned Faculty',
-      sortable: true,
-      render: (row) => (
-        <div>
-          <p className="font-semibold text-slate-800 text-xs">{row.facultyName}</p>
-          <p className="text-[10px] text-slate-400">{row.facultyEmail}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'modulesCount',
-      header: 'Modules / Chapters',
-      render: (row) => {
-        const subMods = modules.filter(m => m.subjectId === row.id);
-        const count = subMods.length || row.modulesCount || 0;
-        return (
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedSubjectId(row.id);
-              setSelectedModuleId('ALL');
-              setActiveTab('modules');
-            }}
-            className="group flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50/70 hover:bg-blue-100/90 rounded-lg border border-blue-200 transition cursor-pointer"
-            title="Drill down to view and manage chapters in this subject"
-          >
-            <Layers className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
-            <span>{count} Chapters</span>
-            <ArrowRight className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-          </button>
-        );
-      },
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => <StatusBadge status={row.status} />,
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      className: 'text-right',
-      render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          <button
-            onClick={() => {
-              setSelectedSubjectId(row.id);
-              setSelectedModuleId('ALL');
-              setActiveTab('modules');
-            }}
-            className="px-2.5 py-1 text-[11px] font-bold text-[#0052CC] bg-blue-50/70 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-            title="View Units / Chapters for this Subject"
-          >
-            <Layers className="w-3 h-3" />
-            <span>{isSuperAdmin ? 'View Chapters' : 'Manage Chapters'}</span>
-          </button>
-          {(row.status === 'DRAFT' || row.status === 'PENDING_APPROVAL') && (
-            <button
-              onClick={() => {
-                setSubjects((prev) =>
-                  prev.map((s) => (s.id === row.id ? { ...s, status: 'PUBLISHED' } : s))
-                );
-                showSuccess(`Subject "${row.name}" (${row.code}) verified & approved!`);
-              }}
-              className="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-              title="Verify & Approve Subject"
-            >
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              <span>Verify & Approve</span>
-            </button>
-          )}
-          {!isSuperAdmin && (
-            <>
-              <button
-                onClick={() => {
-                  setEditSubject(row);
-                  setIsSubjectDrawerOpen(true);
-                }}
-                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                title="Edit Subject"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setDeleteSubject(row)}
-                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                title="Delete Subject"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
-
-  // Columns for Modules (Chapters)
-  const moduleColumns: Column<AcademicModule>[] = [
-    {
-      key: 'title',
-      header: 'Chapter / Module & Description',
-      sortable: true,
-      render: (row) => (
-        <div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-              Unit {row.moduleNumber}
-            </span>
-            <p className="font-bold text-[#0B2447] text-xs">{row.title}</p>
-          </div>
-          <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{row.description}</p>
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
-              {row.courseName || mockCourses.find((c) => c.id === row.courseId)?.name || 'French A1 Intensive Certification Program'}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'subjectName',
-      header: 'Parent Subject',
-      render: (row) => (
-        <button
-          onClick={() => {
-            setSelectedSubjectId(row.subjectId);
-            setActiveTab('subjects');
-          }}
-          className="text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-left transition cursor-pointer hover:border-blue-300"
-          title="Filter to this subject"
-        >
-          {row.subjectName}
-        </button>
-      ),
-    },
-    {
-      key: 'estimatedHours',
-      header: 'Hours',
-      sortable: true,
-      render: (row) => (
-        <span className="font-semibold text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 w-fit">
-          <Clock className="w-3 h-3" />
-          {row.estimatedHours}h
-        </span>
-      ),
-    },
-    {
-      key: 'topicsCount',
-      header: 'Micro-Topics',
-      render: (row) => {
-        const modTopics = topics.filter(t => t.moduleId === row.id);
-        const count = modTopics.length || row.topicsCount || 0;
-        return (
-          <button
-            type="button"
-            onClick={() => {
-              if (row.subjectId) setSelectedSubjectId(row.subjectId);
-              setSelectedModuleId(row.id);
-              setActiveTab('topics');
-            }}
-            className="group flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-purple-700 bg-purple-50/70 hover:bg-purple-100/90 rounded-lg border border-purple-200 transition cursor-pointer"
-            title="Drill down to view and manage lesson topics in this chapter"
-          >
-            <ListTree className="w-3.5 h-3.5 text-purple-600 group-hover:scale-110 transition-transform" />
-            <span>{count} Topics</span>
-            <ArrowRight className="w-3 h-3 text-purple-500 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-          </button>
-        );
-      },
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => <StatusBadge status={row.status} />,
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      className: 'text-right',
-      render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          <button
-            onClick={() => {
-              if (row.subjectId) setSelectedSubjectId(row.subjectId);
-              setSelectedModuleId(row.id);
-              setActiveTab('topics');
-            }}
-            className="px-2.5 py-1 text-[11px] font-bold text-purple-700 bg-purple-50/70 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-            title="View Topics & Content in this Unit"
-          >
-            <ListTree className="w-3 h-3" />
-            <span>{isSuperAdmin ? 'View Topics' : 'Manage Topics'}</span>
-          </button>
-          {!isSuperAdmin && (
-            <>
-              <button
-                onClick={() => {
-                  setEditModule(row);
-                  setIsModuleDrawerOpen(true);
-                }}
-                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                title="Edit Chapter / Module"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setDeleteModule(row)}
-                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                title="Delete Chapter"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
-
-  // Columns for Topics
-  const topicColumns: Column<AcademicTopic>[] = [
-    {
-      key: 'title',
-      header: 'Topic & Learning Objective',
-      sortable: true,
-      render: (row) => (
-        <div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-              #{row.topicNumber}
-            </span>
-            <p className="font-bold text-[#0B2447] text-xs">{row.title}</p>
-          </div>
-          <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{row.learningObjective}</p>
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
-              {row.courseName || mockCourses.find((c) => c.id === row.courseId)?.name || 'French A1 Intensive Certification Program'}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'moduleTitle',
-      header: 'Parent Chapter / Module',
-      render: (row) => (
-        <span className="text-xs font-semibold text-slate-700 truncate max-w-[200px] inline-block">
-          {row.moduleTitle}
-        </span>
-      ),
-    },
-    {
-      key: 'skillMapped',
-      header: 'Skill Competency',
-      render: (row) => (
-        <span className="font-semibold text-[11px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-          {row.skillMapped}
-        </span>
-      ),
-    },
-    {
-      key: 'resourcesCount',
-      header: 'Attached Resources',
-      render: (row) => {
-        const count = row.resources?.length || row.resourcesCount || 0;
-        return (
-          <button
-            type="button"
-            onClick={() => setResourceDrawerTopic(row)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50/60 hover:bg-blue-100/70 text-[#0052CC] font-bold text-xs transition cursor-pointer"
-            title="Manage PDFs, Docs & Web links"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>{count} {count === 1 ? 'Resource' : 'Resources'}</span>
-          </button>
-        );
-      },
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) => <StatusBadge status={row.status} />,
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      className: 'text-right',
-      render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          {!isSuperAdmin && (
-            <button
-              onClick={() =>
-                router.push(
-                  `/academic-manager/curriculum/builder?topicId=${row.id}&moduleId=${row.moduleId}&subjectId=${selectedSubjectId}`
-                )
-              }
-              className="px-2 py-1 text-[11px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-              title="Open Moodle-style Course Content Builder"
-            >
-              <Palette className="w-3 h-3 text-purple-600" />
-              <span>Builder</span>
-            </button>
-          )}
-          <button
-            onClick={() => setResourceDrawerTopic(row)}
-            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-bold"
-            title={isSuperAdmin ? "View Attached PDFs, Docs & Links" : "Upload / Manage PDF, Docs & Links"}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            {isSuperAdmin && <span>View Resources</span>}
-          </button>
-          {!isSuperAdmin && (
-            <>
-              <button
-                onClick={() => {
-                  setEditTopic(row);
-                  setIsTopicDrawerOpen(true);
-                }}
-                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                title="Edit Topic"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setDeleteTopic(row)}
-                className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                title="Delete Topic"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
+  }, [liveCourses, activeLanguage, isOverall, selectedCollegeId]);
 
   return (
-    <div className="space-y-4 sm:space-y-5 pb-10 font-sans">
-      <Breadcrumbs
-        items={[
-          { label: 'Academic Architecture', href: portalRole === 'super-admin' ? '/super-admin/academic' : '/academic-manager/dashboard' },
-          { label: 'Curriculum & Syllabus' },
-        ]}
-      />
-
+    <div className="space-y-6">
+      {/* Scope Filter Bar (College vs School & Single vs Overall) */}
       <CollegeFilterBar />
 
-      {/* Header and Course Filter Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+      {/* Header Banner - Read-Only Live Monitoring Notice */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#0B2447] text-white">
-                CURRICULUM MATRIX
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Monitoring Hub
               </span>
-              <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-[#0052CC] border border-blue-200">
-                Course Mapped
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Read-Only • Strictly Configured Architecture
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#0B2447] tracking-tight mt-1.5">
-              Subjects, Chapters & Lesson Topics
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
+              <BookOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              Curriculum & Syllabus Architecture
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Centralized syllabus and pedagogical hierarchy. Manage subjects, modular chapters, and micro-topics mapped directly to active courses.
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
+              {isSchoolMode ? (
+                <>Official K-12 School Curriculum Matrix across <strong>4 Languages (French, German, Spanish, Korean)</strong> with 6 School Period Categories (35 to 60 mins).</>
+              ) : (
+                <>Higher Ed College Curriculum Matrix across <strong>5 Languages (French, German, Spanish, Korean, Japanese)</strong> with Standard, Intensive & Super-Intensive Tracks.</>
+              )}
             </p>
           </div>
 
-          {/* Quick Action Button depending on Active Tab - Hidden for Super Admin */}
-          {!isSuperAdmin && (
-            <div className="flex items-center gap-2 shrink-0">
-              {activeTab === 'subjects' && (
-                <Can permission="SUBJECT_CREATE">
-                  <button
-                    onClick={() => {
-                      setEditSubject(null);
-                      setIsSubjectDrawerOpen(true);
-                    }}
-                    className="px-3.5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Subject</span>
-                  </button>
-                </Can>
-              )}
-
-              {activeTab === 'levels' && (
-                <button
-                  onClick={() => {
-                    setEditLevel(null);
-                    setIsLevelDrawerOpen(true);
-                  }}
-                  className="px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Create Proficiency Level</span>
-                </button>
-              )}
-
-              {activeTab === 'modules' && (
-                <Can permission="MODULE_CREATE">
-                  <button
-                    onClick={() => {
-                      setEditModule(null);
-                      setIsModuleDrawerOpen(true);
-                    }}
-                    className="px-3.5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Chapter / Module</span>
-                  </button>
-                </Can>
-              )}
-
-              {activeTab === 'topics' && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() =>
-                      router.push(
-                        `/academic-manager/curriculum/builder?moduleId=${selectedModuleId}&subjectId=${selectedSubjectId}`
-                      )
-                    }
-                    className="px-3.5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-                    title="Open Moodle-style Course Content Builder Studio"
-                  >
-                    <Palette className="w-4 h-4" />
-                    <span>Course Builder Studio</span>
-                  </button>
-                  <Can permission="TOPIC_CREATE">
-                    <button
-                      onClick={() => {
-                        setEditTopic(null);
-                        setIsTopicDrawerOpen(true);
-                      }}
-                      className="px-3.5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Create Lesson Topic</span>
-                    </button>
-                  </Can>
-                </div>
-              )}
+          {/* Active Context Metric Badges */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60">
+              <div className="text-[10px] uppercase font-semibold text-slate-600 dark:text-slate-300">Target Framework</div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 mt-0.5">
+                {isSchoolMode ? (
+                  <>
+                    <School className="w-3.5 h-3.5 text-amber-500" />
+                    School System (4 Languages • 9 Sub-stages)
+                  </>
+                ) : (
+                  <>
+                    <Building2 className="w-3.5 h-3.5 text-indigo-500" />
+                    College System (5 Languages • 3 Tracks)
+                  </>
+                )}
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Course Mapping Filter Selector */}
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              Filter by Teaching Course:
-            </span>
-            <select
-              value={selectedCourseFilter}
-              onChange={(e) => setSelectedCourseFilter(e.target.value)}
-              className="text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer min-w-[260px]"
-            >
-              <option value="ALL">All Associated Courses ({mockCourses.length} courses)</option>
-              {mockCourses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} — {c.name}
-                </option>
-              ))}
-            </select>
+            <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60">
+              <div className="text-[10px] uppercase font-semibold text-slate-600 dark:text-slate-300">Active Scope</div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[140px] mt-0.5" title={selectedCollege ? selectedCollege.name : 'All Campuses'}>
+                {isOverall ? 'All Institutions' : (selectedCollege?.name || 'Selected Campus')}
+              </div>
+            </div>
           </div>
-
-          {activeCourse && (
-            <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-              <span className="font-bold text-[#0B2447]">{activeCourse.name}</span>
-              <span className="text-slate-400">|</span>
-              <span className="font-mono text-slate-500">{activeCourse.duration || '6 Months'}</span>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Simple, Friendly View Mode Toggle & Breadcrumb Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
-        <div className="flex items-center gap-2 flex-wrap text-xs">
-          <button
-            onClick={() => {
-              setSelectedSubjectId('ALL');
-              setSelectedLevelId('ALL');
-              setSelectedModuleId('ALL');
-              setActiveTab('subjects');
-            }}
-            className={`font-bold px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-              selectedSubjectId === 'ALL'
-                ? 'bg-blue-50 text-[#0052CC] border border-blue-200'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-          >
-            <BookMarked className="w-3.5 h-3.5 text-blue-600" />
-            <span>1. Subjects ({filteredSubjects.length})</span>
-          </button>
-
-          {selectedSubjectId !== 'ALL' && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <button
-                onClick={() => {
-                  setSelectedLevelId('ALL');
-                  setSelectedModuleId('ALL');
-                  setActiveTab('levels');
-                }}
-                className={`font-bold px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'levels'
-                    ? 'bg-purple-50 text-purple-800 border border-purple-200'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <Award className="w-3.5 h-3.5 text-purple-600" />
-                <span className="truncate max-w-[180px]">
-                  2. {subjects.find((s) => s.id === selectedSubjectId)?.name || 'Language Levels'}
-                </span>
-              </button>
-            </>
-          )}
-
-          {selectedLevelId !== 'ALL' && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <button
-                onClick={() => {
-                  setSelectedModuleId('ALL');
-                  setActiveTab('modules');
-                }}
-                className={`font-bold px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'modules'
-                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5 text-amber-600" />
-                <span className="truncate max-w-[180px]">
-                  3. {levels.find((l) => l.id === selectedLevelId)?.name || 'Chapters'}
-                </span>
-              </button>
-            </>
-          )}
-
-          {selectedModuleId !== 'ALL' && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <button
-                onClick={() => setActiveTab('topics')}
-                className="font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 transition cursor-pointer flex items-center gap-1.5"
-              >
-                <ListTree className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="truncate max-w-[200px]">
-                  4. {modules.find((m) => m.id === selectedModuleId)?.title || 'Topics'}
-                </span>
-              </button>
-            </>
+      {/* Language Selector Bar (Dynamically respects School vs College rules) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 shadow-sm">
+        <div className="flex items-center justify-between px-2 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800/80">
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5 text-indigo-500" />
+            Language Programs ({activeLanguagesList.length} Languages Active for {isSchoolMode ? 'Schools' : 'Colleges'})
+          </span>
+          {isSchoolMode && (
+            <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+              Japanese not applicable for Schools (Colleges only)
+            </span>
           )}
         </div>
 
-        {/* View Layout Switcher (Interactive Cards vs Raw Table) */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg shrink-0 self-end sm:self-auto">
-          <button
-            onClick={() => setViewMode('cards')}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-              viewMode === 'cards'
-                ? 'bg-white text-[#0B2447] shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Card Studio</span>
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-              viewMode === 'table'
-                ? 'bg-white text-[#0B2447] shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <FolderTree className="w-3.5 h-3.5" />
-            <span>Table View</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* MODE A: INTERACTIVE USER-FRIENDLY CARD DRILLDOWN STUDIO                  */}
-      {/* ========================================================================= */}
-      {viewMode === 'cards' && (
-        <div className="space-y-4">
-          {/* LEVEL 1: SUBJECT CARDS (When on 'subjects' or when no subject is selected) */}
-          {activeTab === 'subjects' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold text-[#0B2447] flex items-center gap-2">
-                    <BookMarked className="w-4 h-4 text-blue-600" />
-                    <span>Select a Subject to Explore Units & Content</span>
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Click any subject card below to drill down and manage its syllabus chapters & topics.
-                  </p>
+        <div className={`grid gap-2 ${isSchoolMode ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'}`}>
+          {activeLanguagesList.map((lang) => {
+            const isSelected = lang.id === selectedLanguageId;
+            return (
+              <button
+                key={lang.id}
+                onClick={() => setSelectedLanguageId(lang.id)}
+                className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150 ${
+                  isSelected
+                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/30 ring-2 ring-indigo-500/20 shadow-sm'
+                    : 'border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-300'
+                }`}
+              >
+                <span className="text-2xl select-none" role="img" aria-label={lang.name}>
+                  {lang.flag}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                    {lang.name}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {lang.nativeName}
+                  </div>
                 </div>
-                <Can permission="SUBJECT_CREATE">
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Grid: Left Levels & Stages List | Right Detailed Architecture Metrics & Placeholders */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column: Levels / Stages based on exact Matrix */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="text-xl">{activeLanguage.flag}</span>
+                  {activeLanguage.name} {isSchoolMode ? 'School Stages' : 'College Levels'}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {isSchoolMode ? '9 Stage School Sub-levels' : 'CEFR / JLPT Higher Ed Levels'}
+                </p>
+              </div>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">
+                {currentLevels.length} Levels
+              </span>
+            </div>
+
+            {/* Level Selector Buttons */}
+            <div className="space-y-2">
+              {currentLevels.map((lvl: any) => {
+                const isSelected = lvl.code === selectedLevelCode;
+                return (
                   <button
-                    onClick={() => {
-                      setEditSubject(null);
-                      setIsSubjectDrawerOpen(true);
-                    }}
-                    className="px-3 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    key={lvl.code}
+                    onClick={() => setSelectedLevelCode(lvl.code)}
+                    className={`w-full text-left p-3 rounded-xl border transition-all ${
+                      isSelected
+                        ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 shadow-sm ring-1 ring-indigo-500/20'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                    }`}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Subject</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}>
+                          {lvl.code}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                          {lvl.name}
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                        {lvl.durationHours} hrs
+                      </span>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                      <span>{lvl.assessmentsCount} Assessments before Exam</span>
+                      <span>
+                        {isSchoolMode 
+                          ? `${lvl.humanSpeakingMinutesOnceIn2Weeks}m speaking / 2wks` 
+                          : `${lvl.humanSpeakingMinutesPerWeek}m speaking / wk`}
+                      </span>
+                    </div>
                   </button>
-                </Can>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Detailed Master Matrix Metrics & Empty Topic Monitor */}
+        <div className="lg:col-span-7 space-y-5">
+          
+          {/* Active Level Header & Exact Requirements from User Request */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  {isSchoolMode ? 'School Curriculum Specification' : 'College Academic Track Specification'}
+                </div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mt-0.5">
+                  <span>{activeLanguage.name} — {activeLevel?.code} ({activeLevel?.name})</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  {activeLevel?.durationHours} Teaching Hours
+                </span>
+                <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  {activeLevel?.assessmentsCount} Assessments
+                </span>
+              </div>
+            </div>
+
+            {/* Core Practice Metrics Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-indigo-500" />
+                  Teaching Hours
+                </div>
+                <div className="text-base font-bold text-slate-900 dark:text-white mt-1">
+                  {activeLevel?.durationHours} hrs
+                </div>
+                <div className="text-[10px] text-slate-400">Excl. assessments & exams</div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredSubjects.map((sub) => {
-                  const subMods = modules.filter((m) => m.subjectId === sub.id);
-                  const subTopics = topics.filter((t) => subMods.some((m) => m.id === t.moduleId));
-                  return (
-                    <div
-                      key={sub.id}
-                      className="group bg-white rounded-2xl border border-slate-200 hover:border-blue-400 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                    >
-                      <div>
-                        {/* Top Badge & Code */}
-                        <div className="flex items-center justify-between gap-2 mb-2.5">
-                          <span className="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                            {sub.code}
-                          </span>
-                          <StatusBadge status={sub.status} />
-                        </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                  Pre-Exam Tests
+                </div>
+                <div className="text-base font-bold text-slate-900 dark:text-white mt-1">
+                  {activeLevel?.assessmentsCount} Tests
+                </div>
+                <div className="text-[10px] text-slate-400">Continuous assessments</div>
+              </div>
 
-                        {/* Title */}
-                        <h3 className="font-bold text-[#0B2447] text-sm group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {sub.name}
-                        </h3>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <UserCheck className="w-3 h-3 text-amber-500" />
+                  Human Speaking
+                </div>
+                <div className="text-base font-bold text-slate-900 dark:text-white mt-1">
+                  {isSchoolMode 
+                    ? `${(activeLevel as SchoolLevelSpec)?.humanSpeakingMinutesOnceIn2Weeks} mins` 
+                    : `${(activeLevel as CollegeLevelSpec)?.humanSpeakingMinutesPerWeek} mins`}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  {isSchoolMode ? 'Once in 2 weeks appointment' : 'Per week with appointment'}
+                </div>
+              </div>
 
-                        {/* Course info */}
-                        <p className="text-[11px] text-blue-700 font-semibold mt-1 flex items-center gap-1">
-                          <BookOpen className="w-3 h-3 text-blue-600 shrink-0" />
-                          <span className="truncate">{sub.courseName || 'Certification Course'}</span>
-                        </p>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <Bot className="w-3 h-3 text-purple-500" />
+                  AI Speaking
+                </div>
+                <div className="text-base font-bold text-slate-900 dark:text-white mt-1">
+                  {activeLevel?.aiSpeakingPracticePerDay}x / day
+                </div>
+                <div className="text-[10px] text-slate-400">Daily conversational drill</div>
+              </div>
+            </div>
 
-                        {/* Quick Stats Grid */}
-                        <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 text-xs">
-                          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                            <span className="text-[10px] text-slate-400 font-medium block">Chapters / Units</span>
-                            <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
-                              <Layers className="w-3.5 h-3.5 text-amber-500" />
-                              {subMods.length} Units
-                            </span>
-                          </div>
-                          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                            <span className="text-[10px] text-slate-400 font-medium block">Micro-Topics</span>
-                            <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
-                              <ListTree className="w-3.5 h-3.5 text-purple-500" />
-                              {subTopics.length} Topics
-                            </span>
-                          </div>
-                        </div>
+            {/* COLLEGE SPECIFIC: Standard vs Intensive vs Super-Intensive Tracks */}
+            {!isSchoolMode && (activeLevel as CollegeLevelSpec)?.tracks && (
+              <div className="pt-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-indigo-500" />
+                    Pacing Track Breakdown (Standard vs Intensive vs Super-Intensive)
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Standard Track */}
+                  <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50">
+                    <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                      <span>Standard Track</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-semibold">
+                        {(activeLevel as CollegeLevelSpec).tracks.standard?.monthsRequired} Months
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                      <div className="flex justify-between">
+                        <span>Session Length:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.standard?.minutesPerSession} mins</strong>
                       </div>
-
-                      {/* Card Action Buttons */}
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                        {!isSuperAdmin ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                setEditSubject(sub);
-                                setIsSubjectDrawerOpen(true);
-                              }}
-                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                              title="Edit Subject"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteSubject(sub)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                              title="Delete Subject"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            Audited Subject
-                          </span>
-                        )}
-
-                        <button
-                          onClick={() => {
-                            setSelectedSubjectId(sub.id);
-                            setSelectedLevelId('ALL');
-                            setSelectedModuleId('ALL');
-                            setActiveTab('levels');
-                          }}
-                          className="px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer group-hover:shadow-sm"
-                        >
-                          <Award className="w-3.5 h-3.5 text-purple-200" />
-                          <span>Manage Levels</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                      <div className="flex justify-between">
+                        <span>Sessions Required:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.standard?.sessionsRequired} sessions</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Weekly Frequency:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.standard?.sessionsPerWeek} / week</strong>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* LEVEL 2: PROFICIENCY LEVEL CARDS (When activeTab === 'levels') */}
-          {activeTab === 'levels' && (
-            <div className="space-y-4">
-              {/* Back to Subjects bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-purple-50/70 border border-purple-200 p-3.5 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedSubjectId('ALL');
-                      setSelectedLevelId('ALL');
-                      setSelectedModuleId('ALL');
-                      setActiveTab('subjects');
-                    }}
-                    className="p-1.5 text-purple-700 hover:bg-purple-100 rounded-lg transition cursor-pointer flex items-center gap-1 font-bold text-xs"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Subjects</span>
-                  </button>
-                  <span className="text-slate-300">|</span>
-                  <div className="text-xs">
-                    <span className="text-slate-500">Subject: </span>
-                    <span className="font-bold text-[#0B2447]">
-                      {subjects.find((s) => s.id === selectedSubjectId)?.name || 'All Scoped Subjects'}
-                    </span>
                   </div>
-                </div>
 
-                {!isSuperAdmin && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setEditLevel(null);
-                        setIsLevelDrawerOpen(true);
-                      }}
-                      className="px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Proficiency Level</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {filteredLevels.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 p-8">
-                  <Award className="w-10 h-10 text-purple-300 mx-auto mb-2" />
-                  <h3 className="font-bold text-slate-700 text-sm">No Proficiency Levels Defined</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                    Create language levels (e.g. A1, A2, B1 for French/German or N5, N4 for Japanese) before organizing syllabus chapters.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setEditLevel(null);
-                      setIsLevelDrawerOpen(true);
-                    }}
-                    className="mt-4 px-4 py-2 bg-purple-700 text-white text-xs font-bold rounded-xl cursor-pointer"
-                  >
-                    Create First Level (e.g. A1 / N5)
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredLevels.map((lvl) => {
-                    const lvlMods = modules.filter((m) => m.levelId === lvl.id || (m.subjectId === lvl.subjectId && m.levelCode === lvl.levelCode));
-                    const lvlTopics = topics.filter((t) => lvlMods.some((m) => m.id === t.moduleId));
-                    return (
-                      <div
-                        key={lvl.id}
-                        className="group bg-white rounded-2xl border border-purple-200/80 hover:border-purple-400 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="font-mono text-xs font-extrabold text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-md border border-purple-200">
-                              Level: {lvl.levelCode}
-                            </span>
-                            <span className="text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-                              {lvl.targetCefrOrJlpt || 'Language Track'}
-                            </span>
-                          </div>
-
-                          <h3 className="font-bold text-[#0B2447] text-sm group-hover:text-purple-700 transition-colors line-clamp-2">
-                            {lvl.name}
-                          </h3>
-
-                          <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-                            {lvl.description || 'Proficiency framework curriculum track and pedagogical milestones.'}
-                          </p>
-
-                          <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-purple-100/70 text-xs">
-                            <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                              <span className="text-[10px] text-slate-400 font-medium block">Chapters in Level</span>
-                              <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
-                                <Layers className="w-3.5 h-3.5 text-amber-500" />
-                                {lvlMods.length} Chapters
-                              </span>
-                            </div>
-                            <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                              <span className="text-[10px] text-slate-400 font-medium block">Lesson Topics</span>
-                              <span className="font-bold text-slate-800 text-sm flex items-center gap-1">
-                                <ListTree className="w-3.5 h-3.5 text-purple-500" />
-                                {lvlTopics.length} Topics
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Level Actions */}
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                          {!isSuperAdmin ? (
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => {
-                                  setEditLevel(lvl);
-                                  setIsLevelDrawerOpen(true);
-                                }}
-                                className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition cursor-pointer"
-                                title="Edit Level"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => setDeleteLevel(lvl)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                title="Delete Level"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              Audited Track
-                            </span>
-                          )}
-
-                          <button
-                            onClick={() => {
-                              setSelectedSubjectId(lvl.subjectId);
-                              setSelectedLevelId(lvl.id);
-                              setSelectedModuleId('ALL');
-                              setActiveTab('modules');
-                            }}
-                            className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                          >
-                            <span>Explore Chapters</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                  {/* Intensive Track */}
+                  <div className="p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/20">
+                    <div className="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center justify-between">
+                      <span>Intensive Track</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-semibold">
+                        {(activeLevel as CollegeLevelSpec).tracks.intensive?.monthsRequired} Months
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                      <div className="flex justify-between">
+                        <span>Session Length:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.intensive?.minutesPerSession} mins</strong>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* LEVEL 3: CHAPTERS / MODULES CARDS (When activeTab === 'modules') */}
-          {activeTab === 'modules' && (
-            <div className="space-y-4">
-              {/* Back to Levels bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-50/70 border border-blue-200 p-3.5 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedModuleId('ALL');
-                      setActiveTab('levels');
-                    }}
-                    className="p-1.5 text-blue-700 hover:bg-blue-100 rounded-lg transition cursor-pointer flex items-center gap-1 font-bold text-xs"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Levels</span>
-                  </button>
-                  <span className="text-slate-300">|</span>
-                  <div className="text-xs">
-                    <span className="text-slate-500">Subject: </span>
-                    <span className="font-bold text-[#0B2447]">
-                      {subjects.find((s) => s.id === selectedSubjectId)?.name || 'All Scoped Subjects'}
-                    </span>
-                    {selectedLevelId !== 'ALL' && (
-                      <>
-                        <span className="text-slate-300 mx-1.5">•</span>
-                        <span className="text-slate-500">Level: </span>
-                        <span className="font-bold text-purple-700">
-                          {levels.find((l) => l.id === selectedLevelId)?.name || selectedLevelId}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {!isSuperAdmin && (
-                  <div className="flex items-center gap-2">
-                    <Can permission="MODULE_CREATE">
-                      <button
-                        onClick={() => {
-                          setEditModule(null);
-                          setIsModuleDrawerOpen(true);
-                        }}
-                        className="px-3 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Chapter / Unit</span>
-                      </button>
-                    </Can>
-                  </div>
-                )}
-              </div>
-
-              {filteredModules.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 p-8">
-                  <Layers className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                  <h3 className="font-bold text-slate-700 text-sm">No Chapters Found in this Subject</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                    {isSuperAdmin
-                      ? 'No syllabus chapters have been published for this subject yet.'
-                      : 'Start structuring your curriculum by adding syllabus units/chapters to this subject.'}
-                  </p>
-                  {!isSuperAdmin && (
-                    <button
-                      onClick={() => {
-                        setEditModule(null);
-                        setIsModuleDrawerOpen(true);
-                      }}
-                      className="mt-4 px-4 py-2 bg-[#0052CC] text-white text-xs font-bold rounded-xl cursor-pointer"
-                    >
-                      Create First Chapter
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredModules.map((mod) => {
-                    const modTopics = topics.filter((t) => t.moduleId === mod.id);
-                    return (
-                      <div
-                        key={mod.id}
-                        className="group bg-white rounded-2xl border border-slate-200 hover:border-amber-400 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="font-mono text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
-                              Unit {mod.moduleNumber}
-                            </span>
-                            <span className="font-semibold text-xs text-slate-600 flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              {mod.estimatedHours}h
-                            </span>
-                          </div>
-
-                          <h3 className="font-bold text-[#0B2447] text-sm group-hover:text-amber-700 transition-colors line-clamp-2">
-                            {mod.title}
-                          </h3>
-
-                          <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-                            {mod.description}
-                          </p>
-
-                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                            <span className="font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200 flex items-center gap-1">
-                              <ListTree className="w-3.5 h-3.5" />
-                              {modTopics.length} Lesson Topics
-                            </span>
-                            <StatusBadge status={mod.status} />
-                          </div>
-                        </div>
-
-                        {/* Card Actions */}
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                          {!isSuperAdmin ? (
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => {
-                                  setEditModule(mod);
-                                  setIsModuleDrawerOpen(true);
-                                }}
-                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                                title="Edit Chapter"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => setDeleteModule(mod)}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                title="Delete Chapter"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              Audited Chapter
-                            </span>
-                          )}
-
-                          <button
-                            onClick={() => {
-                              if (mod.subjectId) setSelectedSubjectId(mod.subjectId);
-                              if (mod.levelId) setSelectedLevelId(mod.levelId);
-                              setSelectedModuleId(mod.id);
-                              setActiveTab('topics');
-                            }}
-                            className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                          >
-                            <span>Manage Topics</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      <div className="flex justify-between">
+                        <span>Sessions Required:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.intensive?.sessionsRequired} sessions</strong>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* LEVEL 3: TOPICS & CONTENT CARDS (When activeTab === 'topics') */}
-          {activeTab === 'topics' && (
-            <div className="space-y-4">
-              {/* Back to Chapters bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-purple-50/70 border border-purple-200 p-3.5 rounded-xl">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const currentMod = modules.find((m) => m.id === selectedModuleId);
-                      if (currentMod?.levelId) {
-                        setSelectedLevelId(currentMod.levelId);
-                      }
-                      if (currentMod?.subjectId) {
-                        setSelectedSubjectId(currentMod.subjectId);
-                      }
-                      setSelectedModuleId('ALL');
-                      setActiveTab('modules');
-                    }}
-                    className="p-1.5 px-2.5 text-purple-700 bg-purple-100/70 hover:bg-purple-200/80 rounded-lg transition cursor-pointer flex items-center gap-1.5 font-bold text-xs shadow-2xs border border-purple-200"
-                  >
-                    <ArrowLeft className="w-4 h-4 text-purple-700 shrink-0" />
-                    <span>Back to Chapters</span>
-                  </button>
-                  <span className="text-slate-300">|</span>
-                  <div className="text-xs">
-                    <span className="text-slate-500">Unit: </span>
-                    <span className="font-bold text-[#0B2447]">
-                      {modules.find((m) => m.id === selectedModuleId)?.title || 'All Scoped Units'}
-                    </span>
-                  </div>
-                </div>
-
-                {!isSuperAdmin && (
-                  <div className="flex items-center gap-2">
-                    <Can permission="TOPIC_CREATE">
-                      <button
-                        onClick={() => {
-                          setEditTopic(null);
-                          setIsTopicDrawerOpen(true);
-                        }}
-                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Lesson Topic</span>
-                      </button>
-                    </Can>
-                  </div>
-                )}
-              </div>
-
-              {filteredTopics.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 p-8">
-                  <ListTree className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                  <h3 className="font-bold text-slate-700 text-sm">No Lesson Topics Found</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                    {isSuperAdmin
-                      ? 'No micro-learning lesson topics have been published for this unit yet.'
-                      : 'Create lesson topics, assign learning objectives, and attach PDFs/audio/links.'}
-                  </p>
-                  {!isSuperAdmin && (
-                    <button
-                      onClick={() => {
-                        setEditTopic(null);
-                        setIsTopicDrawerOpen(true);
-                      }}
-                      className="mt-4 px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-xl cursor-pointer"
-                    >
-                      Create First Topic
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredTopics.map((top) => {
-                    const resCount = top.resources?.length || top.resourcesCount || 0;
-                    return (
-                      <div
-                        key={top.id}
-                        className="group bg-white rounded-2xl border border-slate-200 hover:border-purple-400 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <span className="font-mono text-[11px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                              Lesson #{top.topicNumber}
-                            </span>
-                            <StatusBadge status={top.status} />
-                          </div>
-
-                          <h3 className="font-bold text-[#0B2447] text-sm group-hover:text-purple-700 transition-colors line-clamp-2">
-                            {top.title}
-                          </h3>
-
-                          <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-                            {top.learningObjective}
-                          </p>
-
-                          <div className="mt-3">
-                            <span className="font-semibold text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 block truncate">
-                              🎯 {top.skillMapped}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Resources & Actions */}
-                        <div className="mt-4 pt-3 border-t border-slate-100 space-y-3">
-                          <button
-                            type="button"
-                            onClick={() => setResourceDrawerTopic(top)}
-                            className="w-full flex items-center justify-between px-3 py-1.5 bg-blue-50/70 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold transition border border-blue-200 cursor-pointer"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Attached Learning Resources</span>
-                            </span>
-                            <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-                              {resCount}
-                            </span>
-                          </button>
-
-                          <div className="flex items-center justify-between gap-2 pt-1">
-                            {!isSuperAdmin ? (
-                              <>
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => {
-                                      setEditTopic(top);
-                                      setIsTopicDrawerOpen(true);
-                                    }}
-                                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                                    title="Edit Topic"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleteTopic(top)}
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                    title="Delete Topic"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    onClick={() => setResourceDrawerTopic(top)}
-                                    className="px-2.5 py-1 text-slate-600 hover:text-blue-700 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold transition cursor-pointer"
-                                    title="Quick Resource Attachment"
-                                  >
-                                    Files ({resCount})
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      router.push(
-                                        `/academic-manager/curriculum/builder?topicId=${top.id}&moduleId=${top.moduleId}&subjectId=${selectedSubjectId}`
-                                      )
-                                    }
-                                    className="px-3 py-1 text-white bg-purple-600 hover:bg-purple-700 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-xs"
-                                    title="Open in Moodle-style Course Content Builder"
-                                  >
-                                    <Palette className="w-3 h-3" />
-                                    <span>Manage Content</span>
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="flex items-center justify-between w-full">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                  Audited Topic
-                                </span>
-                                <button
-                                  onClick={() => setResourceDrawerTopic(top)}
-                                  className="px-2.5 py-1 text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg text-xs font-bold transition cursor-pointer border border-blue-200 flex items-center gap-1"
-                                  title="View Learning Resources"
-                                >
-                                  <BookOpen className="w-3 h-3" />
-                                  <span>View Files ({resCount})</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="flex justify-between">
+                        <span>Weekly Frequency:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.intensive?.sessionsPerWeek} / week</strong>
                       </div>
-                    );
-                  })}
+                    </div>
+                  </div>
+
+                  {/* Super-Intensive Track */}
+                  <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-950/20">
+                    <div className="text-xs font-bold text-purple-900 dark:text-purple-200 flex items-center justify-between">
+                      <span>Super-Intensive</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-semibold">
+                        {(activeLevel as CollegeLevelSpec).tracks.superIntensive?.monthsRequired} Months
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                      <div className="flex justify-between">
+                        <span>Session Length:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.superIntensive?.minutesPerSession} mins</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Sessions Required:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.superIntensive?.sessionsRequired} sessions</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Weekly Frequency:</span>
+                        <strong className="text-slate-900 dark:text-white">{(activeLevel as CollegeLevelSpec).tracks.superIntensive?.sessionsPerWeek} / week</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+              </div>
+            )}
 
-      {/* ========================================================================= */}
-      {/* MODE B: STANDARD TABLE VIEW (Available via toggle if user wants full rows) */}
-      {/* ========================================================================= */}
-      {viewMode === 'table' && (
-        <div className="space-y-4">
-          {/* Tabs Bar: Subjects, Chapters / Modules, Topics */}
-          <div className="flex items-center border-b border-slate-200 gap-2 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('subjects')}
-              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                activeTab === 'subjects'
-                  ? 'border-[#0052CC] text-[#0052CC] bg-blue-50/50 rounded-t-lg'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <BookMarked className="w-4 h-4" />
-              <span>Subjects Catalog</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === 'subjects' ? 'bg-[#0052CC] text-white' : 'bg-slate-200 text-slate-700'
-                }`}
-              >
-                {filteredSubjects.length}
-              </span>
-            </button>
+            {/* SCHOOL SPECIFIC: 6 Categories of Period Lengths */}
+            {isSchoolMode && (activeLevel as SchoolLevelSpec)?.categories && (
+              <div className="pt-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Timer className="w-3.5 h-3.5 text-amber-500" />
+                    School Period Allocation across Categories (Cat 1 to Cat 6)
+                  </h3>
+                </div>
 
-            <button
-              onClick={() => setActiveTab('modules')}
-              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                activeTab === 'modules'
-                  ? 'border-[#0052CC] text-[#0052CC] bg-blue-50/50 rounded-t-lg'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>Chapters / Modules</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === 'modules' ? 'bg-[#0052CC] text-white' : 'bg-slate-200 text-slate-700'
-                }`}
-              >
-                {filteredModules.length}
-              </span>
-            </button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  {/* Cat 1: 35 min */}
+                  <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 text-center">
+                    <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Cat 1 (35m)</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat1_35min.periodsPerWeek} / wk
+                    </div>
+                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat1_35min.totalPeriods} Total
+                    </div>
+                  </div>
 
-            <button
-              onClick={() => setActiveTab('topics')}
-              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                activeTab === 'topics'
-                  ? 'border-[#0052CC] text-[#0052CC] bg-blue-50/50 rounded-t-lg'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-              }`}
-            >
-              <ListTree className="w-4 h-4" />
-              <span>Lesson Topics</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  activeTab === 'topics' ? 'bg-[#0052CC] text-white' : 'bg-slate-200 text-slate-700'
-                }`}
-              >
-                {filteredTopics.length}
-              </span>
-            </button>
+                  {/* Cat 2: 40 min */}
+                  <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 text-center">
+                    <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Cat 2 (40m)</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat2_40min.periodsPerWeek} / wk
+                    </div>
+                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat2_40min.totalPeriods} Total
+                    </div>
+                  </div>
+
+                  {/* Cat 3: 45 min */}
+                  <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 text-center">
+                    <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Cat 3 (45m)</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat3_45min.periodsPerWeek} / wk
+                    </div>
+                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat3_45min.totalPeriods} Total
+                    </div>
+                  </div>
+
+                  {/* Cat 4: 50 min */}
+                  <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 text-center">
+                    <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Cat 4 (50m)</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat4_50min.periodsPerWeek} / wk
+                    </div>
+                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat4_50min.totalPeriods} Total
+                    </div>
+                  </div>
+
+                  {/* Cat 5: 55 min */}
+                  <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 text-center">
+                    <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Cat 5 (55m)</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat5_55min.periodsPerWeek} / wk
+                    </div>
+                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat5_55min.totalPeriods} Total
+                    </div>
+                  </div>
+
+                  {/* Cat 6: 60 min */}
+                  <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 text-center">
+                    <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Cat 6 (60m)</div>
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat6_60min.periodsPerWeek} / wk
+                    </div>
+                    <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                      {(activeLevel as SchoolLevelSpec).categories.cat6_60min.totalPeriods} Total
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Tab Content 1: SUBJECTS */}
-          {activeTab === 'subjects' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <p>
-                  Showing <span className="font-bold text-slate-700">{filteredSubjects.length}</span> subjects assigned to curriculum.
+          {/* Live Associated Courses Section */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  Live Platform Courses Mapped ({matchedCourses.length})
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Live course codes registered in database matching {activeLanguage.name}
                 </p>
-                <button
-                  onClick={() => {
-                    setEditSubject(null);
-                    setIsSubjectDrawerOpen(true);
-                  }}
-                  className="text-[#0052CC] font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add New Subject</span>
-                </button>
               </div>
-
-              <DataTable
-                data={filteredSubjects}
-                columns={subjectColumns}
-                rowKey={(row) => row.id}
-                searchPlaceholder="Search subject name, code, faculty..."
-                searchKey={(row) => `${row.name} ${row.code} ${row.facultyName} ${row.courseName || ''}`}
-              />
             </div>
-          )}
 
-          {/* Tab Content 2: CHAPTERS / MODULES */}
-          {activeTab === 'modules' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <p>
-                  Showing <span className="font-bold text-slate-700">{filteredModules.length}</span> modular units and syllabus chapters.
+            {isLoadingCourses ? (
+              <div className="py-8 text-center text-xs text-slate-500">
+                <div className="inline-block w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2" />
+                <div>Loading live courses from platform...</div>
+              </div>
+            ) : matchedCourses.length === 0 ? (
+              <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-800/30">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  No courses registered yet for {activeLanguage.name} in {isOverall ? 'all campuses' : (selectedCollege?.name || 'this campus')}.
                 </p>
-                <button
-                  onClick={() => {
-                    setEditModule(null);
-                    setIsModuleDrawerOpen(true);
-                  }}
-                  className="text-[#0052CC] font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add New Chapter</span>
-                </button>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {matchedCourses.map((c: any) => (
+                  <div key={c.id || c.code} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                        {c.code}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-medium">
+                        Active
+                      </span>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-900 dark:text-white mt-1 truncate">
+                      {c.name}
+                    </div>
+                    {c.institutionName && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+                        {c.institutionName}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-              <DataTable
-                data={filteredModules}
-                columns={moduleColumns}
-                rowKey={(row) => row.id}
-                searchPlaceholder="Search chapter title, subject, course..."
-                searchKey={(row) => `${row.title} ${row.subjectName} ${row.courseName || ''}`}
-              />
-            </div>
-          )}
-
-          {/* Tab Content 3: TOPICS */}
-          {activeTab === 'topics' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <p>
-                  Showing <span className="font-bold text-slate-700">{filteredTopics.length}</span> pedagogical lesson topics and competencies.
+          {/* Topics & Lessons Monitoring Card — Kept Clean & Empty as Requested */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  Syllabus Units, Topics & Lessons
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Detailed lesson outlines and pedagogical topics for {activeLanguage.name} {activeLevel?.code}
                 </p>
-                <button
-                  onClick={() => {
-                    setEditTopic(null);
-                    setIsTopicDrawerOpen(true);
-                  }}
-                  className="text-[#0052CC] font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add New Topic</span>
-                </button>
               </div>
-
-              <DataTable
-                data={filteredTopics}
-                columns={topicColumns}
-                rowKey={(row) => row.id}
-                searchPlaceholder="Search lesson topic, competency, objective..."
-                searchKey={(row) => `${row.title} ${row.moduleTitle} ${row.skillMapped} ${row.courseName || ''}`}
-              />
+              <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                0 Topics Active
+              </span>
             </div>
-          )}
+
+            {/* Empty State Banner (Clean placeholder as requested by user) */}
+            <div className="py-12 px-6 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center bg-slate-50/40 dark:bg-slate-800/20">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3 shadow-sm">
+                <FileText className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                No Topics or Lessons Published Yet
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1.5 leading-relaxed">
+                Detailed lesson outlines, unit chapters, and interactive exercises for <strong>{activeLanguage.name} ({activeLevel?.code})</strong> will be populated here once authored.
+              </p>
+              <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                Monitoring Mode Active (Read-Only)
+              </div>
+            </div>
+          </div>
+
         </div>
-      )}
 
-      {/* CREATION & EDIT DRAWERS (ONLY FOR ACADEMIC MANAGER) */}
-      {!isSuperAdmin && (
-        <>
-          {/* SUBJECT DRAWER */}
-          <CreateSubjectDrawer
-            isOpen={isSubjectDrawerOpen}
-            onClose={() => {
-              setIsSubjectDrawerOpen(false);
-              setEditSubject(null);
-            }}
-            onSubjectCreated={handleSubjectCreated}
-            editSubject={editSubject}
-            onSubjectUpdated={handleSubjectUpdated}
-          />
-
-          {/* PROFICIENCY LEVEL DRAWER (A1, A2, B1, N5, N4, TOPIK) */}
-          <CreateLevelDrawer
-            isOpen={isLevelDrawerOpen}
-            onClose={() => {
-              setIsLevelDrawerOpen(false);
-              setEditLevel(null);
-            }}
-            onLevelCreated={handleLevelCreated}
-            editLevel={editLevel}
-            onLevelUpdated={handleLevelUpdated}
-            defaultSubjectId={selectedSubjectId !== 'ALL' ? selectedSubjectId : undefined}
-            subjectsList={subjects}
-          />
-
-          {/* MODULE / CHAPTER DRAWER */}
-          <CreateModuleDrawer
-            isOpen={isModuleDrawerOpen}
-            onClose={() => {
-              setIsModuleDrawerOpen(false);
-              setEditModule(null);
-            }}
-            onModuleCreated={handleModuleCreated}
-            editModule={editModule}
-            onModuleUpdated={handleModuleUpdated}
-            defaultCourseId={selectedCourseFilter !== 'ALL' ? selectedCourseFilter : undefined}
-            defaultSubjectId={selectedSubjectId !== 'ALL' ? selectedSubjectId : undefined}
-            defaultLevelId={selectedLevelId !== 'ALL' ? selectedLevelId : undefined}
-            levelsList={levels}
-          />
-
-          {/* TOPIC DRAWER */}
-          <CreateTopicDrawer
-            isOpen={isTopicDrawerOpen}
-            onClose={() => {
-              setIsTopicDrawerOpen(false);
-              setEditTopic(null);
-            }}
-            onTopicCreated={handleTopicCreated}
-            editTopic={editTopic}
-            onTopicUpdated={handleTopicUpdated}
-            defaultCourseId={selectedCourseFilter !== 'ALL' ? selectedCourseFilter : undefined}
-            defaultModuleId={selectedModuleId !== 'ALL' ? selectedModuleId : undefined}
-          />
-
-          {/* DELETE DIALOGS */}
-          <DeleteConfirmDrawer
-            isOpen={!!deleteSubject}
-            onClose={() => setDeleteSubject(null)}
-            onConfirm={handleSubjectDeleted}
-            entityType="Curriculum Subject"
-            entityName={deleteSubject?.name || ''}
-            entityCode={deleteSubject?.code}
-            description="Deleting this subject will remove associated module units, syllabus objectives, and faculty assignments."
-          />
-
-          <DeleteConfirmDrawer
-            isOpen={!!deleteLevel}
-            onClose={() => setDeleteLevel(null)}
-            onConfirm={handleLevelDeleted}
-            entityType="Proficiency Level"
-            entityName={deleteLevel?.name || ''}
-            entityCode={deleteLevel?.levelCode}
-            description="Deleting this proficiency level will affect all nested chapters and syllabus tracks."
-          />
-
-          <DeleteConfirmDrawer
-            isOpen={!!deleteModule}
-            onClose={() => setDeleteModule(null)}
-            onConfirm={handleModuleDeleted}
-            entityType="Chapter / Module"
-            entityName={deleteModule?.title || ''}
-            entityCode={`Unit ${deleteModule?.moduleNumber}`}
-            description="Deleting this chapter module will remove all underlying lesson topics and class allocations."
-          />
-
-          <DeleteConfirmDrawer
-            isOpen={!!deleteTopic}
-            onClose={() => setDeleteTopic(null)}
-            onConfirm={handleTopicDeleted}
-            entityType="Lesson Topic"
-            entityName={deleteTopic?.title || ''}
-            entityCode={`#${deleteTopic?.topicNumber}`}
-            description="Deleting this lesson topic will remove it from the course syllabus and teacher tracking."
-          />
-        </>
-      )}
-
-      {/* TOPIC RESOURCE VIEWER DRAWER (PDF, DOCS, WEB LINKS, VIDEOS) */}
-      <TopicResourceManagerDrawer
-        isOpen={Boolean(resourceDrawerTopic)}
-        onClose={() => setResourceDrawerTopic(null)}
-        topic={resourceDrawerTopic}
-        onUpdateTopicResources={(updated) => {
-          handleTopicUpdated(updated);
-          setResourceDrawerTopic(updated);
-        }}
-      />
+      </div>
     </div>
   );
 }

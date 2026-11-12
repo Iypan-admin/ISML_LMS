@@ -59,6 +59,7 @@ import {
 } from 'lucide-react';
 import { useRbac, useAuth } from '@/context/AuthRbacContext';
 import { useCollege } from '@/context/CollegeContext';
+import { financeProposalStore } from '@/services/financeProposalStore';
 
 // Icon registry mapping string iconNames from menu registry
 const iconMap: Record<string, React.ElementType> = {
@@ -111,6 +112,57 @@ export default function SuperAdminSidebar() {
   const { currentUser, activeRole } = useAuth();
   const { selectedCollege, isOverall } = useCollege();
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState<number>(0);
+
+  // Live dynamic counter for pending approvals (fetch API + realtime event + local store)
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCount = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/api/portals/approvals', { cache: 'no-store' });
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data)) {
+          const count = json.data.filter((item: any) => {
+            const st = (item.currentStatus || 'PENDING').toUpperCase();
+            return st === 'PENDING' || st === 'SUBMITTED' || st === 'UNDER_REVIEW';
+          }).length;
+          if (isMounted) setPendingApprovalsCount(count);
+          return;
+        }
+      } catch {
+        // Fallback to 0 if API is unreachable (no mock)
+        if (isMounted) setPendingApprovalsCount(0);
+      }
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 4000);
+
+    const handleRealtime = (e: any) => {
+      const type = e?.detail?.type;
+      if (
+        type === 'APPROVAL_SUBMITTED' ||
+        type === 'APPROVAL_REVIEWED' ||
+        type === 'COURSES_UPDATED' ||
+        type === 'BATCHES_UPDATED'
+      ) {
+        fetchCount();
+      }
+    };
+
+    window.addEventListener('isml-realtime-event', handleRealtime);
+    const unsubStore = financeProposalStore.subscribe(() => {
+      fetchCount();
+    });
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('isml-realtime-event', handleRealtime);
+      unsubStore();
+    };
+  }, []);
 
   // Determine which group contains the active route initially
   const activeGroupId = useMemo(() => {
@@ -238,11 +290,17 @@ export default function SuperAdminSidebar() {
                           />
                           <span className="truncate">{item.label}</span>
                         </div>
-                        {item.badge && (
+                        {item.id === 'APPROVAL_CENTER' ? (
+                          pendingApprovalsCount > 0 ? (
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 rounded-full tracking-wider animate-pulse">
+                              {pendingApprovalsCount} Pending
+                            </span>
+                          ) : null
+                        ) : item.badge ? (
                           <span className="px-1.5 py-0.5 text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded-full tracking-wider">
                             {item.badge}
                           </span>
-                        )}
+                        ) : null}
                       </Link>
                     );
                   })}

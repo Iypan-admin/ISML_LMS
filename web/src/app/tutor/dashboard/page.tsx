@@ -6,7 +6,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -45,7 +45,54 @@ import LiveWebinarStudioModal from '@/components/tutor/LiveWebinarStudioModal';
 
 export default function MasterTutorDashboardPage() {
   const { showSuccess, showInfo } = useToast();
-  const [activeWebinar, setActiveWebinar] = useState<{ batchName: string; subjectName: string } | null>(null);
+  const [activeWebinar, setActiveWebinar] = useState<{ batchName: string; subjectName: string; id?: string } | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('isml_tutor_active_webinar') || sessionStorage.getItem('isml_tutor_active_webinar');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.batchName || parsed.subjectName)) return parsed;
+        }
+      } catch {}
+    }
+    return null;
+  });
+
+  // Restore active webinar on client mount from localStorage / sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('isml_tutor_active_webinar') || sessionStorage.getItem('isml_tutor_active_webinar');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.batchName || parsed.subjectName)) {
+            setActiveWebinar(parsed);
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
+  const handleOpenWebinar = (data: { batchName: string; subjectName: string; id?: string }) => {
+    setActiveWebinar(data);
+    if (typeof window !== 'undefined') {
+      try {
+        const val = JSON.stringify(data);
+        localStorage.setItem('isml_tutor_active_webinar', val);
+        sessionStorage.setItem('isml_tutor_active_webinar', val);
+      } catch {}
+    }
+  };
+
+  const handleCloseWebinar = () => {
+    setActiveWebinar(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('isml_tutor_active_webinar');
+        sessionStorage.removeItem('isml_tutor_active_webinar');
+      } catch {}
+    }
+  };
   const {
     currentFaculty,
     myAllocations,
@@ -57,7 +104,81 @@ export default function MasterTutorDashboardPage() {
     canAnswerDoubtsForBatch,
   } = useTutor();
 
-  // Filtered Allocations based on Duty Segment Filter (ALL vs LEAD vs SUBSTITUTE vs DOUBT vs ASSISTANT)
+  // Real-time slot status checker (Checks if slot is currently LIVE, UPCOMING, or CONCLUDED)
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 30000); // refresh every 30s
+    return () => clearInterval(timer);
+  }, []);
+
+  const getSlotTimingStatus = (scheduleSlots: string[] = []) => {
+    if (!scheduleSlots || scheduleSlots.length === 0) return { isLive: false, label: 'No Live Schedule', badge: 'bg-slate-100 text-slate-500' };
+
+    const daysMap: Record<string, number> = {
+      SUN: 0, SUNDAY: 0,
+      MON: 1, MONDAY: 1,
+      TUE: 2, TUESDAY: 2,
+      WED: 3, WEDNESDAY: 3,
+      THU: 4, THURSDAY: 4,
+      FRI: 5, FRIDAY: 5,
+      SAT: 6, SATURDAY: 6,
+    };
+
+    const currentDay = currentTime.getDay();
+    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+
+    let isScheduledToday = false;
+    let isCurrentlyLive = false;
+    let startsSoon = false;
+    let timeRangeText = '';
+
+    for (const slotStr of scheduleSlots) {
+      // Parse days e.g. "Mon, Wed, Fri 07:30 PM - 09:00 PM" or "Mon & Wed 10:00 AM - 11:30 AM"
+      const parts = slotStr.split(/\d/);
+      const daysPart = parts[0] || '';
+      const matchedDays = Object.keys(daysMap).filter((d) => new RegExp(`\\b${d}\\b`, 'i').test(daysPart));
+
+      const matchesDay = matchedDays.some((d) => daysMap[d] === currentDay);
+      if (matchesDay) {
+        isScheduledToday = true;
+
+        // Extract time range e.g. "07:30 PM - 09:00 PM"
+        const timeMatch = slotStr.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+        if (timeMatch) {
+          timeRangeText = `${timeMatch[1]} - ${timeMatch[2]}`;
+          const parseMinutes = (t: string) => {
+            const [time, meridiem] = t.trim().split(/\s+/);
+            const [h, m] = time.split(':').map(Number);
+            let hours = h % 12;
+            if (meridiem.toUpperCase() === 'PM') hours += 12;
+            return hours * 60 + m;
+          };
+
+          const startMinutes = parseMinutes(timeMatch[1]);
+          const endMinutes = parseMinutes(timeMatch[2]);
+
+          // Enable 15 minutes before session begins up until end time
+          if (currentMinutes >= startMinutes - 15 && currentMinutes <= endMinutes) {
+            isCurrentlyLive = true;
+          } else if (currentMinutes < startMinutes && startMinutes - currentMinutes <= 60) {
+            startsSoon = true;
+          }
+        }
+      }
+    }
+
+    if (isCurrentlyLive) {
+      return { isLive: true, label: '🔴 LIVE SESSION IN PROGRESS', badge: 'bg-rose-100 text-rose-700 border-rose-300 animate-pulse' };
+    }
+    if (startsSoon) {
+      return { isLive: false, label: '⏳ UPCOMING IN < 1 HOUR', badge: 'bg-amber-100 text-amber-800 border-amber-300' };
+    }
+    if (isScheduledToday) {
+      return { isLive: false, label: `SCHEDULED TODAY (${timeRangeText || 'Upcoming'})`, badge: 'bg-blue-100 text-blue-800 border-blue-200' };
+    }
+    return { isLive: false, label: 'NO ACTIVE SESSION NOW', badge: 'bg-slate-100 text-slate-600 border-slate-200' };
+  };
   const filteredAllocations = useMemo(() => {
     if (activeRoleFilter === 'ALL') return myAllocations;
     return myAllocations.filter((a) => a.tutorRole === activeRoleFilter);
@@ -74,12 +195,30 @@ export default function MasterTutorDashboardPage() {
   const pendingAssignmentsCount = mockAssignments.length;
 
   const handleStartClass = (batchName: string, subjectName: string) => {
-    setActiveWebinar({ batchName, subjectName });
+    handleOpenWebinar({ batchName, subjectName, id: 'live-class-french-01' });
   };
 
   const handleDeniedAccess = (roleName: string) => {
     showInfo(`Access Restricted: This batch is assigned to you as "${roleName}". Live Class creation is reserved for Lead Trainers.`);
   };
+
+  // If Tutor is inside active webinar studio, render ONLY the full-screen Studio Classroom Modal!
+  // This completely eliminates any background dashboard flash during page refresh.
+  if (activeWebinar) {
+    return (
+      <LiveWebinarStudioModal
+        isOpen={true}
+        onClose={handleCloseWebinar}
+        classId={activeWebinar.id || 'live-class-french-01'}
+        sessionTitle={`Interactive Live Webinar • ${activeWebinar.subjectName}`}
+        batchName={activeWebinar.batchName}
+        subjectCode="LIVE-WEBINAR-STUDIO"
+        tutorName={currentFaculty.name}
+        isHost={true}
+        onEndSession={handleCloseWebinar}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -92,29 +231,46 @@ export default function MasterTutorDashboardPage() {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#0052CC]">
-              French CEFR Track (A1 • A2 • B1 • B2)
+              {currentFaculty.primaryLanguage} Curriculum Track
             </span>
             <span className="text-xs text-slate-400">•</span>
             <span className="text-xs font-semibold text-slate-600">
-              Allocated: {currentFaculty.allocatedHours} / {currentFaculty.weeklyHoursLimit} hrs/week
+              Allocated: {myAllocations.length} Active Cohorts
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Bonjour, {currentFaculty.name}!
+            Welcome, {currentFaculty.name}!
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Your official French teaching workload and live webinar permissions assigned by the Academic Manager.
+            Your official teaching workload and live webinar permissions assigned by the Academic Manager.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <button
-            onClick={() => handleStartClass('French A1 Intensive Cohort 2026', 'French A1 Language, Phonetics & Salutations')}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
-          >
-            <Radio className="w-4 h-4 animate-pulse" />
-            <span>Launch A1 Live Studio</span>
-          </button>
+          {leadBatches.length > 0 && (() => {
+            const firstLead = leadBatches[0];
+            const timing = getSlotTimingStatus(firstLead.scheduleSlots);
+            return (
+              <button
+                onClick={() => {
+                  if (timing.isLive) {
+                    handleStartClass(firstLead.batchName, firstLead.subjectName);
+                  } else {
+                    showInfo(`Classroom Locked: Live Broadcast for "${firstLead.batchName}" is only available during the scheduled slot (${firstLead.scheduleSlots.join(', ')}).`);
+                  }
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 ${
+                  timing.isLive
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer animate-pulse'
+                    : 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed hover:bg-slate-200'
+                }`}
+                title={timing.isLive ? 'Session in progress - Enter Live Studio' : 'Scheduled class is not currently live'}
+              >
+                {timing.isLive ? <Radio className="w-4 h-4 animate-pulse" /> : <Lock className="w-4 h-4" />}
+                <span>{timing.isLive ? `Enter Live: ${firstLead.batchName}` : `Class Locked (${firstLead.batchName})`}</span>
+              </button>
+            );
+          })()}
           <Link
             href="/tutor/attendance"
             className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
@@ -125,7 +281,7 @@ export default function MasterTutorDashboardPage() {
         </div>
       </div>
 
-      {/* ─── 2. Dedicated French CEFR Level Matrix (A1, A2, B1, B2) ─── */}
+      {/* ─── 2. Real Assigned Courses & Batches Portfolio (Dynamic from Academic Manager) ─── */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
@@ -134,176 +290,215 @@ export default function MasterTutorDashboardPage() {
                 Official Workload Matrix
               </span>
               <h2 className="text-sm sm:text-base font-black text-slate-900">
-                My Assigned French Teaching Portfolio (A1 • A2 • B1 • B2)
+                My Assigned Curriculum & Cohort Batches
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Clear breakdown of your role, duties, timetable, and operational permissions for each French CEFR level.
+              Live breakdown of your active course tracks, assigned cohort batches, and timetable permissions allocated by the Academic Manager.
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-            <span>Primary Faculty:</span>
-            <span className="text-[#0052CC] font-extrabold">Jay (fac-jay)</span>
+            <span>Faculty Profile:</span>
+            <span className="text-[#0052CC] font-extrabold">{currentFaculty.name}</span>
           </div>
         </div>
 
-        {/* 4 CEFR Level Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* FRENCH A1 CARD */}
-          <div className="p-4 rounded-xl border-2 border-blue-200 bg-gradient-to-b from-blue-50/70 to-white flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-sm transition-all">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-[#0052CC] text-white tracking-wide">
-                  FRENCH A1
-                </span>
-                <span className="text-[10px] font-extrabold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
-                  LEAD TRAINER
-                </span>
-              </div>
-              <h3 className="text-xs font-extrabold text-slate-900 leading-snug">
-                FR-101: Language & Phonetics
-              </h3>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
-                <strong>Cohort:</strong> Intensive Live Webinar 2026<br/>
-                <strong>Schedule:</strong> Mon & Wed • 10:00 - 11:30 AM<br/>
-                <strong>Access:</strong> Full Live Studio Host, 1080p Cloud Recording & Roll Call
-              </p>
-            </div>
-            <div className="pt-2 border-t border-blue-100">
-              <button
-                onClick={() => handleStartClass('French A1 Intensive Cohort 2026', 'French A1 Language & Phonetics')}
-                className="w-full py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-              >
-                <Radio className="w-3.5 h-3.5 animate-pulse" />
-                <span>Start A1 Live Webinar</span>
-              </button>
-            </div>
+        {/* Dynamic Allocated Courses & Batches Cards */}
+        {myAllocations.length === 0 ? (
+          <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
+            <BookOpen className="w-8 h-8 text-slate-400 mx-auto" />
+            <h4 className="text-xs font-bold text-slate-700">No Course Allocations Assigned Yet</h4>
+            <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+              Your profile is active. Once the Academic Manager allocates a course track or cohort batch to you, your live classroom cards and duties will automatically appear here.
+            </p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {myAllocations.map((alloc) => {
+              const isLead = alloc.tutorRole === 'LEAD_TRAINER';
+              const isSub = alloc.tutorRole === 'SUBSTITUTE_TUTOR';
+              const isDoubt = alloc.tutorRole === 'DOUBT_SOLVING_TUTOR';
 
-          {/* FRENCH A2 CARD */}
-          <div className="p-4 rounded-xl border-2 border-amber-200 bg-gradient-to-b from-amber-50/60 to-white flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-sm transition-all">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-amber-500 text-slate-950 tracking-wide">
-                  FRENCH A2
-                </span>
-                <span className="text-[10px] font-extrabold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
-                  SUBSTITUTE STANDBY
-                </span>
-              </div>
-              <h3 className="text-xs font-extrabold text-slate-900 leading-snug">
-                FR-102: Passé Composé & A2 Mocks
-              </h3>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
-                <strong>Cohort:</strong> Section B Standby Cover<br/>
-                <strong>Schedule:</strong> Tue & Thu • 02:00 - 03:30 PM<br/>
-                <strong>Access:</strong> Emergency Broadcast Standby & DELF A2 Mock Assessments
-              </p>
-            </div>
-            <div className="pt-2 border-t border-amber-100">
-              <Link
-                href="/tutor/assessments"
-                className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-              >
-                <Award className="w-3.5 h-3.5" />
-                <span>Review A2 Mocks</span>
-              </Link>
-            </div>
-          </div>
+              const roleBadgeColor = isLead
+                ? 'bg-[#0052CC] text-white'
+                : isSub
+                ? 'bg-amber-500 text-slate-950 font-black'
+                : isDoubt
+                ? 'bg-emerald-600 text-white'
+                : 'bg-purple-600 text-white';
 
-          {/* FRENCH B1 CARD */}
-          <div className="p-4 rounded-xl border-2 border-emerald-200 bg-gradient-to-b from-emerald-50/60 to-white flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-sm transition-all">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-emerald-600 text-white tracking-wide">
-                  FRENCH B1
-                </span>
-                <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">
-                  DOUBT SOLVER
-                </span>
-              </div>
-              <h3 className="text-xs font-extrabold text-slate-900 leading-snug">
-                FR-201: Subjunctive & Opinion Fluency
-              </h3>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
-                <strong>Cohort:</strong> Executive Q&A Desk<br/>
-                <strong>Schedule:</strong> Tue & Thu • 05:30 - 07:00 PM<br/>
-                <strong>Access:</strong> 1-on-1 Doubt Clearing Desk & Audio Inquiries (No Live Lecture)
-              </p>
-            </div>
-            <div className="pt-2 border-t border-emerald-100">
-              <Link
-                href="/tutor/doubts"
-                className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>Open B1 Doubt Desk</span>
-              </Link>
-            </div>
-          </div>
+              const roleLabel =
+                alloc.tutorRole === 'LEAD_TRAINER'
+                  ? 'LEAD TRAINER'
+                  : alloc.tutorRole === 'SUBSTITUTE_TUTOR'
+                  ? 'SUBSTITUTE TUTOR'
+                  : alloc.tutorRole === 'DOUBT_SOLVING_TUTOR'
+                  ? 'DOUBT SOLVING TUTOR'
+                  : alloc.tutorRole === 'ASSISTANT_TUTOR'
+                  ? 'ASSISTANT TUTOR'
+                  : alloc.tutorRole === 'ORAL_EXAMINER'
+                  ? 'HUMAN 1:1 TUTOR'
+                  : alloc.tutorRole.replace(/_/g, ' ');
 
-          {/* FRENCH B2 CARD */}
-          <div className="p-4 rounded-xl border-2 border-purple-200 bg-gradient-to-b from-purple-50/60 to-white flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-sm transition-all">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-purple-600 text-white tracking-wide">
-                  FRENCH B2
-                </span>
-                <span className="text-[10px] font-extrabold text-purple-800 bg-purple-100 px-2 py-0.5 rounded">
-                  ASSISTANT EVALUATOR
-                </span>
-              </div>
-              <h3 className="text-xs font-extrabold text-slate-900 leading-snug">
-                FR-202: Argumentation & Viva Evaluation
-              </h3>
-              <p className="text-[11px] text-slate-600 leading-relaxed">
-                <strong>Cohort:</strong> Advanced Evaluation Desk<br/>
-                <strong>Schedule:</strong> Fri • 03:00 - 05:00 PM<br/>
-                <strong>Access:</strong> DELF B2 Synthesis Grading & Oral Viva Marking Rubrics
-              </p>
-            </div>
-            <div className="pt-2 border-t border-purple-100">
-              <Link
-                href="/tutor/assignments"
-                className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-              >
-                <ClipboardList className="w-3.5 h-3.5" />
-                <span>Grade B2 Essays</span>
-              </Link>
-            </div>
+              return (
+                <div
+                  key={alloc.id}
+                  className="p-4 rounded-xl border-2 border-slate-200/90 hover:border-blue-300 bg-gradient-to-b from-slate-50/50 to-white flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-sm transition-all"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-slate-900 text-white tracking-wide">
+                        {alloc.subjectCode || 'CRS'}
+                      </span>
+                      <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider ${roleBadgeColor}`}>
+                        {roleLabel}
+                      </span>
+                    </div>
+
+                    <h3 className="text-xs font-extrabold text-slate-900 leading-snug">
+                      {alloc.courseName || alloc.subjectName}
+                    </h3>
+
+                    <div className="p-3 rounded-xl bg-slate-100/80 border border-slate-200/80 text-[11px] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium">Assigned Duty:</span>
+                        <span className="font-extrabold text-slate-900">{roleLabel}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium">Course Track:</span>
+                        <strong className="text-blue-700 font-bold">{alloc.courseName || alloc.subjectName}</strong>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium">Batch Cohort:</span>
+                        <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200">{alloc.batchName}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium">Campus:</span>
+                        <span className="text-slate-700 font-semibold">{alloc.institutionName || 'Affiliated Campus'}</span>
+                      </div>
+
+                      {/* 🗓️ User-Friendly Date & Live Timing Breakdown */}
+                      <div className="pt-2 border-t border-slate-200/90 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 font-medium flex items-center gap-1">
+                            <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Schedule Days:</span>
+                          </span>
+                          <span className="font-bold text-slate-800">
+                            {alloc.scheduleSlots?.[0]?.split(/\d/)[0]?.replace(/,\s*$/, '').trim() || 'Mon, Wed, Fri'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 font-medium flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Slot Timing:</span>
+                          </span>
+                          <span className="font-mono font-bold text-indigo-700 bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200/60">
+                            {alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)\s*[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || '07:30 PM - 09:00 PM'}
+                          </span>
+                        </div>
+                        {alloc.effectiveFrom && (
+                          <div className="flex items-center justify-between text-[10px] text-slate-500">
+                            <span>Effective Since:</span>
+                            <span className="font-semibold text-slate-600">{alloc.effectiveFrom}</span>
+                          </div>
+                        )}
+                        <div className="pt-1 flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">Current Status:</span>
+                          {(() => {
+                            const timing = getSlotTimingStatus(alloc.scheduleSlots);
+                            return (
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${timing.badge}`}>
+                                {timing.label}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                    {(() => {
+                      const timing = getSlotTimingStatus(alloc.scheduleSlots);
+
+                      if (isLead || isSub) {
+                        if (timing.isLive) {
+                          return (
+                            <button
+                              onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName)}
+                              className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer animate-pulse"
+                              title="Session Live! Click to broadcast"
+                            >
+                              <Radio className="w-3.5 h-3.5" />
+                              <span>🔴 Enter Live Studio Now</span>
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <button
+                            onClick={() => {
+                              showInfo(
+                                `Classroom Locked: Live Broadcast for "${alloc.batchName}" is scheduled at ${alloc.scheduleSlots.join(', ')}.`
+                              );
+                            }}
+                            className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-not-allowed"
+                            title={`Locked until slot time: ${alloc.scheduleSlots.join(', ')}`}
+                          >
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>🔒 Class Locked ({alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || 'Scheduled'})</span>
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <Link
+                          href="/tutor/doubts"
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Open Doubt Desk</span>
+                        </Link>
+                      );
+                    })()}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
       </div>
 
       {/* ─── 3. Multi-Role KPI Summary Cards ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
-          title="French A1: Lead Trainer"
+          title="Lead Trainer Cohorts"
           value={leadBatches.length}
           icon={Video}
           iconColor="text-blue-600"
-          subtext="Full Live Class & Roster Rights"
+          subtext="Full Live Studio & Host Access"
         />
         <StatCard
-          title="French A2: Standby & Mocks"
+          title="Substitute Standby"
           value={substituteBatches.length}
           icon={ShieldCheck}
           iconColor="text-amber-600"
-          subtext="Emergency Replacement & Mocks"
+          subtext="Emergency Replacement Cover"
         />
         <StatCard
-          title="French B1: Doubt Desks"
+          title="Doubt Desks"
           value={doubtBatches.length}
           icon={MessageSquare}
           iconColor="text-emerald-600"
-          subtext={`${pendingDoubtsCount} Pending Learner Q&As`}
+          subtext={`${pendingDoubtsCount} Open Learner Inquiries`}
         />
         <StatCard
-          title="French B2: Assistant Evaluator"
+          title="Assistant & Evaluations"
           value={assistantBatches.length}
           icon={ClipboardList}
           iconColor="text-purple-600"
-          subtext="DELF B2 Essay & Viva Grading"
+          subtext="Homework & Viva Assessments"
         />
       </div>
 
@@ -425,17 +620,32 @@ export default function MasterTutorDashboardPage() {
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900 leading-snug">
-                        {alloc.subjectName}
-                      </h3>
-                      <p className="text-xs text-blue-600 font-bold mt-0.5">
-                        {alloc.batchName}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-bold text-slate-900 leading-snug">
+                          {alloc.subjectName}
+                        </h3>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-50 text-[#0052CC] border border-blue-200">
+                          Course: {alloc.courseName || alloc.subjectName}
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-700 font-bold mt-1">
+                        Cohort: {alloc.batchName} • <span className="text-slate-500 font-medium">{alloc.institutionName || 'Affiliated Campus'}</span>
                       </p>
                     </div>
 
-                    <div className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{alloc.scheduleSlots.join(', ')}</span>
+                    <div className="text-xs text-slate-500 flex items-center justify-between gap-1.5 pt-1">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{alloc.scheduleSlots.join(', ')}</span>
+                      </div>
+                      {(() => {
+                        const timing = getSlotTimingStatus(alloc.scheduleSlots);
+                        return (
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${timing.badge}`}>
+                            {timing.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -488,24 +698,50 @@ export default function MasterTutorDashboardPage() {
 
                   {/* Operational Action Buttons */}
                   <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100">
-                    {canStartLive ? (
-                      <button
-                        onClick={() => handleStartClass(alloc.batchName, alloc.subjectName)}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                      >
-                        <Radio className="w-3.5 h-3.5 animate-pulse" />
-                        <span>Start Live Class</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleDeniedAccess(alloc.tutorRole.replace(/_/g, ' '))}
-                        className="px-3 py-1.5 bg-slate-100 text-slate-400 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-not-allowed border border-slate-200"
-                        title="Only Lead or Active Substitute can start live class"
-                      >
-                        <Lock className="w-3.5 h-3.5" />
-                        <span>No Live Broadcast</span>
-                      </button>
-                    )}
+                    {(() => {
+                      const timing = getSlotTimingStatus(alloc.scheduleSlots);
+
+                      if (!canStartLive) {
+                        return (
+                          <button
+                            onClick={() => handleDeniedAccess(alloc.tutorRole.replace(/_/g, ' '))}
+                            className="px-3 py-1.5 bg-slate-100 text-slate-400 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-not-allowed border border-slate-200"
+                            title="Only Lead or Active Substitute can start live class"
+                          >
+                            <Lock className="w-3.5 h-3.5" />
+                            <span>No Live Broadcast</span>
+                          </button>
+                        );
+                      }
+
+                      if (timing.isLive) {
+                        return (
+                          <button
+                            onClick={() => handleStartClass(alloc.batchName, alloc.subjectName)}
+                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
+                            title="Session live right now! Click to enter Live Studio"
+                          >
+                            <Radio className="w-3.5 h-3.5" />
+                            <span>Enter Live Studio</span>
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <button
+                          onClick={() => {
+                            showInfo(
+                              `Class Locked: Live Studio for "${alloc.batchName}" unlocks during scheduled session hours (${alloc.scheduleSlots.join(', ')}).`
+                            );
+                          }}
+                          className="px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-not-allowed border border-slate-200 transition-colors"
+                          title={`Locked until slot time: ${alloc.scheduleSlots.join(', ')}`}
+                        >
+                          <Lock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Class Locked</span>
+                        </button>
+                      );
+                    })()}
 
                     <Link
                       href={`/tutor/batches`}
@@ -584,22 +820,6 @@ export default function MasterTutorDashboardPage() {
           </div>
         </Link>
       </div>
-
-      {/* Full Live Webinar Classroom Modal */}
-      {activeWebinar && (
-        <LiveWebinarStudioModal
-          isOpen={Boolean(activeWebinar)}
-          onClose={() => setActiveWebinar(null)}
-          sessionTitle={`Interactive Live Webinar • ${activeWebinar.subjectName}`}
-          batchName={activeWebinar.batchName}
-          subjectCode="LIVE-WEBINAR-STUDIO"
-          tutorName={currentFaculty.name}
-          isHost={true}
-          onEndSession={() => {
-            setActiveWebinar(null);
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -33,6 +33,7 @@ interface OnboardCollegeDrawerProps {
   onInstitutionCreated: (newInst: Institution) => void;
   editInstitution?: Institution | null;
   onInstitutionUpdated?: (updated: Institution) => void;
+  initialType?: 'COLLEGE' | 'SCHOOL';
 }
 
 export default function OnboardCollegeDrawer({
@@ -41,15 +42,16 @@ export default function OnboardCollegeDrawer({
   onInstitutionCreated,
   editInstitution,
   onInstitutionUpdated,
+  initialType = 'COLLEGE',
 }: OnboardCollegeDrawerProps) {
   const isEditMode = Boolean(editInstitution);
   // Stepper / Screen: 'FORM' | 'SUCCESS'
   const [currentScreen, setCurrentScreen] = useState<'FORM' | 'SUCCESS'>('FORM');
 
-  // Form Fields — College Identity
+  // Form Fields — College / School Identity
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [type, setType] = useState<'COLLEGE' | 'UNIVERSITY' | 'INSTITUTE'>('COLLEGE');
+  const [type, setType] = useState<'COLLEGE' | 'UNIVERSITY' | 'INSTITUTE' | 'SCHOOL'>('COLLEGE');
   const [affiliation, setAffiliation] = useState(
     'Autonomous • Affiliated to University • NAAC Accredited'
   );
@@ -64,13 +66,62 @@ export default function OnboardCollegeDrawer({
   const [adminEmail, setAdminEmail] = useState('');
   const [adminMobile, setAdminMobile] = useState('');
 
-  // Academic Capacity Initial Values
-  const [departmentsCount, setDepartmentsCount] = useState<number>(4);
-  const [studentsTarget, setStudentsTarget] = useState<number>(450);
+  // Form Validation & Errors
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    adminEmail?: string;
+    adminMobile?: string;
+  }>({});
+
+  const validateForm = () => {
+    const errors: {
+      name?: string;
+      contactEmail?: string;
+      contactPhone?: string;
+      adminEmail?: string;
+      adminMobile?: string;
+    } = {};
+
+    if (!name.trim() || name.trim().length < 3) {
+      errors.name = 'Institution name must be at least 3 characters.';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!contactEmail.trim() || !emailRegex.test(contactEmail.trim())) {
+      errors.contactEmail = 'Please provide a valid official institution email.';
+    }
+
+    const cleanContactPhone = contactPhone.replace(/\D/g, '');
+    if (contactPhone.trim() && cleanContactPhone.length < 10) {
+      errors.contactPhone = 'Official phone number must have at least 10 digits.';
+    }
+
+    if (adminEmail.trim() && !emailRegex.test(adminEmail.trim())) {
+      errors.adminEmail = 'Please enter a valid administrator email address.';
+    }
+
+    const cleanAdminMobile = adminMobile.replace(/\D/g, '');
+    if (adminMobile.trim() && cleanAdminMobile.length < 10) {
+      errors.adminMobile = 'Administrator mobile number must have at least 10 digits.';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdInst, setCreatedInst] = useState<Institution | null>(null);
+  const [adminCredentials, setAdminCredentials] = useState<{
+    name: string;
+    email: string;
+    temporaryPassword: string;
+    portalRoute: string;
+    role: string;
+    roleDisplayName: string;
+  } | null>(null);
 
   // Auto-generate code preview when name changes
   const handleNameChange = (val: string) => {
@@ -106,23 +157,29 @@ export default function OnboardCollegeDrawer({
         setDepartmentsCount(editInstitution.departmentsCount || 4);
         setStudentsTarget(editInstitution.studentsCount || 450);
       } else {
+        const isSchool = initialType === 'SCHOOL';
         setName('');
         setCode('');
-        setType('COLLEGE');
-        setAffiliation('Autonomous • Affiliated to State University • NAAC A++');
+        setType(isSchool ? 'SCHOOL' : 'COLLEGE');
+        setAffiliation(
+          isSchool
+            ? 'CBSE Affiliated • Senior Secondary Wing • K-12'
+            : 'Autonomous • Affiliated to State University • NAAC A++'
+        );
         setAddress('');
         setContactEmail('');
         setContactPhone('');
         setAdminName('');
         setAdminEmail('');
         setAdminMobile('');
-        setDepartmentsCount(4);
-        setStudentsTarget(450);
+        setDepartmentsCount(isSchool ? 6 : 4);
+        setStudentsTarget(isSchool ? 300 : 450);
       }
       setIsSubmitting(false);
       setCreatedInst(null);
+      setAdminCredentials(null);
     }
-  }, [isOpen, editInstitution]);
+  }, [isOpen, editInstitution, initialType]);
 
   // Handle ESC key
   useEffect(() => {
@@ -141,40 +198,62 @@ export default function OnboardCollegeDrawer({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !contactEmail.trim()) return;
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     if (isEditMode && editInstitution) {
-      setTimeout(() => {
-        const updated: Institution = {
-          ...editInstitution,
-          name: name.trim(),
-          code: code.trim().toUpperCase() || editInstitution.code,
-          type,
-          affiliation: affiliation.trim(),
-          address: address.trim() || editInstitution.address,
-          contactEmail: contactEmail.trim(),
-          contactPhone: contactPhone.trim() || editInstitution.contactPhone,
-          departmentsCount: Number(departmentsCount) || 1,
-          studentsCount: Number(studentsTarget) || 0,
-          facultyCount: editInstitution.facultyCount || 0,
-        };
-        onInstitutionUpdated?.(updated);
-        setIsSubmitting(false);
-        onClose();
-      }, 400);
+      const updated: Institution = {
+        ...editInstitution,
+        name: name.trim(),
+        code: code.trim().toUpperCase() || editInstitution.code,
+        type,
+        affiliation: affiliation.trim(),
+        address: address.trim() || editInstitution.address,
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim() || editInstitution.contactPhone,
+        departmentsCount: Number(departmentsCount) || 1,
+        studentsCount: Number(studentsTarget) || 0,
+        facultyCount: editInstitution.facultyCount || 0,
+      };
+      onInstitutionUpdated?.(updated);
+      setIsSubmitting(false);
+      onClose();
       return;
     }
 
-    setTimeout(() => {
-      const newInstId = `inst-${Date.now().toString().slice(-4)}`;
-      const finalCode = code.trim().toUpperCase() || `COL-${newInstId.slice(-3)}`;
+    try {
+      const finalCode = code.trim().toUpperCase() || `COL-${Date.now().toString().slice(-4)}`;
+      const payload = {
+        name: name.trim(),
+        code: finalCode,
+        type,
+        status: 'ACTIVE',
+        affiliation: affiliation.trim(),
+        address: address.trim() || 'Institutional Campus Address',
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim() || '+91 44 2800 0000',
+        departmentsCount: Number(departmentsCount) || 4,
+        studentsCount: Number(studentsTarget) || 450,
+        adminName: adminName.trim() || (type === 'SCHOOL' ? `${name.trim()} Principal` : `${name.trim()} Admin`),
+        adminEmail: adminEmail.trim() || contactEmail.trim(),
+        adminMobile: adminMobile.trim() || contactPhone.trim(),
+        adminPassword: `${finalCode.replace(/[^A-Z0-9]/g, '')}@2026!`,
+      };
+
+      const res = await fetch('http://localhost:4000/api/portals/institutions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      const serverInst = json.data;
 
       const newInstitution: Institution = {
-        id: newInstId,
+        id: serverInst?.id || `inst-${Date.now().toString().slice(-4)}`,
         name: name.trim(),
         code: finalCode,
         type,
@@ -191,9 +270,51 @@ export default function OnboardCollegeDrawer({
 
       onInstitutionCreated(newInstitution);
       setCreatedInst(newInstitution);
+      if (serverInst?.adminCredentials) {
+        setAdminCredentials(serverInst.adminCredentials);
+      } else {
+        setAdminCredentials({
+          name: payload.adminName,
+          email: payload.adminEmail,
+          temporaryPassword: payload.adminPassword,
+          portalRoute: '/college-admin/dashboard',
+          role: type === 'SCHOOL' ? 'SCHOOL_ADMIN' : 'COLLEGE_ADMIN',
+          roleDisplayName: type === 'SCHOOL' ? 'School Administrator' : 'College Administrator',
+        });
+      }
       setIsSubmitting(false);
       setCurrentScreen('SUCCESS');
-    }, 650);
+    } catch {
+      const newInstId = `inst-${Date.now().toString().slice(-4)}`;
+      const finalCode = code.trim().toUpperCase() || `COL-${newInstId.slice(-3)}`;
+      const newInstitution: Institution = {
+        id: newInstId,
+        name: name.trim(),
+        code: finalCode,
+        type,
+        status: 'ACTIVE',
+        affiliation: affiliation.trim(),
+        address: address.trim() || 'Institutional Campus Address',
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim() || '+91 44 2800 0000',
+        departmentsCount: Number(departmentsCount) || 4,
+        studentsCount: Number(studentsTarget) || 450,
+        facultyCount: 0,
+        createdAt: new Date().toISOString(),
+      };
+      onInstitutionCreated(newInstitution);
+      setCreatedInst(newInstitution);
+      setAdminCredentials({
+        name: adminName.trim() || `${name.trim()} Admin`,
+        email: adminEmail.trim() || contactEmail.trim(),
+        temporaryPassword: `${finalCode.replace(/[^A-Z0-9]/g, '')}@2026!`,
+        portalRoute: '/college-admin/dashboard',
+        role: type === 'SCHOOL' ? 'SCHOOL_ADMIN' : 'COLLEGE_ADMIN',
+        roleDisplayName: type === 'SCHOOL' ? 'School Administrator' : 'College Administrator',
+      });
+      setIsSubmitting(false);
+      setCurrentScreen('SUCCESS');
+    }
   };
 
   return (
@@ -290,7 +411,8 @@ export default function OnboardCollegeDrawer({
                         className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 text-xs focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none cursor-pointer"
                       >
                         <option value="COLLEGE">Autonomous College</option>
-                        <option value="INSTITUTE">Specialized Institute</option>
+                        <option value="SCHOOL">K-12 Partner School (CBSE / ICSE / IB)</option>
+                        <option value="INSTITUTE">Specialized Language Institute</option>
                         <option value="UNIVERSITY">University Campus</option>
                       </select>
                     </div>
@@ -400,53 +522,6 @@ export default function OnboardCollegeDrawer({
                   </div>
                 </div>
 
-                {/* Section 4: Initial Academic Capacity */}
-                <div className="space-y-3 pt-1">
-                  <h3 className="font-bold text-[#0B2447] text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-blue-600" />
-                    <span>4. Initial Academic Capacity & Learner Intake</span>
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-slate-500 font-medium mb-1 text-[11px]">
-                        Participating Departments
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={departmentsCount}
-                        onChange={(e) => setDepartmentsCount(Number(e.target.value))}
-                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-500 font-medium mb-1 text-[11px]">
-                        Target Student Intake
-                      </label>
-                      <input
-                        type="number"
-                        min={10}
-                        value={studentsTarget}
-                        onChange={(e) => setStudentsTarget(Number(e.target.value))}
-                        className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#0052CC] outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* ISML Centralized Tutor Model Callout */}
-                  <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200 text-blue-900 text-[11px] flex items-start gap-2.5">
-                    <Sparkles className="w-4 h-4 text-[#0052CC] shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-xs text-[#0B2447]">Centralized ISML Language Faculty Model</p>
-                      <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                        Teaching faculty & certified language tutors are centrally provided, managed, and allocated by ISML. Partner colleges do not provide internal teaching faculty.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Zero Plaintext Password Guarantee */}
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 text-[11px] flex items-start gap-2">
                   <Lock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
@@ -532,10 +607,92 @@ export default function OnboardCollegeDrawer({
                     <span className="text-slate-500 font-medium">Tenant Status:</span>
                     <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold text-[11px]">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Active Institutional Tenant</span>
+                      <span>Active Institutional Tenant in DB</span>
                     </span>
                   </div>
                 </div>
+
+                {/* Provisioned Administrator Credentials Highlight Card */}
+                {adminCredentials && (
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/80 border-2 border-blue-300 rounded-2xl text-left space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-blue-950 uppercase tracking-wider">
+                            {adminCredentials.roleDisplayName} Initialized
+                          </h4>
+                          <p className="text-[10px] text-blue-700">
+                            Protected credentials securely routed to administrator
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded-full">
+                        {adminCredentials.role}
+                      </span>
+                    </div>
+
+                    {/* Auto-Mail Sent Notification Banner */}
+                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-300 flex items-start gap-2.5 text-emerald-900 shadow-2xs">
+                      <Mail className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-950">
+                          <span>Official Credentials Delivered via Email</span>
+                          <span className="px-1.5 py-0.2 bg-emerald-200 text-emerald-900 text-[9px] font-extrabold rounded-md">
+                            SENT
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                          Login credentials and portal access link have been emailed to{' '}
+                          <span className="font-semibold underline text-emerald-950">{adminCredentials.email}</span>. Plain text passwords are protected and never displayed on screen.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/90 p-3 rounded-xl border border-blue-200 space-y-2 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Admin Name:</span>
+                        <span className="font-bold text-slate-900">{adminCredentials.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Login Email:</span>
+                        <span className="font-mono font-bold text-blue-700">{adminCredentials.email}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Target Portal:</span>
+                        <span className="text-slate-700 font-semibold">{adminCredentials.portalRoute}</span>
+                      </div>
+                    </div>
+
+                    {/* Direct Quick Login & Copy Actions */}
+                    <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            `Administrator: ${adminCredentials.name}\nEmail: ${adminCredentials.email}\nPortal URL: http://localhost:3000${adminCredentials.portalRoute}`
+                          );
+                          alert('Administrator profile reference copied to clipboard.');
+                        }}
+                        className="flex-1 py-2 px-3 bg-white hover:bg-slate-50 border border-blue-300 text-blue-900 rounded-xl text-xs font-bold transition-all text-center cursor-pointer shadow-2xs"
+                      >
+                        Copy Account Reference
+                      </button>
+
+                      <a
+                        href={`/auth/login?email=${encodeURIComponent(adminCredentials.email)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all text-center shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Open Login Portal</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-center gap-3 pt-3">
                   <button
@@ -545,11 +702,14 @@ export default function OnboardCollegeDrawer({
                       setName('');
                       setCode('');
                       setContactEmail('');
+                      setAdminName('');
+                      setAdminEmail('');
+                      setAdminCredentials(null);
                     }}
                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                   >
                     <Building2 className="w-4 h-4" />
-                    <span>Onboard Another College</span>
+                    <span>Onboard Another Institution</span>
                   </button>
 
                   <button

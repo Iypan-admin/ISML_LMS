@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { 
-  Video, 
-  Clock, 
-  User, 
-  Users, 
-  MessageSquare, 
-  Hand, 
+import {
+  Video,
+  Clock,
+  User,
+  Users,
+  MessageSquare,
+  Hand,
   Mic,
-  MicOff, 
-  VideoOff, 
-  ShieldCheck, 
-  X, 
+  MicOff,
+  VideoOff,
+  ShieldCheck,
+  X,
   Send,
   CheckCircle2,
   Film,
@@ -24,54 +24,1026 @@ import {
   Lock,
   Volume2
 } from 'lucide-react';
-import { mockLiveClasses, LiveClass } from '@/mock/liveClasses';
+import { LiveClass } from '@/mock/liveClasses';
 import { currentStudent } from '@/mock/students';
+import RealLiveKitStage from '@/components/live/RealLiveKitStage';
+import InteractiveWhiteboard from '@/components/live/InteractiveWhiteboard';
+import SharedContentStage from '@/components/live/SharedContentStage';
+import { soundNotification } from '@/lib/soundNotification';
 
-const mockParticipants = [
-  { name: "Prof. Hélène Dubois", role: "Host (Main Tutor)", college: "ISML Faculty", isSpeaking: true, micOn: true },
-  { name: "Assistant Tutor Ananya", role: "Co-Host (Doubt Specialist)", college: "ISML Team", isSpeaking: false, micOn: false },
-  { name: "Bharathi M (You)", role: "Student", college: "Anna University", isSpeaking: false, micOn: false },
-  { name: "Priya Sharma", role: "Student", college: "IIT Madras", isSpeaking: false, micOn: false },
-  { name: "Rahul Verma", role: "Student", college: "Delhi University", isSpeaking: false, micOn: false },
-  { name: "Sneha Patel", role: "Student", college: "IIT Bombay", isSpeaking: false, micOn: false },
-  { name: "Karthik Raja", role: "Student", college: "PSG Tech", isSpeaking: false, micOn: false },
-];
+const mockParticipants: any[] = [];
 
 export default function LiveClassesPage() {
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'LIVE_NOW' | 'TODAY' | 'UPCOMING' | 'COMPLETED'>('LIVE_NOW');
   const [activeRoom, setActiveRoom] = useState<LiveClass | null>(null);
-  
+
   // Studio Drawer State
   const [rightDrawerTab, setRightDrawerTab] = useState<'CHAT' | 'PEOPLE' | 'POLLS'>('CHAT');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState([
-    { sender: 'Prof. Hélène Dubois', role: 'Main Tutor', text: 'Bonjour à tous! Welcome to today\'s webinar class on Bistro Conversations.', time: '10:30 AM' },
-    { sender: 'Assistant Tutor Ananya', role: 'Doubt Tutor', text: 'Please type your questions in the chat box. I am monitoring live doubts.', time: '10:32 AM' },
-    { sender: 'Priya Sharma', role: 'Student (IIT Madras)', text: 'Bonjour professeur!', time: '10:33 AM' }
-  ]);
+  const [messages, setMessages] = useState<Array<{ id?: string; sender: string; role: string; text: string; time: string }>>([]);
+  const [micOn, setMicOn] = useState<boolean>(false);
+  const [videoOn, setVideoOn] = useState<boolean>(false);
   const [handRaised, setHandRaised] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [pollVoted, setPollVoted] = useState<number | null>(null);
 
-  const filteredClasses = mockLiveClasses.filter(c => c.status === activeTab);
+  // Synchronized Interactive Content & Whiteboard from Tutor
+  const [studentContent, setStudentContent] = useState<any>(null);
+  const [participantsList, setParticipantsList] = useState<Array<{ id: string; name: string; role: string; regNo?: string; isHost?: boolean }>>([]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    setMessages(prev => [...prev, { sender: currentStudent.name, role: 'Student', text: chatInput, time: '10:44 AM' }]);
-    setChatInput('');
+  const [stayTimeSecs, setStayTimeSecs] = useState<number>(0);
+
+  useEffect(() => {
+    setMounted(true);
+    // Note: Do NOT auto-restore old stale active room from localStorage if tutor ended or isn't in room!
+    // Clean stale sessions on mount so student always knocks or waits for tutor approval
+    try {
+      localStorage.removeItem('isml_student_active_room');
+      sessionStorage.removeItem('isml_student_active_room');
+      localStorage.removeItem('isml_student_waiting_status');
+      sessionStorage.removeItem('isml_student_waiting_status');
+      localStorage.removeItem('isml_student_requesting_class');
+      sessionStorage.removeItem('isml_student_requesting_class');
+
+      const storedTime = localStorage.getItem('isml_student_stay_time_start') || sessionStorage.getItem('isml_student_stay_time_start');
+      if (storedTime) {
+        const t = parseInt(storedTime, 10);
+        if (!isNaN(t)) {
+          const diff = Math.floor((Date.now() - t) / 1000);
+          setStayTimeSecs(diff >= 0 ? diff : 0);
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!activeRoom) return;
+
+    try {
+      const stored = localStorage.getItem('isml_student_stay_time_start') || sessionStorage.getItem('isml_student_stay_time_start');
+      if (!stored) {
+        const now = Date.now().toString();
+        localStorage.setItem('isml_student_stay_time_start', now);
+        sessionStorage.setItem('isml_student_stay_time_start', now);
+      }
+    } catch {}
+
+    const timer = setInterval(() => {
+      try {
+        const stored = localStorage.getItem('isml_student_stay_time_start') || sessionStorage.getItem('isml_student_stay_time_start');
+        if (stored) {
+          const t = parseInt(stored, 10);
+          if (!isNaN(t)) {
+            const diff = Math.floor((Date.now() - t) / 1000);
+            setStayTimeSecs(diff >= 0 ? diff : 0);
+            return;
+          }
+        }
+      } catch {}
+      setStayTimeSecs((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeRoom]);
+
+  const formatStayTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} Mins`;
   };
 
-  const handleSendReaction = (emoji: string) => {
+  // Prevent accidental page reload (F5 / Ctrl+R / browser reload) while in live class
+  useEffect(() => {
+    if (!activeRoom) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Live class session in progress. Please use the Leave button to exit.';
+      return e.returnValue;
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === 'F5' ||
+        ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R'))
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeRoom]);
+
+  const [classesList, setClassesList] = useState<LiveClass[]>([]);
+  // Waiting Room state for Student
+  const [waitingRoomStatus, setWaitingRoomStatus] = useState<'IDLE' | 'WAITING' | 'ADMITTED' | 'DECLINED'>('IDLE');
+  const [requestingClass, setRequestingClass] = useState<LiveClass | null>(null);
+
+  // Tutor permission state for student media capabilities
+  const [canStudentUnmute, setCanStudentUnmute] = useState(false);
+  const [canStudentShareVideo, setCanStudentShareVideo] = useState(false);
+
+  const handleExitRoom = useCallback(() => {
+    setActiveRoom(null);
+    setWaitingRoomStatus('IDLE');
+    setRequestingClass(null);
+    setStayTimeSecs(0);
+    try {
+      localStorage.removeItem('isml_student_active_room');
+      localStorage.removeItem('isml_student_waiting_status');
+      localStorage.removeItem('isml_student_requesting_class');
+      localStorage.removeItem('isml_student_stay_time_start');
+      sessionStorage.removeItem('isml_student_active_room');
+      sessionStorage.removeItem('isml_student_waiting_status');
+      sessionStorage.removeItem('isml_student_requesting_class');
+      sessionStorage.removeItem('isml_student_stay_time_start');
+    } catch {}
+  }, []);
+
+  const handleEnterRoom = useCallback((cls: LiveClass) => {
+    setActiveRoom(cls);
+    setWaitingRoomStatus('ADMITTED');
+    setRequestingClass(cls);
+    try {
+      const jsonStr = JSON.stringify(cls);
+      localStorage.setItem('isml_student_active_room', jsonStr);
+      localStorage.setItem('isml_student_waiting_status', 'ADMITTED');
+      localStorage.setItem('isml_student_requesting_class', jsonStr);
+      sessionStorage.setItem('isml_student_active_room', jsonStr);
+      sessionStorage.setItem('isml_student_waiting_status', 'ADMITTED');
+      sessionStorage.setItem('isml_student_requesting_class', jsonStr);
+    } catch {}
+  }, []);
+
+  const handleSetWaiting = useCallback((cls: LiveClass) => {
+    setRequestingClass(cls);
+    setWaitingRoomStatus('WAITING');
+    try {
+      const jsonStr = JSON.stringify(cls);
+      localStorage.setItem('isml_student_waiting_status', 'WAITING');
+      localStorage.setItem('isml_student_requesting_class', jsonStr);
+      sessionStorage.setItem('isml_student_waiting_status', 'WAITING');
+      sessionStorage.setItem('isml_student_requesting_class', jsonStr);
+    } catch {}
+  }, []);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    const text = chatInput;
+    setChatInput('');
+
+    // Broadcast through backend interactive chat API so tutor and other students see it instantly
+    if (activeRoom) {
+      try {
+        await fetch(`http://localhost:4000/api/live-classes/${activeRoom.id}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            senderId: 'student_learner',
+            senderName: currentStudent.name,
+            role: 'student',
+            text,
+          }),
+        });
+      } catch {}
+    } else {
+      setMessages(prev => [...prev, { sender: currentStudent.name, role: 'Student', text, time: '10:44 AM' }]);
+    }
+  };
+
+  const [floatingEmojis, setFloatingEmojis] = useState<Array<{ id: string; emoji: string; studentName: string; left: number }>>([]);
+
+  const handleToggleHandRaise = async () => {
+    const nextState = !handRaised;
+    setHandRaised(nextState);
+    if (activeRoom) {
+      try {
+        await fetch(`http://localhost:4000/api/live-classes/${activeRoom.id}/interaction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'HAND_RAISE',
+            studentId: 'student_learner',
+            studentName: currentStudent.name,
+            raised: nextState,
+          }),
+        });
+      } catch {}
+    }
+  };
+
+  const handleSendReaction = async (emoji: string) => {
     setSelectedEmoji(emoji);
     setTimeout(() => setSelectedEmoji(null), 2000);
+
+    if (activeRoom) {
+      try {
+        await fetch(`http://localhost:4000/api/live-classes/${activeRoom.id}/interaction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'REACTION',
+            studentId: 'student_learner',
+            studentName: currentStudent.name,
+            emoji,
+          }),
+        });
+      } catch {}
+    }
   };
 
   const openMobileDrawer = (tab: 'CHAT' | 'PEOPLE' | 'POLLS') => {
     setRightDrawerTab(tab);
     setMobileDrawerOpen(true);
   };
+
+  useEffect(() => {
+    fetch('http://localhost:4000/api/live-classes')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+          const mapped: LiveClass[] = json.data.map((item: any) => {
+            const startDate = item.scheduledStartTime ? new Date(item.scheduledStartTime) : new Date();
+            const endDate = item.scheduledEndTime ? new Date(item.scheduledEndTime) : new Date(startDate.getTime() + (item.durationMinutes || 60) * 60000);
+
+            const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const formatDate = (d: Date) => d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
+            const formattedTimeSlot = `${formatTime(startDate)} – ${formatTime(endDate)}`;
+            const formattedDate = formatDate(startDate);
+
+            return {
+              id: item.id,
+              topic: item.title || 'Live Interactive Class',
+              tutorName: item.tutorName || 'Lead Trainer',
+              tutorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+              tutorTitle: 'Certified Faculty',
+              status: item.status === 'LIVE' ? 'LIVE_NOW' : item.status === 'ENDED' ? 'COMPLETED' : 'TODAY',
+              date: formattedDate,
+              timeSlot: formattedTimeSlot,
+              durationMins: item.durationMinutes || 60,
+              batchCode: item.batchName || 'BAT-01',
+              batchName: item.batchName || 'General Batch',
+              moduleName: item.courseName || 'Language Certification',
+              roomToken: item.roomName || item.id,
+              attendeesCount: item.enrolledStudentsCount || 35,
+              recordingAvailable: false,
+            };
+          });
+          setClassesList(mapped);
+        }
+      })
+      .catch(() => { });
+  }, []);
+
+  // Poll waiting room status if student is in WAITING state
+  useEffect(() => {
+    if (waitingRoomStatus !== 'WAITING' || !requestingClass) return;
+
+    let studentId = 'user-student';
+    let studentName = 'Aarav Sharma';
+    try {
+      const stored = localStorage.getItem('isml_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.id) studentId = u.id;
+        if (u.name) studentName = u.name;
+      }
+    } catch { }
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`http://localhost:4000/api/live-classes/${requestingClass.id}/join-status?studentId=${studentId}`);
+        const json = await res.json();
+        if (json.data?.status === 'APPROVED') {
+          handleEnterRoom(requestingClass);
+          clearInterval(interval);
+        } else if (json.data?.status === 'REJECTED') {
+          handleExitRoom();
+          setWaitingRoomStatus('DECLINED');
+          clearInterval(interval);
+        }
+      } catch { }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [waitingRoomStatus, requestingClass, handleEnterRoom, handleExitRoom]);
+
+  // Real-time Interactive Sync: Content, Whiteboard, Chat & Attendance Ping
+  useEffect(() => {
+    if (!activeRoom) return;
+    const classId = activeRoom.id;
+
+    // 1. Initial fetch of interactive state from backend
+    fetch(`http://localhost:4000/api/live-classes/${classId}/interactive-state`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.data) {
+          if (res.data.sharedContent && res.data.sharedContent.type !== 'NONE') {
+            setStudentContent(res.data.sharedContent);
+          }
+          if (res.data.permissions) {
+            setCanStudentUnmute(Boolean(res.data.permissions.allowStudentMic));
+            setCanStudentShareVideo(Boolean(res.data.permissions.allowStudentVideo));
+            if (!res.data.permissions.allowStudentMic) setMicOn(false);
+            if (!res.data.permissions.allowStudentVideo) setVideoOn(false);
+          }
+          if (res.data.messages && Array.isArray(res.data.messages)) {
+            setMessages(
+              res.data.messages.map((m: any) => ({
+                id: m.id,
+                sender: m.senderName || m.sender,
+                role: m.role === 'teacher' ? 'Faculty Instructor' : 'Student',
+                text: m.text,
+                time: m.time,
+              }))
+            );
+          }
+          if (res.data.attendance && Array.isArray(res.data.attendance)) {
+            const tutorEntry = {
+              id: 'tutor_host',
+              name: activeRoom.tutorName || 'Course Instructor',
+              role: 'Host Instructor',
+              regNo: 'FACULTY-LEAD',
+              isHost: true,
+            };
+            const studentEntries = res.data.attendance.map((s: any) => ({
+              id: s.studentId,
+              name: s.studentName,
+              role: 'Enrolled Learner',
+              regNo: s.regNo,
+              isHost: false,
+            }));
+            setParticipantsList([tutorEntry, ...studentEntries]);
+          } else {
+            setParticipantsList([
+              {
+                id: 'tutor_host',
+                name: activeRoom.tutorName || 'Course Instructor',
+                role: 'Host Instructor',
+                regNo: 'FACULTY-LEAD',
+                isHost: true,
+              },
+              {
+                id: 'student_current',
+                name: currentStudent.name,
+                role: 'Enrolled Learner',
+                regNo: 'LOY-FR-2026-042',
+                isHost: false,
+              },
+            ]);
+          }
+        }
+      })
+      .catch(() => {});
+
+    // 2. Attendance Ping: Auto records verified student attendance in DB every 30 seconds
+    let studentId = 'user-student';
+    let studentName = 'Aarav Sharma';
+    try {
+      const stored = localStorage.getItem('isml_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.id) studentId = u.id;
+        if (u.name) studentName = u.name;
+      }
+    } catch {}
+
+    const attendanceTimer = setInterval(() => {
+      fetch(`http://localhost:4000/api/live-classes/${classId}/attendance-ping`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          studentName,
+          regNo: 'LOY-FR-2026-042',
+        }),
+      }).catch(() => {});
+    }, 30000);
+
+    // Initial ping on entry
+    fetch(`http://localhost:4000/api/live-classes/${classId}/attendance-ping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId,
+        studentName,
+        regNo: 'LOY-FR-2026-042',
+      }),
+    }).catch(() => {});
+
+    // 3. Listen for Realtime Tutor Broadcasts: Shared Content & Chat Messages
+    const handleRealtime = (e: any) => {
+      const detail = e?.detail;
+      if (detail?.payload?.classId !== classId) return;
+
+      if (detail?.type === 'CLASSROOM_CONTENT_SHARED') {
+        const c = detail?.payload?.content;
+        if (c?.type === 'NONE') {
+          setStudentContent(null);
+        } else {
+          setStudentContent(c);
+        }
+      }
+
+      if (detail?.type === 'CLASSROOM_PERMISSIONS_UPDATED') {
+        const perms = detail?.payload?.permissions;
+        if (perms) {
+          setCanStudentUnmute(Boolean(perms.allowStudentMic));
+          setCanStudentShareVideo(Boolean(perms.allowStudentVideo));
+          if (!perms.allowStudentMic) {
+            setMicOn(false);
+            soundNotification.playNoticeTone();
+          }
+          if (!perms.allowStudentVideo) {
+            setVideoOn(false);
+          }
+        }
+      }
+
+      if (detail?.type === 'CLASSROOM_CHAT_MESSAGE') {
+        const m = detail.payload.message;
+        setMessages((prev) => {
+          if (m?.id && prev.some((existing) => existing.id === m.id)) {
+            return prev;
+          }
+          // Play pleasant incoming chat message notification sound
+          soundNotification.playMessagePop();
+
+          return [
+            ...prev,
+            {
+              id: m.id,
+              sender: m.senderName,
+              role: m.role === 'teacher' ? 'Faculty Instructor' : 'Student',
+              text: m.text,
+              time: m.time,
+            },
+          ];
+        });
+      }
+
+      if (detail?.type === 'CLASSROOM_INTERACTION') {
+        const inter = detail.payload?.interaction;
+        if (inter?.type === 'REACTION' && inter.emoji) {
+          const emojiId = inter.id || `em_${Date.now()}_${Math.random()}`;
+          const leftPercent = 25 + Math.floor(Math.random() * 50);
+          setFloatingEmojis((prev) => {
+            if (prev.some((e) => e.id === emojiId)) return prev;
+            return [...prev, { id: emojiId, emoji: inter.emoji, studentName: inter.studentName, left: leftPercent }];
+          });
+          setTimeout(() => {
+            setFloatingEmojis((prev) => prev.filter((e) => e.id !== emojiId));
+          }, 2500);
+        }
+      }
+
+      if (detail?.type === 'CLASSROOM_ATTENDANCE_UPDATE') {
+        const attList = detail.payload?.attendance;
+        if (Array.isArray(attList)) {
+          const tutorEntry = {
+            id: 'tutor_host',
+            name: activeRoom.tutorName || 'Course Instructor',
+            role: 'Host Instructor',
+            regNo: 'FACULTY-LEAD',
+            isHost: true,
+          };
+          const studentEntries = attList.map((s: any) => ({
+            id: s.studentId,
+            name: s.studentName,
+            role: 'Enrolled Learner',
+            regNo: s.regNo,
+            isHost: false,
+          }));
+          setParticipantsList([tutorEntry, ...studentEntries]);
+        }
+      }
+    };
+
+    window.addEventListener('isml-realtime-event', handleRealtime);
+
+    return () => {
+      clearInterval(attendanceTimer);
+      window.removeEventListener('isml-realtime-event', handleRealtime);
+    };
+  }, [activeRoom]);
+
+  // Real-time Event Listener & Polling: If tutor ends session, automatically kick out student!
+  useEffect(() => {
+    if (!activeRoom) return;
+    const currentActiveRoomId = (activeRoom as any).id;
+    if (!currentActiveRoomId) return;
+
+    // SSE Realtime Event Listener (Instant Webhook/SSE - Zero need to poll or reload)
+    const handleClassEnded = (e: any) => {
+      if (e?.detail?.type === 'LIVE_CLASS_ENDED') {
+        const endedId = e?.detail?.payload?.classId;
+        if (!endedId || endedId === currentActiveRoomId) {
+          handleExitRoom();
+        }
+      }
+    };
+
+    // Auto-Kick & End Class Timer: When scheduledEndTime passes, automatically end session!
+    const endMs = (activeRoom as any).scheduledEndTime
+      ? new Date((activeRoom as any).scheduledEndTime).getTime()
+      : (activeRoom as any).timeSlot
+      ? 0
+      : 0;
+
+    let autoEndTimer: NodeJS.Timeout | null = null;
+    if (endMs && endMs > Date.now()) {
+      autoEndTimer = setTimeout(() => {
+        handleExitRoom();
+        alert('This scheduled live class session has reached its end time (10:04 AM) and is now closed.');
+      }, endMs - Date.now());
+    } else if (endMs && endMs <= Date.now()) {
+      handleExitRoom();
+    }
+
+    window.addEventListener('isml-realtime-event', handleClassEnded);
+
+    return () => {
+      if (autoEndTimer) clearTimeout(autoEndTimer);
+      window.removeEventListener('isml-realtime-event', handleClassEnded);
+    };
+  }, [activeRoom, handleExitRoom]);
+
+  const handleStudentJoinClick = async (item: LiveClass) => {
+    // If class is already ENDED / COMPLETED, block join directly!
+    if (item.status === 'COMPLETED') {
+      alert('This live class session has already ended. Please view the recording in the VOD library.');
+      return;
+    }
+
+    handleSetWaiting(item);
+
+    let studentId = 'user-student';
+    let studentName = 'Aarav Sharma';
+    try {
+      const stored = localStorage.getItem('isml_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.id) studentId = u.id;
+        if (u.name) studentName = u.name;
+      }
+    } catch { }
+
+    try {
+      const res = await fetch(`http://localhost:4000/api/live-classes/${item.id}/request-join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId,
+          studentName,
+          regNo: 'LOY-FR-2026-042',
+        }),
+      });
+      const data = await res.json();
+      if (data.status === 'ended' || data.error === 'ENDED') {
+        handleExitRoom();
+        alert('This session has already ended by the host tutor.');
+      }
+    } catch { }
+  };
+  const handleCancelJoinRequest = async () => {
+    if (!requestingClass) {
+      setWaitingRoomStatus('IDLE');
+      return;
+    }
+
+    let studentId = 'user-student';
+    let studentName = 'Aarav Sharma';
+    try {
+      const stored = localStorage.getItem('isml_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u.id) studentId = u.id;
+        if (u.name) studentName = u.name;
+      }
+    } catch {}
+
+    const classId = requestingClass.id;
+    setWaitingRoomStatus('IDLE');
+    setRequestingClass(null);
+
+    try {
+      await fetch(`http://localhost:4000/api/live-classes/${classId}/cancel-join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, studentName }),
+      });
+    } catch {}
+  };
+
+  const filteredClasses = classesList.filter((c: any) => c.status === activeTab || (activeTab === "TODAY" && c.status === "SCHEDULED"));
+
+  // Prevent SSR hydration mismatch before browser mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500">
+        <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // If student is inside active live class room, render ONLY the full-screen classroom view!
+  // This eliminates any underlying dashboard flash during reload.
+  if (activeRoom) {
+    return (
+      <div className="fixed inset-0 bg-[#121212] z-50 flex flex-col font-sans text-white overflow-hidden">
+        {/* Top Header Bar */}
+        <div className="h-14 bg-[#1E1E1E] border-b border-white/10 px-3 sm:px-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 truncate">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-600/30 text-rose-400 border border-rose-500/40 text-[10px] sm:text-xs font-extrabold animate-pulse shrink-0">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              <span>REC</span>
+            </div>
+            <h2 className="text-xs sm:text-sm font-bold text-white truncate max-w-[180px] sm:max-w-xl">
+              {activeRoom.topic}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden md:flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Stay Time: {formatStayTime(stayTimeSecs)} (Attendance Tracked)</span>
+            </span>
+
+            <button
+              onClick={handleExitRoom}
+              className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white"
+              title="Exit Class"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area (LiveKit WebRTC Classroom + Synchronized Content/Whiteboard) */}
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Left Studio Stage View with Real LiveKit Media Feeds or Synchronized Whiteboard/Content */}
+          <div className="flex-1 bg-[#121212] p-2 sm:p-4 flex flex-col justify-between relative overflow-hidden w-full">
+            {/* Floating Animated Emojis Streamed from Classmates */}
+            <div className="absolute inset-0 pointer-events-none z-40 overflow-hidden">
+              {floatingEmojis.map((item) => (
+                <div
+                  key={item.id}
+                  style={{ left: `${item.left}%` }}
+                  className="absolute bottom-16 flex flex-col items-center animate-float-fade"
+                >
+                  <span className="text-3xl filter drop-shadow-lg">{item.emoji}</span>
+                  <span className="text-[10px] font-bold text-white/90 bg-black/60 px-1.5 py-0.2 rounded-full whitespace-nowrap mt-0.5">
+                    {item.studentName}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex-1 relative rounded-2xl overflow-hidden bg-[#1E1E1E] border border-white/10 flex flex-col">
+              {studentContent && studentContent.type === 'WHITEBOARD' ? (
+                <InteractiveWhiteboard
+                  classId={activeRoom.id}
+                  isHost={false}
+                />
+              ) : studentContent && studentContent.type !== 'NONE' ? (
+                <SharedContentStage
+                  content={studentContent}
+                  isHost={false}
+                  classId={activeRoom.id}
+                />
+              ) : (
+                <RealLiveKitStage
+                  classId={activeRoom.id}
+                  identity={currentStudent.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'student_learner'}
+                  name={currentStudent.name}
+                  role="student"
+                  onDisconnect={handleExitRoom}
+                  hideControls={true}
+                  externalMicOn={micOn}
+                  externalVideoOn={videoOn}
+                  canUnmute={canStudentUnmute}
+                  canShareVideo={canStudentShareVideo}
+                />
+              )}
+            </div>
+
+            {/* 🎛 FLOATING GOOGLE MEET CONTROL DOCK BAR */}
+            <div className="mt-2 p-2 bg-[#1E1E1E] rounded-2xl border border-white/10 flex items-center justify-between max-w-3xl mx-auto w-full shadow-2xl z-20">
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    if (!canStudentUnmute && !micOn) {
+                      soundNotification.playNoticeTone();
+                      alert('🔒 Microphone is locked by the Lead Tutor. Please raise your hand if you want to speak.');
+                      return;
+                    }
+                    setMicOn(!micOn);
+                  }}
+                  className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer relative ${
+                    micOn
+                      ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/30'
+                      : !canStudentUnmute
+                      ? 'bg-slate-800/80 border-slate-700/60 text-slate-500 hover:text-slate-400'
+                      : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
+                  }`}
+                  title={
+                    !canStudentUnmute
+                      ? 'Microphone locked by Lead Tutor (Click to request)'
+                      : micOn
+                      ? 'Mute Microphone'
+                      : 'Unmute Microphone'
+                  }
+                >
+                  {micOn ? <Mic className="w-4 h-4 sm:w-5 sm:h-5" /> : <MicOff className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  {!canStudentUnmute && (
+                    <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 p-0.5 rounded-full ring-2 ring-[#1E1E1E]">
+                      <Lock className="w-2.5 h-2.5" />
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (!canStudentShareVideo && !videoOn) {
+                      soundNotification.playNoticeTone();
+                      alert('🔒 Camera access is locked by the Lead Tutor.');
+                      return;
+                    }
+                    setVideoOn(!videoOn);
+                  }}
+                  className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer relative ${
+                    videoOn
+                      ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/30 ring-2 ring-blue-400/30'
+                      : !canStudentShareVideo
+                      ? 'bg-slate-800/80 border-slate-700/60 text-slate-500 hover:text-slate-400'
+                      : 'bg-slate-800 border-white/10 text-slate-400 hover:text-slate-300'
+                  }`}
+                  title={
+                    !canStudentShareVideo
+                      ? 'Camera locked by Lead Tutor'
+                      : videoOn
+                      ? 'Turn Off Camera'
+                      : 'Turn On Camera'
+                  }
+                >
+                  {videoOn ? <Video className="w-4 h-4 sm:w-5 sm:h-5" /> : <VideoOff className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  {!canStudentShareVideo && (
+                    <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 p-0.5 rounded-full ring-2 ring-[#1E1E1E]">
+                      <Lock className="w-2.5 h-2.5" />
+                    </span>
+                  )}
+                </button>
+
+                {/* Hand Raise */}
+                <button
+                  onClick={handleToggleHandRaise}
+                  className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer ${handRaised ? 'bg-amber-500 border-amber-400 text-slate-950 animate-bounce' : 'bg-slate-800 border-white/10 text-white'
+                    }`}
+                  title={handRaised ? 'Lower Hand' : 'Raise Hand to Tutor'}
+                >
+                  <Hand className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+
+                {/* Emoji Quick Reactions */}
+                <div className="hidden md:flex items-center gap-1 bg-slate-800/80 p-1 rounded-full border border-white/10">
+                  {['👏', '👍', '❤️', '❓'].map((emoji) => (
+                    <button key={emoji} onClick={() => handleSendReaction(emoji)} className="p-1 hover:bg-white/10 rounded-full text-sm">
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {/* Drawer Controls */}
+                <button
+                  onClick={() => { setRightDrawerTab('CHAT'); setMobileDrawerOpen(true); }}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 border transition-all ${rightDrawerTab === 'CHAT' ? 'bg-[#0052CC] border-cyan-400 text-white' : 'bg-slate-800 border-white/10 text-slate-300'
+                    }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="hidden sm:inline">Chat</span>
+                </button>
+
+                <button
+                  onClick={() => { setRightDrawerTab('PEOPLE'); setMobileDrawerOpen(true); }}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 border transition-all ${rightDrawerTab === 'PEOPLE' ? 'bg-[#0052CC] border-cyan-400 text-white' : 'bg-slate-800 border-white/10 text-slate-300'
+                    }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">People</span>
+                </button>
+
+                {/* Red Leave Class Button */}
+                <button
+                  onClick={handleExitRoom}
+                  className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-full flex items-center gap-1 shadow-lg shadow-rose-900/50 cursor-pointer shrink-0"
+                >
+                  <PhoneOff className="w-4 h-4" />
+                  <span>Leave</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Side Drawer Panel (hidden on mobile, visible lg:flex) */}
+          <div className="hidden lg:flex w-96 bg-[#1E1E1E] border-l border-white/10 flex-col h-full shrink-0">
+            <div className="p-3 bg-[#181818] border-b border-white/10 flex items-center justify-between">
+              <span className="text-xs font-bold text-cyan-300 flex items-center gap-2">
+                {rightDrawerTab === 'CHAT' && <><MessageSquare className="w-4 h-4" /> In-Class Live Chat</>}
+                {rightDrawerTab === 'PEOPLE' && <><Users className="w-4 h-4" /> Connected Learners ({participantsList.length})</>}
+                {rightDrawerTab === 'POLLS' && <><BarChart2 className="w-4 h-4" /> Live In-Class Polls</>}
+              </span>
+              <div className="flex items-center gap-1 bg-[#121212] p-1 rounded-lg">
+                <button
+                  onClick={() => setRightDrawerTab('CHAT')}
+                  className={`p-1.5 rounded-md text-xs font-bold ${rightDrawerTab === 'CHAT' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Chat
+                </button>
+                <button
+                  onClick={() => setRightDrawerTab('PEOPLE')}
+                  className={`p-1.5 rounded-md text-xs font-bold ${rightDrawerTab === 'PEOPLE' ? 'bg-cyan-500/20 text-cyan-400' : 'text-slate-400 hover:text-white'}`}
+                >
+                  People
+                </button>
+              </div>
+            </div>
+
+            {rightDrawerTab === 'CHAT' && (
+              <div className="flex-1 flex flex-col h-full overflow-hidden">
+                <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-6 text-slate-500 space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400">
+                        <MessageSquare className="w-5 h-5" />
+                      </div>
+                      <p className="font-semibold text-slate-400 text-xs">No chat messages yet</p>
+                      <p className="text-[11px] text-slate-500">Live conversation between tutor & classmates will appear here.</p>
+                    </div>
+                  ) : (
+                    messages.map((m, idx) => (
+                      <div key={idx} className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-bold text-cyan-300">{m.sender}</span>
+                          <span className="text-slate-400">{m.time}</span>
+                        </div>
+                        <p className="text-slate-200">{m.text}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 flex items-center gap-2 bg-[#181818]">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Send a message to everyone..."
+                    className="flex-1 bg-[#252525] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                  />
+                  <button type="submit" className="p-2 bg-[#0052CC] text-white rounded-xl">
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {rightDrawerTab === 'PEOPLE' && (
+              <div className="flex-1 p-4 overflow-y-auto space-y-2 text-xs">
+                {participantsList.length === 0 ? (
+                  <div className="text-center p-6 text-slate-500">
+                    <p className="text-xs">No learners connected yet.</p>
+                  </div>
+                ) : (
+                  participantsList.map((p) => (
+                    <div key={p.id} className="p-2.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${p.isHost ? 'bg-cyan-600 text-white' : 'bg-blue-600/30 text-blue-300'}`}>
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-100 flex items-center gap-1.5">
+                            <span>{p.name}</span>
+                            {p.isHost && (
+                              <span className="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 px-1.5 py-0.2 rounded-full font-bold">
+                                Host
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            {p.role} {p.regNo ? `• ${p.regNo}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500" title="Connected & Active" />
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Bottom Sheet Drawer */}
+          {mobileDrawerOpen && (
+            <div className="fixed inset-0 z-50 bg-black/60 lg:hidden flex flex-col justify-end">
+              <div className="bg-[#1E1E1E] rounded-t-3xl h-[70vh] flex flex-col border-t border-white/10">
+                <div className="p-3 bg-[#181818] border-b border-white/10 flex items-center justify-between rounded-t-3xl">
+                  <span className="text-xs font-bold text-cyan-300">{rightDrawerTab}</span>
+                  <button onClick={() => setMobileDrawerOpen(false)} className="p-1.5 bg-white/10 rounded-lg text-slate-300">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {rightDrawerTab === 'CHAT' && (
+                  <div className="flex-1 flex flex-col h-full overflow-hidden">
+                    <div className="flex-1 p-3 overflow-y-auto space-y-3 text-xs">
+                      {messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center p-6 text-slate-500 space-y-2">
+                          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400">
+                            <MessageSquare className="w-5 h-5" />
+                          </div>
+                          <p className="font-semibold text-slate-400 text-xs">No chat messages yet</p>
+                          <p className="text-[11px] text-slate-500">Live conversation between tutor & classmates will appear here.</p>
+                        </div>
+                      ) : (
+                        messages.map((m, idx) => (
+                          <div key={idx} className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className="font-bold text-cyan-300">{m.sender}</span>
+                              <span className="text-slate-400">{m.time}</span>
+                            </div>
+                            <p className="text-slate-200">{m.text}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 flex items-center gap-2 bg-[#181818]">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Send a message to everyone..."
+                        className="flex-1 bg-[#252525] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                      />
+                      <button type="submit" className="p-2 bg-[#0052CC] text-white rounded-xl">
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {rightDrawerTab === 'PEOPLE' && (
+                  <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
+                    {participantsList.length === 0 ? (
+                      <div className="text-center p-6 text-slate-500">
+                        <p className="text-xs">No learners connected yet.</p>
+                      </div>
+                    ) : (
+                      participantsList.map((p) => (
+                        <div key={p.id} className="p-2.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${p.isHost ? 'bg-cyan-600 text-white' : 'bg-blue-600/30 text-blue-300'}`}>
+                              {p.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-100 flex items-center gap-1.5">
+                                <span>{p.name}</span>
+                                {p.isHost && (
+                                  <span className="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 px-1.5 py-0.2 rounded-full font-bold">
+                                    Host
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono">
+                                {p.role} {p.regNo ? `• ${p.regNo}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500" title="Connected & Active" />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-8 font-sans">
@@ -90,24 +1062,22 @@ export default function LiveClassesPage() {
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
         {[
-          { key: 'LIVE_NOW', label: '🔴 Live Now', count: mockLiveClasses.filter(c => c.status === 'LIVE_NOW').length },
-          { key: 'TODAY', label: "Today's Schedule", count: mockLiveClasses.filter(c => c.status === 'TODAY').length },
-          { key: 'UPCOMING', label: 'Upcoming Classes', count: mockLiveClasses.filter(c => c.status === 'UPCOMING').length },
-          { key: 'COMPLETED', label: 'Completed Classes', count: mockLiveClasses.filter(c => c.status === 'COMPLETED').length }
+          { key: 'LIVE_NOW', label: '🔴 Live Now', count: classesList.filter(c => c.status === 'LIVE_NOW').length },
+          { key: 'TODAY', label: "Today's Schedule", count: classesList.filter(c => c.status === 'TODAY').length },
+          { key: 'UPCOMING', label: 'Upcoming Classes', count: classesList.filter(c => c.status === 'UPCOMING').length },
+          { key: 'COMPLETED', label: 'Completed Classes', count: classesList.filter(c => c.status === 'COMPLETED').length }
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
-            className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-              activeTab === tab.key
+            className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${activeTab === tab.key
                 ? 'bg-[#0052CC] text-white border-b-2 border-cyan-400 shadow-xs'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
+              }`}
           >
             <span>{tab.label}</span>
-            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-              activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-            }`}>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}>
               {tab.count}
             </span>
           </button>
@@ -126,9 +1096,8 @@ export default function LiveClassesPage() {
             <div key={item.id} className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
               <div className="p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${
-                    item.status === 'LIVE_NOW' ? 'bg-rose-600 text-white animate-live-pulse' : 'bg-blue-100 text-[#0052CC]'
-                  }`}>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${item.status === 'LIVE_NOW' ? 'bg-rose-600 text-white animate-live-pulse' : 'bg-blue-100 text-[#0052CC]'
+                    }`}>
                     {item.status === 'LIVE_NOW' ? '🔴 LIVE WEBINAR NOW' : item.timeSlot}
                   </span>
                   <span className="text-xs font-mono font-semibold text-slate-500">{item.moduleName}</span>
@@ -147,29 +1116,49 @@ export default function LiveClassesPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50/80 border-t border-slate-200 flex items-center justify-between">
-                <div className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-[#0052CC]" />
-                  <span>{item.date} • {item.durationMins} Mins</span>
+              <div className="p-4 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="space-y-1">
+                  <div className="text-xs text-slate-700 font-bold flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#0052CC] shrink-0" />
+                    <span>{item.timeSlot}</span>
+                    <span className="text-slate-400 font-normal">({item.durationMins} Mins)</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium pl-5">
+                    Date: <strong className="text-slate-700">{item.date}</strong>
+                  </div>
                 </div>
 
                 {item.status === 'LIVE_NOW' && (
                   <button
-                    onClick={() => { setActiveRoom(item); setMobileDrawerOpen(false); }}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-xl shadow-md flex items-center gap-1.5 transition-transform transform active:scale-95 cursor-pointer"
+                    onClick={() => handleStudentJoinClick(item)}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-xl shadow-md flex items-center gap-1.5 transition-transform transform active:scale-95 cursor-pointer ring-2 ring-rose-400/40"
                   >
                     <Video className="w-4 h-4" />
                     <span>Join Live Class</span>
                   </button>
                 )}
 
-                {item.status === 'COMPLETED' && item.recordingAvailable && (
-                  <a
-                    href="/recordings"
-                    className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-lg flex items-center gap-1"
-                  >
-                    <Film className="w-3.5 h-3.5" /> Watch Replay
-                  </a>
+                {item.status === 'COMPLETED' && (
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-slate-100 text-slate-500 text-xs font-bold rounded-lg border border-slate-200">
+                      Session Ended
+                    </span>
+                    {item.recordingAvailable && (
+                      <a
+                        href="/recordings"
+                        className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+                      >
+                        <Film className="w-3.5 h-3.5" /> Watch Replay
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {item.status === 'TODAY' && (
+                  <span className="px-3 py-1.5 bg-slate-100 text-slate-500 text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Starts {item.timeSlot}</span>
+                  </span>
                 )}
               </div>
             </div>
@@ -177,281 +1166,56 @@ export default function LiveClassesPage() {
         )}
       </div>
 
-      {/* 🎬 100% MOBILE-OPTIMIZED GOOGLE MEET / ZOOM CLASSROOM MODAL */}
-      {activeRoom && (
-        <div className="fixed inset-0 bg-[#121212] z-50 flex flex-col font-sans text-white overflow-hidden">
-          {/* Top Header Bar */}
-          <div className="h-14 bg-[#1E1E1E] border-b border-white/10 px-3 sm:px-4 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2 truncate">
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-600/30 text-rose-400 border border-rose-500/40 text-[10px] sm:text-xs font-extrabold animate-pulse shrink-0">
-                <span className="w-2 h-2 rounded-full bg-rose-500" />
-                <span>REC</span>
-              </div>
-              <h2 className="text-xs sm:text-sm font-bold text-white truncate max-w-[180px] sm:max-w-xl">
-                {activeRoom.topic}
-              </h2>
+      {/* ⏳ WAITING FOR TUTOR APPROVAL MODAL */}
+      {waitingRoomStatus === 'WAITING' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-full bg-blue-50 text-[#0052CC] mx-auto flex items-center justify-center border-4 border-blue-100 shadow-inner">
+              <Clock className="w-8 h-8 animate-spin" />
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="hidden md:flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Stay Time: 18:42 Mins (Attendance Tracked)</span>
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+                Waiting Room
               </span>
-
-              <button
-                onClick={() => setActiveRoom(null)}
-                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white"
-                title="Exit Class"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <h3 className="text-lg font-black text-slate-900 mt-2">Waiting for Tutor Approval...</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Your entry request has been sent to <strong>{requestingClass?.tutorName || 'the Faculty Tutor'}</strong>. You will be admitted into the classroom immediately upon tutor authorization.
+              </p>
             </div>
+
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 flex items-center justify-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Identity Verified: Aarav Sharma (LOY-FR-2026-042)</span>
+            </div>
+
+            <button
+              onClick={handleCancelJoinRequest}
+              className="text-xs text-slate-400 hover:text-slate-600 font-semibold cursor-pointer underline pt-2"
+            >
+              Cancel Request & Go Back
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex overflow-hidden relative">
-            {/* Left Studio Stage View (Occupies 100% on Mobile!) */}
-            <div className="flex-1 bg-[#121212] p-2 sm:p-4 flex flex-col justify-between relative overflow-hidden w-full">
-              {/* Main Stage Grid */}
-              <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2 sm:gap-3 relative rounded-2xl overflow-hidden bg-[#1E1E1E] border border-white/10 p-2">
-                {/* Main Stage: Presentation Screen Share */}
-                <div className="lg:col-span-3 bg-slate-900 rounded-xl relative overflow-hidden flex flex-col justify-between border border-slate-800 h-full">
-                  <div className="p-2.5 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-10 text-xs">
-                    <span className="font-bold text-cyan-400 flex items-center gap-1.5 truncate">
-                      <Monitor className="w-4 h-4 text-cyan-400 shrink-0" />
-                      <span className="truncate">Prof. Hélène Dubois (Screen Share)</span>
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded shrink-0">1080p</span>
-                  </div>
-
-                  {/* Presentation Slide Content Simulation */}
-                  <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center space-y-3 bg-gradient-to-b from-slate-900 via-[#0B2447] to-slate-950 overflow-y-auto">
-                    <div className="p-4 bg-white/10 border border-white/20 rounded-2xl backdrop-blur-md w-full max-w-lg space-y-2 shadow-2xl">
-                      <span className="text-[10px] font-mono font-bold text-cyan-300 uppercase tracking-widest">Syllabus Slide 14</span>
-                      <h3 className="text-base sm:text-xl font-bold text-white font-serif leading-snug">Au Café — Essential French Ordering Phrases</h3>
-                      <div className="p-3 bg-slate-950/80 rounded-xl text-left space-y-1.5 text-xs text-slate-200 font-mono">
-                        <p><span className="text-cyan-400 font-bold">Tutor:</span> "Bonjour! Que désirez-vous?"</p>
-                        <p><span className="text-emerald-400 font-bold">Student:</span> "Je voudrais un café au lait, s'il vous plaît."</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Floating Reaction Bubble */}
-                  {selectedEmoji && (
-                    <div className="absolute bottom-12 right-6 p-2.5 bg-slate-900/90 text-2xl rounded-full border border-cyan-400/50 shadow-2xl animate-bounce z-20">
-                      {selectedEmoji}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column: Tutor Spotlight + Student Thumbnails */}
-                <div className="lg:col-span-1 flex flex-row lg:flex-col gap-2 shrink-0">
-                  {/* Tutor Active Speaker Tile */}
-                  <div className="relative aspect-video lg:aspect-auto flex-1 rounded-xl overflow-hidden bg-slate-950 border-2 border-cyan-500/80 shadow-lg min-h-[90px]">
-                    <Image src={activeRoom.tutorAvatar} alt={activeRoom.tutorName} fill className="object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent" />
-                    <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-slate-900/90 border border-cyan-400/50 flex items-center gap-1 text-[9px] font-bold text-cyan-300">
-                      <Volume2 className="w-3 h-3 text-cyan-400 animate-pulse" />
-                      <span>Speaking</span>
-                    </div>
-                    <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[11px] text-white font-bold truncate">
-                      <span className="truncate">{activeRoom.tutorName}</span>
-                    </div>
-                  </div>
-
-                  {/* Student Participant Thumbnail Grid */}
-                  <div className="hidden sm:grid grid-cols-2 lg:grid-cols-2 gap-1.5 shrink-0">
-                    <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center">
-                      <Image src={currentStudent.avatarUrl} alt="You" fill className="object-cover opacity-90" />
-                      <div className="absolute bottom-1 left-1 bg-slate-900/80 px-1 py-0.2 rounded text-[8px] font-bold text-white">You</div>
-                    </div>
-
-                    <div className="relative aspect-video rounded-lg overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center">
-                      <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" alt="Priya" fill className="object-cover opacity-90" />
-                      <div className="absolute bottom-1 left-1 bg-slate-900/80 px-1 py-0.2 rounded text-[8px] font-bold text-white">Priya</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 🎛 FLOATING GOOGLE MEET CONTROL DOCK BAR */}
-              <div className="mt-2 p-2 bg-[#1E1E1E] rounded-2xl border border-white/10 flex items-center justify-between max-w-3xl mx-auto w-full shadow-2xl z-20">
-                <div className="flex items-center gap-1.5">
-                  <button className="p-2.5 sm:p-3 rounded-full bg-rose-600/20 border border-rose-500/40 text-rose-400" title="Mic Muted">
-                    <MicOff className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-
-                  <button className="p-2.5 sm:p-3 rounded-full bg-slate-800 border border-white/10 text-slate-400" title="Camera Off">
-                    <VideoOff className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-
-                  {/* Hand Raise */}
-                  <button
-                    onClick={() => setHandRaised(!handRaised)}
-                    className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer ${
-                      handRaised ? 'bg-amber-500 border-amber-400 text-slate-950 animate-bounce' : 'bg-slate-800 border-white/10 text-white'
-                    }`}
-                  >
-                    <Hand className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-
-                  {/* Emoji Quick Reactions */}
-                  <div className="hidden md:flex items-center gap-1 bg-slate-800/80 p-1 rounded-full border border-white/10">
-                    {['👏', '👍', '❤️', '❓'].map((emoji) => (
-                      <button key={emoji} onClick={() => handleSendReaction(emoji)} className="p-1 hover:bg-white/10 rounded-full text-sm">
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {/* Drawer Controls */}
-                  <button
-                    onClick={() => { setRightDrawerTab('CHAT'); setMobileDrawerOpen(true); }}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 border transition-all ${
-                      rightDrawerTab === 'CHAT' ? 'bg-[#0052CC] border-cyan-400 text-white' : 'bg-slate-800 border-white/10 text-slate-300'
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="hidden sm:inline">Chat</span>
-                  </button>
-
-                  <button
-                    onClick={() => { setRightDrawerTab('PEOPLE'); setMobileDrawerOpen(true); }}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 border transition-all ${
-                      rightDrawerTab === 'PEOPLE' ? 'bg-[#0052CC] border-cyan-400 text-white' : 'bg-slate-800 border-white/10 text-slate-300'
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    <span className="hidden sm:inline">People</span>
-                  </button>
-
-                  {/* Red Leave Class Button */}
-                  <button
-                    onClick={() => setActiveRoom(null)}
-                    className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-full flex items-center gap-1 shadow-lg shadow-rose-900/50 cursor-pointer shrink-0"
-                  >
-                    <PhoneOff className="w-4 h-4" />
-                    <span>Leave</span>
-                  </button>
-                </div>
-              </div>
+      {/* ❌ DECLINED MODAL */}
+      {waitingRoomStatus === 'DECLINED' && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl border border-rose-100">
+            <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-600 mx-auto flex items-center justify-center border-4 border-rose-100">
+              <X className="w-8 h-8" />
             </div>
-
-            {/* Desktop Side Drawer Panel (hidden on mobile, visible lg:flex) */}
-            <div className="hidden lg:flex w-96 bg-[#1E1E1E] border-l border-white/10 flex-col h-full shrink-0">
-              <div className="p-3 bg-[#181818] border-b border-white/10 flex items-center justify-between">
-                <span className="text-xs font-bold text-cyan-300 flex items-center gap-2">
-                  {rightDrawerTab === 'CHAT' && <><MessageSquare className="w-4 h-4" /> In-Class Live Chat</>}
-                  {rightDrawerTab === 'PEOPLE' && <><Users className="w-4 h-4" /> Connected Participants (248)</>}
-                  {rightDrawerTab === 'POLLS' && <><BarChart2 className="w-4 h-4" /> Live In-Class Polls</>}
-                </span>
-              </div>
-
-              {/* Chat Feed */}
-              {rightDrawerTab === 'CHAT' && (
-                <div className="flex-1 flex flex-col h-full overflow-hidden">
-                  <div className="flex-1 p-3 overflow-y-auto space-y-3 text-xs">
-                    {messages.map((m, idx) => (
-                      <div key={idx} className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="font-bold text-cyan-300">{m.sender}</span>
-                          <span className="text-slate-400">{m.time}</span>
-                        </div>
-                        <p className="text-slate-200">{m.text}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 flex items-center gap-2 bg-[#181818]">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Send a message to everyone..."
-                      className="flex-1 bg-[#252525] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                    />
-                    <button type="submit" className="p-2 bg-[#0052CC] text-white rounded-xl">
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* People Feed */}
-              {rightDrawerTab === 'PEOPLE' && (
-                <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
-                  {mockParticipants.map((p, idx) => (
-                    <div key={idx} className="p-2.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-slate-100">{p.name}</p>
-                        <p className="text-[10px] text-cyan-300">{p.role} • {p.college}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Mobile Slide-Up Bottom Sheet Overlay (Only when opened on mobile!) */}
-            {mobileDrawerOpen && (
-              <div className="lg:hidden absolute inset-0 bg-slate-950/80 backdrop-blur-md z-40 flex flex-col justify-end">
-                <div className="bg-[#1E1E1E] border-t border-white/20 rounded-t-2xl h-[70vh] flex flex-col overflow-hidden text-white shadow-2xl">
-                  <div className="p-3 bg-[#181818] border-b border-white/10 flex items-center justify-between">
-                    <span className="text-xs font-bold text-cyan-300 flex items-center gap-2">
-                      {rightDrawerTab === 'CHAT' && <><MessageSquare className="w-4 h-4" /> In-Class Live Chat</>}
-                      {rightDrawerTab === 'PEOPLE' && <><Users className="w-4 h-4" /> Connected Participants (248)</>}
-                    </span>
-                    <button onClick={() => setMobileDrawerOpen(false)} className="p-1.5 bg-white/10 rounded-lg text-slate-300">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {rightDrawerTab === 'CHAT' && (
-                    <div className="flex-1 flex flex-col h-full overflow-hidden">
-                      <div className="flex-1 p-3 overflow-y-auto space-y-3 text-xs">
-                        {messages.map((m, idx) => (
-                          <div key={idx} className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
-                            <div className="flex items-center justify-between text-[10px]">
-                              <span className="font-bold text-cyan-300">{m.sender}</span>
-                              <span className="text-slate-400">{m.time}</span>
-                            </div>
-                            <p className="text-slate-200">{m.text}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 flex items-center gap-2 bg-[#181818]">
-                        <input
-                          type="text"
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          placeholder="Send a message to everyone..."
-                          className="flex-1 bg-[#252525] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                        />
-                        <button type="submit" className="p-2 bg-[#0052CC] text-white rounded-xl">
-                          <Send className="w-4 h-4" />
-                        </button>
-                      </form>
-                    </div>
-                  )}
-
-                  {rightDrawerTab === 'PEOPLE' && (
-                    <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
-                      {mockParticipants.map((p, idx) => (
-                        <div key={idx} className="p-2.5 bg-white/5 border border-white/10 rounded-xl flex items-center justify-between">
-                          <div>
-                            <p className="font-bold text-slate-100">{p.name}</p>
-                            <p className="text-[10px] text-cyan-300">{p.role} • {p.college}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <h3 className="text-lg font-black text-slate-900">Admission Request Declined</h3>
+            <p className="text-xs text-slate-500">
+              The tutor was unable to admit you to this session right now. Please reach out via Doubt Support or try again later.
+            </p>
+            <button
+              onClick={() => { setWaitingRoomStatus('IDLE'); setRequestingClass(null); }}
+              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

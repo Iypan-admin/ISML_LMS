@@ -31,29 +31,76 @@ import {
   ShieldAlert,
   CreditCard,
 } from 'lucide-react';
-import { mockInstitutions, mockCourses, mockBatches, mockStudents } from '@/mock/superAdminData';
 import { StudentUser } from '@/types/rbac';
 import { useToast } from '@/context/ToastContext';
 import StatusBadge from '@/components/common/StatusBadge';
 import StatusToggleSwitch from '@/components/common/StatusToggleSwitch';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function CollegeAdminStudentsPage() {
   const { showSuccess, showInfo } = useToast();
-  const currentCollege = mockInstitutions[0];
+  const currentCollege = {
+    id: 'inst-01',
+    name: 'Loyola College of Arts & Science',
+    code: 'LOYOLA',
+    address: 'Sterling Road, Nungambakkam, Chennai',
+    phone: '+91 44 2817 8200',
+    email: 'admin@loyola.edu',
+    website: 'https://loyolacollege.edu',
+    status: 'ACTIVE' as const,
+    type: 'COLLEGE' as const,
+    affiliation: 'Autonomous • University of Madras',
+    contactEmail: 'admin@loyola.edu',
+    contactPhone: '+91 44 2817 8200',
+  };
 
-  // College students list
-  const [students, setStudents] = useState<StudentUser[]>(
-    mockStudents.filter((s) => s.collegeId === currentCollege.id || !s.collegeId)
-  );
+  // Live students list
+  const [students, setStudents] = useState<StudentUser[]>([]);
+  const [collegeCourses, setCollegeCourses] = useState<any[]>([]);
+  const [collegeBatches, setCollegeBatches] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    let collegeIdParam = '';
+    let collegeNameParam = '';
+    try {
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('isml_user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u.campusId) collegeIdParam = u.campusId;
+          if (u.campusName) collegeNameParam = u.campusName;
+        }
+      }
+    } catch { }
+
+    const queryUrl = collegeIdParam
+      ? `/api/portals/students?collegeId=${encodeURIComponent(collegeIdParam)}`
+      : '/api/portals/students';
+
+    // 1. Fetch live students from backend API scoped to this college
+    fastFetch(queryUrl, (json) => {
+      if (json && json.data) {
+        setStudents(json.data);
+      }
+      setIsLoading(false);
+    });
+
+    // 2. Fetch live courses
+    fastFetch('http://localhost:4000/api/portals/courses', (json) => {
+      if (json && json.data) setCollegeCourses(json.data);
+    });
+
+    // 3. Fetch live batches
+    fastFetch('http://localhost:4000/api/portals/batches', (json) => {
+      if (json && json.data) setCollegeBatches(json.data);
+    });
+  }, []);
 
   const [selectedCourseFilter, setSelectedCourseFilter] = useState('ALL');
   const [selectedBatchFilter, setSelectedBatchFilter] = useState('ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // College-specific courses and batches
-  const collegeCourses = mockCourses.filter((c) => c.collegeId === currentCollege.id || !c.collegeId);
-  const collegeBatches = mockBatches.filter((b) => b.institutionId === currentCollege.id || !b.institutionId);
 
   // Toggle student status
   const handleToggleStudent = (student: StudentUser) => {
@@ -219,63 +266,71 @@ export default function CollegeAdminStudentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredStudents.map((student) => (
-                <tr key={student.id} className="hover:bg-slate-50/80 transition">
-                  <td className="p-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-[#0052CC] font-bold text-xs flex items-center justify-center shrink-0">
-                        {student.name.charAt(0)}
-                      </div>
-                      <div>
-                        <span className="font-bold text-[#0B2447] block">{student.name}</span>
-                        <span className="text-[11px] text-slate-500 font-mono">{student.studentId}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-semibold text-slate-800 block line-clamp-1">
-                      {student.enrolledCourseName || student.programName}
-                    </span>
-                    <span className="text-[10px] text-slate-400">Semester {(student as any).currentSemester || 1}</span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-medium text-slate-700 block">
-                      {student.batchName}
-                    </span>
-                  </td>
-                  <td className="p-3 text-center">
-                    <span
-                      className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                        student.attendancePercentage >= 85
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : student.attendancePercentage >= 75
-                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                          : 'bg-rose-50 text-rose-800 border border-rose-200'
-                      }`}
-                    >
-                      {student.attendancePercentage}%
-                    </span>
-                  </td>
-                  <td className="p-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <StatusToggleSwitch
-                        checked={student.status === 'ACTIVE'}
-                        onChange={() => handleToggleStudent(student)}
-                      />
-                      <StatusBadge status={student.status} />
-                    </div>
-                  </td>
-                  <td className="p-3 text-right">
-                    <Link
-                      href={`/super-admin/students/${student.id}`}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
-                    >
-                      <Eye className="w-3 h-3" />
-                      <span>Profile</span>
-                    </Link>
+              {filteredStudents.length === 0 ? (
+                <tr key="empty-students">
+                  <td colSpan={6} className="p-8 text-center text-xs text-slate-400 font-medium">
+                    No learners found matching query.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredStudents.map((student, index) => (
+                  <tr key={student.id || student.studentId || `student-${index}`} className="hover:bg-slate-50/80 transition">
+                    <td className="p-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-[#0052CC] font-bold text-xs flex items-center justify-center shrink-0">
+                          {student.name.charAt(0)}
+                        </div>
+                        <div>
+                          <span className="font-bold text-[#0B2447] block">{student.name}</span>
+                          <span className="text-[11px] text-slate-500 font-mono">{student.studentId}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className="font-semibold text-slate-800 block line-clamp-1">
+                        {student.enrolledCourseName || student.programName}
+                      </span>
+                      <span className="text-[10px] text-slate-400">Semester {(student as any).currentSemester || 1}</span>
+                    </td>
+                    <td className="p-3">
+                      <span className="font-medium text-slate-700 block">
+                        {student.batchName}
+                      </span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <span
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                          student.attendancePercentage >= 85
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : student.attendancePercentage >= 75
+                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                            : 'bg-rose-50 text-rose-800 border border-rose-200'
+                        }`}
+                      >
+                        {student.attendancePercentage}%
+                      </span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <StatusToggleSwitch
+                          checked={student.status === 'ACTIVE'}
+                          onChange={() => handleToggleStudent(student)}
+                        />
+                        <StatusBadge status={student.status} />
+                      </div>
+                    </td>
+                    <td className="p-3 text-right">
+                      <Link
+                        href={`/college-admin/students/${student.id}`}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span>Profile</span>
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

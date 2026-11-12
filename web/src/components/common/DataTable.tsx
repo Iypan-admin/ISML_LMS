@@ -249,9 +249,9 @@ export default function DataTable<T>({
                   </tr>
                 ))
               ) : paginatedData.length > 0 ? (
-                paginatedData.map((row) => (
+                paginatedData.map((row, idx) => (
                   <tr
-                    key={rowKey(row)}
+                    key={`${rowKey(row)}-${idx}`}
                     className="hover:bg-blue-50/30 transition-colors duration-150 group"
                   >
                     {columns.map((col) => (
@@ -288,9 +288,9 @@ export default function DataTable<T>({
             </div>
           ))
         ) : paginatedData.length > 0 ? (
-          paginatedData.map((row) => (
+          paginatedData.map((row, idx) => (
             <div
-              key={rowKey(row)}
+              key={`${rowKey(row)}-${idx}`}
               className="p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-2"
             >
               {mobileCardRender ? (

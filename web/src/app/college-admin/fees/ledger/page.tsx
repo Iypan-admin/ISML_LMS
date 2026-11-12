@@ -34,44 +34,23 @@ interface SettlementRecord {
   settledBy: string;
 }
 
-const mockLedger: SettlementRecord[] = [
-  {
-    id: 'led-01',
-    transactionRef: 'COL-FEE-PAY-20261015-9842',
-    settlementDate: '15 Oct 2026, 04:30 PM',
-    studentsCount: 12,
-    totalAmount: 174000,
-    paymentMethod: 'Corporate UPI / NetBanking',
-    status: 'SUCCESS',
-    receiptNo: 'REC-LOYOLA-2026-0891',
-    settledBy: 'Admin Office (Registrar)',
-  },
-  {
-    id: 'led-02',
-    transactionRef: 'COL-FEE-PAY-20261008-3211',
-    settlementDate: '08 Oct 2026, 11:15 AM',
-    studentsCount: 25,
-    totalAmount: 362500,
-    paymentMethod: 'RTGS / NEFT (HDFC0001234)',
-    status: 'SUCCESS',
-    receiptNo: 'REC-LOYOLA-2026-0812',
-    settledBy: 'Accounts Bursar',
-  },
-  {
-    id: 'led-03',
-    transactionRef: 'COL-FEE-PAY-20260920-1094',
-    settlementDate: '20 Sep 2026, 02:45 PM',
-    studentsCount: 8,
-    totalAmount: 116000,
-    paymentMethod: 'Institutional Demand Draft (DD #984201)',
-    status: 'SUCCESS',
-    receiptNo: 'REC-LOYOLA-2026-0745',
-    settledBy: 'Admin Office (Registrar)',
-  },
-];
+const mockLedger: SettlementRecord[] = [];
 
 export default function CollegeAdminPaymentLedgerPage() {
-  const currentCollege = mockInstitutions[0];
+  const currentCollege = mockInstitutions[0] || {
+    id: 'inst-default',
+    name: 'Affiliated College Campus',
+    code: 'COLLEGE',
+    address: 'Campus Address',
+    phone: '',
+    email: '',
+    website: '',
+    status: 'ACTIVE' as const,
+    type: 'COLLEGE' as const,
+    affiliation: 'Autonomous',
+    contactEmail: 'admin@college.edu',
+    contactPhone: '+91 98401 00000',
+  };
   const [search, setSearch] = useState('');
 
   const filtered = mockLedger.filter((item) =>
@@ -115,17 +94,23 @@ export default function CollegeAdminPaymentLedgerPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500 block mb-1">Total Settled Fees</span>
-          <p className="text-2xl font-black text-slate-900 font-mono">₹6,52,500</p>
+          <p className="text-2xl font-black text-slate-900 font-mono">
+            ₹{filtered.reduce((sum, item) => sum + item.totalAmount, 0).toLocaleString()}
+          </p>
           <span className="text-[11px] font-medium text-emerald-700 mt-1 block">Cleared via Institutional Accounts</span>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500 block mb-1">Total Unlocked Students</span>
-          <p className="text-2xl font-black text-blue-700">45 Learners</p>
+          <p className="text-2xl font-black text-blue-700">
+            {filtered.reduce((sum, item) => sum + item.studentsCount, 0)} Learners
+          </p>
           <span className="text-[11px] font-medium text-slate-500 mt-1 block">Full LMS curriculum access granted</span>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
           <span className="text-xs font-bold text-slate-500 block mb-1">Audit Compliance</span>
-          <p className="text-2xl font-black text-emerald-700">100%</p>
+          <p className="text-2xl font-black text-emerald-700">
+            {filtered.length > 0 ? '100%' : '0%'}
+          </p>
           <span className="text-[11px] font-medium text-slate-500 mt-1 block">All receipts verified & stamped</span>
         </div>
       </div>
@@ -167,45 +152,53 @@ export default function CollegeAdminPaymentLedgerPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/60 transition">
-                  <td className="p-3.5">
-                    <span className="font-mono font-bold text-[#0B2447] block">{item.transactionRef}</span>
-                    <span className="text-[11px] text-slate-400 font-mono">No: {item.receiptNo}</span>
-                  </td>
-                  <td className="p-3.5 text-slate-600 font-medium">
-                    {item.settlementDate}
-                  </td>
-                  <td className="p-3.5 text-center">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[11px]">
-                      {item.studentsCount} Students
-                    </span>
-                  </td>
-                  <td className="p-3.5">
-                    <span className="font-medium text-slate-800 block">{item.paymentMethod}</span>
-                    <span className="text-[10px] text-slate-400">By: {item.settledBy}</span>
-                  </td>
-                  <td className="p-3.5 text-right font-mono font-black text-slate-900 text-sm">
-                    ₹{item.totalAmount.toLocaleString()}
-                  </td>
-                  <td className="p-3.5 text-center">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      <span>{item.status}</span>
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-right">
-                    <button
-                      type="button"
-                      onClick={() => alert(`Downloading verified institutional voucher for ${item.transactionRef}`)}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span>PDF</span>
-                    </button>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-xs text-slate-400 font-medium">
+                    No institutional fee payment vouchers or settlement records found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/60 transition">
+                    <td className="p-3.5">
+                      <span className="font-mono font-bold text-[#0B2447] block">{item.transactionRef}</span>
+                      <span className="text-[11px] text-slate-400 font-mono">No: {item.receiptNo}</span>
+                    </td>
+                    <td className="p-3.5 text-slate-600 font-medium">
+                      {item.settlementDate}
+                    </td>
+                    <td className="p-3.5 text-center">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[11px]">
+                        {item.studentsCount} Students
+                      </span>
+                    </td>
+                    <td className="p-3.5">
+                      <span className="font-medium text-slate-800 block">{item.paymentMethod}</span>
+                      <span className="text-[10px] text-slate-400">By: {item.settledBy}</span>
+                    </td>
+                    <td className="p-3.5 text-right font-mono font-black text-slate-900 text-sm">
+                      ₹{item.totalAmount.toLocaleString()}
+                    </td>
+                    <td className="p-3.5 text-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>{item.status}</span>
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => alert(`Downloading verified institutional voucher for ${item.transactionRef}`)}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>PDF</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

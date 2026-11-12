@@ -53,7 +53,7 @@ export default function CreateProgramDrawer({
   const [activeTab, setActiveTab] = useState<'IDENTITY' | 'FEES' | 'BATCHES' | 'SUMMARY'>('IDENTITY');
 
   // ─── 1. Academic Identity ───
-  const [departmentId, setDepartmentId] = useState(mockDepartments[0].id);
+  const [departmentId, setDepartmentId] = useState(mockDepartments[0]?.id || 'dept-cs');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [degreeType, setDegreeType] = useState<'UNDERGRADUATE' | 'POSTGRADUATE' | 'DIPLOMA' | 'DOCTORAL'>('UNDERGRADUATE');
@@ -112,7 +112,7 @@ export default function CreateProgramDrawer({
         setActiveTab('IDENTITY');
         setName(editProgram.name || '');
         setCode(editProgram.code || '');
-        setDepartmentId(editProgram.departmentId || mockDepartments[0].id);
+        setDepartmentId(editProgram.departmentId || mockDepartments[0]?.id || 'dept-cs');
         setDegreeType(editProgram.degreeType || 'UNDERGRADUATE');
         setDurationYears(editProgram.durationYears || 3);
         setTotalSemesters(editProgram.totalSemesters || 6);
@@ -130,7 +130,7 @@ export default function CreateProgramDrawer({
         setActiveTab('IDENTITY');
         setName('');
         setCode('');
-        setDepartmentId(mockDepartments[0].id);
+        setDepartmentId(mockDepartments[0]?.id || 'dept-cs');
         setDegreeType('UNDERGRADUATE');
         setDurationYears(3);
         setTotalSemesters(6);

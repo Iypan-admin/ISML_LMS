@@ -51,7 +51,7 @@ export const PARENT_NAV_SECTIONS: ParentMenuSection[] = [
       },
       {
         id: 'PARENT_GRADES',
-        label: 'Marks & DELF Gradebook',
+        label: 'Marks & Assessment Gradebook',
         route: '/parent/grades',
         iconName: 'Award',
         description: 'Exam scorecards, oral viva recordings evaluation, LSRW radar & progress',

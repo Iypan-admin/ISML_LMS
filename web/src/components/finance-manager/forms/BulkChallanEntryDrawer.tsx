@@ -201,7 +201,10 @@ export default function BulkChallanEntryDrawer({
       return;
     }
 
-    const colObj = mockInstitutions.find((i) => i.id === selectedCollege) || mockInstitutions[0];
+    const colObj = mockInstitutions.find((i) => i.id === selectedCollege) || mockInstitutions[0] || {
+      id: selectedCollege || 'inst-01',
+      name: 'College Campus'
+    };
     const programTitle = activeCourse ? activeCourse.name : 'College Course Program';
 
     const newTx: TransactionRecord = {
@@ -210,8 +213,8 @@ export default function BulkChallanEntryDrawer({
       studentId: `BATCH-${selectedStudentIds.length}`,
       studentName: `${programTitle} Batch (${selectedStudentIds.length} Students)`,
       rollNo: `COHORT-${selectedStudentIds.length}-PAID`,
-      collegeId: colObj.id,
-      collegeName: colObj.name,
+      collegeId: colObj?.id || 'inst-01',
+      collegeName: colObj?.name || 'College Campus',
       program: programTitle,
       semester: 1,
       amount: totalAmount,

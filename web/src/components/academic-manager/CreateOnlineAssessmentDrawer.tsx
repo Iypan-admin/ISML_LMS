@@ -65,7 +65,7 @@ export default function CreateOnlineAssessmentDrawer({
   const [subjectName, setSubjectName] = useState(mockSubjects[0]?.name || 'French Phonetics & Oral Comprehension');
   const [batchName, setBatchName] = useState(mockBatches[0]?.name || 'French A1 Intensive Cohort 2026 (Live Webinar Batch)');
   const [programName, setProgramName] = useState(mockPrograms[0]?.name || 'Diploma in French Language Studies');
-  const [facultyName, setFacultyName] = useState('Dr. Anandhakumar V.');
+  const [facultyName, setFacultyName] = useState('Joy Jk');
   const [type, setType] = useState<'FINAL_EXAM' | 'MID_TERM' | 'QUIZ' | 'ASSIGNMENT'>('FINAL_EXAM');
   const [dueDate, setDueDate] = useState('2026-10-30');
   const [durationMins, setDurationMins] = useState(90);

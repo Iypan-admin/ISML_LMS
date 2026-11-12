@@ -67,6 +67,50 @@ export default function StudentDetailPage() {
 
   const [student, setStudent] = useState<StudentUser | null>(initialStudent);
 
+  // Fallback: If not in static mockStudents, fetch or synthesize from real admissions / roster
+  React.useEffect(() => {
+    if (studentIdParam) {
+      // Check local API first
+      fetch(`/api/portals/students?collegeId=ALL`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (json && json.data) {
+            const found = json.data.find(
+              (s: any) => s.id === studentIdParam || s.studentId === studentIdParam || s.id === `amer-${studentIdParam}`
+            );
+            if (found) {
+              setStudent({
+                id: found.id,
+                studentId: found.studentId,
+                name: found.name,
+                email: found.email,
+                phone: found.phone || '+91 98421 00001',
+                role: 'STUDENT',
+                status: found.status || 'ACTIVE',
+                institutionId: 'inst-amer',
+                institutionName: 'The American College',
+                departmentId: 'dept-lang',
+                departmentName: 'Department of Foreign Languages',
+                programId: 'prog-lang',
+                programName: found.courseName || 'German A1 Professional Track',
+                batchId: 'batch-2026',
+                batchName: found.batchName || 'AY 2026–2027 Cohort',
+                currentSemester: 1,
+                attendancePercentage: found.attendancePercentage || 95,
+                academicStanding: 'EXCELLENT',
+                feeStatus: 'PAID',
+                courseName: found.courseName || 'German A1 Professional Track',
+                createdAt: '2026-01-15T09:00:00Z',
+                lastLoginAt: new Date().toISOString(),
+              } as any);
+              return;
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [studentIdParam]);
+
   // Active Tab
   const [activeTab, setActiveTab] = useState<
     'ACADEMIC' | 'COURSES' | 'ATTENDANCE' | 'ASSESSMENTS' | 'DOUBTS' | 'PARENT' | 'SECURITY'
@@ -76,57 +120,10 @@ export default function StudentDetailPage() {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
-  // Enrolled subjects tailored to the student's program
+  // Enrolled subjects — strictly empty until assigned by Academic Manager / Admin
   const enrolledCourses = useMemo(() => {
-    if (!student) return [];
-    return [
-      {
-        code: 'CS-101',
-        title: 'Problem Solving & Programming in Python',
-        credits: 4,
-        faculty: 'Dr. Anandhakumar V.',
-        attendance: 95,
-        grade: 'A+',
-        status: 'IN_PROGRESS',
-      },
-      {
-        code: 'CS-102',
-        title: 'Digital Logic & Computer Architecture',
-        credits: 3,
-        faculty: 'Prof. Mary Priyanka',
-        attendance: 92,
-        grade: 'A',
-        status: 'IN_PROGRESS',
-      },
-      {
-        code: 'MAT-101',
-        title: 'Discrete Mathematics & Graph Theory',
-        credits: 4,
-        faculty: 'Dr. P. Srinivasan',
-        attendance: 94,
-        grade: 'A+',
-        status: 'IN_PROGRESS',
-      },
-      {
-        code: 'ENG-101',
-        title: 'Professional Technical Communication',
-        credits: 2,
-        faculty: 'Dr. Sharon Joseph',
-        attendance: 91,
-        grade: 'B+',
-        status: 'IN_PROGRESS',
-      },
-      {
-        code: 'FR-101',
-        title: 'French Language Foundation (A1.1)',
-        credits: 2,
-        faculty: 'Prof. Marie Delacroix',
-        attendance: 96,
-        grade: 'A',
-        status: 'IN_PROGRESS',
-      },
-    ];
-  }, [student]);
+    return [];
+  }, []);
 
   if (!student) {
     return (
@@ -270,37 +267,29 @@ export default function StudentDetailPage() {
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
             <span className="text-[11px] text-slate-500 font-medium block">Overall Attendance</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-bold text-emerald-700">
-                {student.attendancePercentage}%
-              </span>
-              <span className="text-[10px] text-emerald-600 font-semibold">(Eligible for Exams)</span>
+              <span className="text-xl font-bold text-slate-700">0%</span>
+              <span className="text-[10px] text-slate-400 font-medium">(No records)</span>
             </div>
           </div>
 
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
             <span className="text-[11px] text-slate-500 font-medium block">Enrolled Courses</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-bold text-[#0B2447]">
-                {student.enrolledCoursesCount}
-              </span>
+              <span className="text-xl font-bold text-slate-700">0</span>
             </div>
           </div>
 
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
             <span className="text-[11px] text-slate-500 font-medium block">Cumulative GPA</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-bold text-blue-700">
-                {student.cgpa ? `${student.cgpa} / 10.0` : '— In Progress —'}
-              </span>
+              <span className="text-xl font-bold text-slate-500">—</span>
             </div>
           </div>
 
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
             <span className="text-[11px] text-slate-500 font-medium block">Active Doubts</span>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-bold text-indigo-700">
-                {student.activeDoubtsCount} Pending
-              </span>
+              <span className="text-xl font-bold text-slate-700">0</span>
             </div>
           </div>
         </div>
@@ -333,333 +322,78 @@ export default function StudentDetailPage() {
 
       {/* Tab 1: Academic Hierarchy */}
       {activeTab === 'ACADEMIC' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
-          <h3 className="font-bold text-[#0B2447] text-sm flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-600" />
-            <span>Academic Association & Cohort Placement</span>
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                College / Institution
-              </span>
-              <p className="font-bold text-[#0B2447] text-sm mt-1">{student.collegeName}</p>
-              <span className="font-mono text-[11px] text-slate-500 mt-0.5 block">{student.collegeId}</span>
-            </div>
-
-
-
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                Program / Degree
-              </span>
-              <p className="font-bold text-[#0B2447] text-sm mt-1">{student.programName}</p>
-              <span className="font-mono text-[11px] text-slate-500 mt-0.5 block">{student.programId}</span>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                Batch Cohort
-              </span>
-              <p className="font-bold text-[#0B2447] text-sm mt-1">{student.batchName}</p>
-              <span className="font-mono text-[11px] text-slate-500 mt-0.5 block">{student.batchId}</span>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                Current Semester
-              </span>
-              <p className="font-bold text-indigo-700 text-sm mt-1">Semester {student.semesterNumber}</p>
-              <span className="text-[11px] text-slate-500 mt-0.5 block">Full-time Regular</span>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                Academic & Admission Year
-              </span>
-              <p className="font-bold text-slate-800 text-sm mt-1">
-                Admitted: {student.admissionYear} • Year {student.academicYear}
-              </p>
-              <span className="text-[11px] text-slate-500 mt-0.5 block">
-                Gender: {student.gender || 'Not Specified'}
-              </span>
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs text-center">
+          <Layers className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <h4 className="font-bold text-slate-800 text-sm">No Academic Hierarchy Configured</h4>
+          <p className="text-xs text-slate-400 mt-1">
+            Department and degree hierarchy will appear once configured in Academic Architecture.
+          </p>
         </div>
       )}
 
       {/* Tab 2: Enrolled Courses */}
       {activeTab === 'COURSES' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-[#0B2447] text-sm flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-blue-600" />
-              <span>Current Semester Enrolled Subjects</span>
-            </h3>
-            <span className="text-xs text-slate-500 font-medium">Semester {student.semesterNumber}</span>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {enrolledCourses.map((c) => (
-              <div
-                key={c.code}
-                className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
-                      {c.code}
-                    </span>
-                    <span className="font-bold text-slate-900">{c.title}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Faculty: {c.faculty}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase">Attendance</span>
-                    <span className="font-bold text-emerald-700 text-xs">{c.attendance}%</span>
-                  </div>
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-bold text-xs border border-blue-200">
-                    Grade {c.grade}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs text-center">
+          <BookOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <h4 className="font-bold text-slate-800 text-sm">No Courses Enrolled</h4>
+          <p className="text-xs text-slate-400 mt-1">
+            This student has not been enrolled in any courses or batches yet.
+          </p>
         </div>
       )}
 
       {/* Tab 3: Attendance Breakdown */}
       {activeTab === 'ATTENDANCE' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
-          <h3 className="font-bold text-[#0B2447] text-sm flex items-center gap-2">
-            <Clock className="w-4 h-4 text-emerald-600" />
-            <span>Attendance Summary & Regulatory Compliance</span>
-          </h3>
-
-          <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 flex items-start gap-3 text-emerald-900 text-xs">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">Exam Eligibility Status: SATISFACTORY ({student.attendancePercentage}%)</p>
-              <p className="text-[11px] text-emerald-800 mt-0.5">
-                The minimum mandatory attendance stipulated by UGC/University regulations is 75.0%. 
-                This student currently satisfies all academic standing requirements.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-slate-500 text-[11px]">Total Lectures Scheduled:</span>
-              <p className="text-base font-bold text-slate-900 mt-1">120 Sessions</p>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-slate-500 text-[11px]">Lectures Attended:</span>
-              <p className="text-base font-bold text-emerald-700 mt-1">112 Sessions</p>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-slate-500 text-[11px]">Authorized Leaves / Absences:</span>
-              <p className="text-base font-bold text-slate-600 mt-1">8 Sessions</p>
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs text-center">
+          <Clock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <h4 className="font-bold text-slate-800 text-sm">No Attendance Records</h4>
+          <p className="text-xs text-slate-400 mt-1">
+            No webinar or classroom attendance logs recorded yet for this student.
+          </p>
         </div>
       )}
 
       {/* Tab 4: Assessments & Marks */}
       {activeTab === 'ASSESSMENTS' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
-          <h3 className="font-bold text-[#0B2447] text-sm flex items-center gap-2">
-            <Award className="w-4 h-4 text-indigo-600" />
-            <span>Internal Assessments & Mid-Term Scores</span>
-          </h3>
-
-          <div className="divide-y divide-slate-100 text-xs">
-            {[
-              {
-                title: 'Python Mid-Semester Practical Examination',
-                subject: 'Problem Solving & Programming in Python (CS-101)',
-                type: 'PRACTICAL',
-                score: '48 / 50',
-                grade: 'O (Outstanding)',
-              },
-              {
-                title: 'Discrete Structures Unit Quiz 1',
-                subject: 'Discrete Mathematics & Graph Theory (MAT-101)',
-                type: 'QUIZ',
-                score: '23 / 25',
-                grade: 'A+',
-              },
-              {
-                title: 'Digital Logic Circuit Lab Assignment',
-                subject: 'Digital Logic & Computer Architecture (CS-102)',
-                type: 'ASSIGNMENT',
-                score: '20 / 20',
-                grade: 'O',
-              },
-              {
-                title: 'French Oral Comprehension Assessment',
-                subject: 'French Language Foundation (FR-101)',
-                type: 'VIVA',
-                score: '28 / 30',
-                grade: 'A+',
-              },
-            ].map((item, idx) => (
-              <div key={idx} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <p className="font-bold text-slate-900">{item.title}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">{item.subject}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-mono text-slate-700 font-bold bg-slate-100 px-2 py-0.5 rounded">
-                    {item.score}
-                  </span>
-                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded font-bold text-xs border border-indigo-200">
-                    {item.grade}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs text-center">
+          <Award className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <h4 className="font-bold text-slate-800 text-sm">No Assessments Completed</h4>
+          <p className="text-xs text-slate-400 mt-1">
+            No marks or viva examination evaluations logged for this student yet.
+          </p>
         </div>
       )}
 
       {/* Tab 5: Doubt Clearing Activity */}
       {activeTab === 'DOUBTS' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
-          <h3 className="font-bold text-[#0B2447] text-sm flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-blue-600" />
-            <span>Interactive Doubt Clearing Log</span>
-          </h3>
-
-          <div className="space-y-3 text-xs">
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900">
-                  Question: Equivalence Relations in Set Partitioning
-                </span>
-                <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-[10px]">
-                  Pending Resolution
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Assigned to: Doubt Teacher (Prof. Karthik) • Submitted 2 hours ago
-              </p>
-            </div>
-
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900">
-                  Question: Recursion Stack Frame vs Iteration Memory Cost
-                </span>
-                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
-                  Resolved
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Answered by: Dr. Anandhakumar V. with code snippet attachment.
-              </p>
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs text-center">
+          <HelpCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <h4 className="font-bold text-slate-800 text-sm">No Doubts Raised</h4>
+          <p className="text-xs text-slate-400 mt-1">
+            No 1:1 faculty doubts submitted by this student yet.
+          </p>
         </div>
       )}
 
       {/* Tab: Parent & Guardian Portal */}
       {activeTab === 'PARENT' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-[#0B2447] text-sm flex items-center gap-2">
-                <HeartHandshake className="w-4 h-4 text-teal-600" />
-                <span>Linked Parent / Guardian Portal Account</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Authorized guardian profile linked to learner {student.name} ({student.studentId})
-              </p>
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs text-center">
+          <HeartHandshake className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <h4 className="font-bold text-slate-800 text-sm">No Parent Linked</h4>
+          <p className="text-xs text-slate-400 mt-1">
+            No guardian profile has been linked to this student record yet.
+          </p>
+        </div>
+      )}
 
-            <button
-              type="button"
-              onClick={() =>
-                showSuccess(
-                  `Parent Portal access link & credentials re-dispatched to ${
-                    student.parentEmail || 'parent email address'
-                  }.`
-                )
-              }
-              className="px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-            >
-              <Mail className="w-3.5 h-3.5 text-teal-600" />
-              <span>Resend Parent Portal Invite</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Guardian Profile Card */}
-            <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-200 space-y-3">
-              <span className="text-[10px] uppercase font-bold text-teal-700 tracking-wider block">
-                Guardian Profile
-              </span>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-teal-100">
-                  <span className="text-slate-500">Legal Name:</span>
-                  <span className="font-bold text-slate-900">
-                    {student.parentName || 'Meenakshi Sundaram'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-teal-100">
-                  <span className="text-slate-500">Relationship:</span>
-                  <span className="font-semibold text-teal-800 bg-teal-100 px-2 py-0.2 rounded">
-                    {student.parentRelationship || 'MOTHER'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-teal-100">
-                  <span className="text-slate-500">Email:</span>
-                  <span className="font-medium text-slate-800">
-                    {student.parentEmail || 'meenakshi.s@gmail.com'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-500">Mobile:</span>
-                  <span className="font-medium text-slate-800">
-                    {student.parentMobile || '+91 94440 12345'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Portal Entitlements & Security */}
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">
-                Parent Portal Capabilities & Status
-              </span>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                  <span className="text-slate-500">Portal Account Status:</span>
-                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold text-[11px]">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Active & Linked</span>
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                  <span className="text-slate-500">Daily Attendance Alert:</span>
-                  <span className="font-semibold text-slate-700">SMS & Email Enabled</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                  <span className="text-slate-500">Fee Invoices & Receipts:</span>
-                  <span className="font-semibold text-slate-700">Online Direct Payment</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-500">Academic Reports:</span>
-                  <span className="font-semibold text-slate-700">Mid-Term & End-Term Access</span>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Tab 6: Account Security */}
+      {activeTab === 'SECURITY' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-2xs text-center">
+          <Lock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+          <h4 className="font-bold text-slate-800 text-sm">Account Security</h4>
+          <p className="text-xs text-slate-400 mt-1">
+            Standard encrypted credentials. No security incidents or lockouts logged.
+          </p>
         </div>
       )}
 

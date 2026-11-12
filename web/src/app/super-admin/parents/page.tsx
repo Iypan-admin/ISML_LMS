@@ -48,208 +48,11 @@ import { useToast } from '@/context/ToastContext';
 import { useCollege } from '@/context/CollegeContext';
 import { ParentUser, UserStatus } from '@/types/rbac';
 import { mockCourses, mockBatches, mockInstitutions } from '@/mock/superAdminData';
+import AddUserDrawer from '@/components/super-admin/users/AddUserDrawer';
+import { SuperAdminUser } from '@/types/rbac';
 
 // High-fidelity enriched Parent Dataset with Course & Batch linkages
-export const superAdminMockParents: ParentUser[] = [
-  {
-    id: 'prt-001',
-    name: "Dr. Ronald D'Souza",
-    email: 'ronald.dsouza@apollohospitals.com',
-    mobile: '+91 94440 12345',
-    relationship: 'FATHER',
-    status: 'ACTIVE',
-    credentialsDelivered: true,
-    portalLastLogin: '2026-10-12T14:30:00Z',
-    createdAt: '2026-06-15T10:00:00Z',
-    linkedStudents: [
-      {
-        studentId: 'ISML20260001',
-        studentName: 'Aarav Sharma',
-        programName: 'French A1 Intensive Certification Program',
-        courseId: 'crs-01',
-        courseName: 'French A1 Intensive Certification Program',
-        batchId: 'batch-2026-cs',
-        batchName: 'Cohort 2026–2029 (Section A & B)',
-        collegeName: 'Loyola College of Arts & Science (Autonomous)',
-        attendancePercentage: 92.4,
-        feePendingAmount: 0,
-      },
-      {
-        studentId: 'ISML20260042',
-        studentName: 'Priya Sharma',
-        programName: 'Japanese N5 Business Certificate Track',
-        courseId: 'crs-03',
-        courseName: 'Japanese N5 Business Certificate Track',
-        batchId: 'batch-mcc-01',
-        batchName: 'MCC Cohort 2026–2029 (Section A)',
-        collegeName: 'Madras Christian College (MCC)',
-        attendancePercentage: 96.0,
-        feePendingAmount: 0,
-      },
-    ],
-  },
-  {
-    id: 'prt-002',
-    name: 'Lakshmi Narayanan',
-    email: 'lakshmi.narayanan@tcs.com',
-    mobile: '+91 94440 23456',
-    relationship: 'MOTHER',
-    status: 'ACTIVE',
-    credentialsDelivered: true,
-    portalLastLogin: '2026-10-13T09:15:00Z',
-    createdAt: '2026-06-16T11:20:00Z',
-    linkedStudents: [
-      {
-        studentId: 'ISML20260002',
-        studentName: 'Ananya Ramesh',
-        programName: 'German A1 Professional Career Track',
-        courseId: 'crs-02',
-        courseName: 'German A1 Professional Career Track',
-        batchId: 'batch-2026-bca',
-        batchName: 'Cohort 2026–2029 (BCA Section A)',
-        collegeName: 'Loyola College of Arts & Science (Autonomous)',
-        attendancePercentage: 88.0,
-        feePendingAmount: 0,
-      },
-    ],
-  },
-  {
-    id: 'prt-003',
-    name: "Joseph D'Souza",
-    email: 'joseph.dsouza@gmail.com',
-    mobile: '+91 94440 34567',
-    relationship: 'FATHER',
-    status: 'ACTIVE',
-    credentialsDelivered: true,
-    portalLastLogin: '2026-10-10T16:45:00Z',
-    createdAt: '2026-06-18T14:00:00Z',
-    linkedStudents: [
-      {
-        studentId: 'ISML20260003',
-        studentName: 'Kavitha S',
-        programName: 'French A1 Intensive Certification Program',
-        courseId: 'crs-01',
-        courseName: 'French A1 Intensive Certification Program',
-        batchId: 'batch-2026-fr',
-        batchName: 'Cohort 2026–2029 (ISML Global)',
-        collegeName: 'Loyola College of Arts & Science (Autonomous)',
-        attendancePercentage: 94.2,
-        feePendingAmount: 0,
-      },
-    ],
-  },
-  {
-    id: 'prt-004',
-    name: 'Karthik N',
-    email: 'karthik.n@gmail.com',
-    mobile: '+91 94440 45678',
-    relationship: 'FATHER',
-    status: 'INACTIVE',
-    credentialsDelivered: false,
-    createdAt: '2026-06-20T09:30:00Z',
-    linkedStudents: [
-      {
-        studentId: 'ISML20260004',
-        studentName: 'Vigneshwaran K',
-        programName: 'French A1 Intensive Certification Program',
-        courseId: 'crs-01',
-        courseName: 'French A1 Intensive Certification Program',
-        batchId: 'batch-2026-cs',
-        batchName: 'Cohort 2026–2029 (Section A & B)',
-        collegeName: 'Loyola College of Arts & Science (Autonomous)',
-        attendancePercentage: 72.5,
-        feePendingAmount: 14500,
-      },
-    ],
-  },
-  {
-    id: 'prt-005',
-    name: 'Sundaram V',
-    email: 'sundaram.v@gmail.com',
-    mobile: '+91 94440 56789',
-    relationship: 'FATHER',
-    status: 'ACTIVE',
-    credentialsDelivered: true,
-    portalLastLogin: '2026-10-14T08:10:00Z',
-    createdAt: '2025-06-12T10:00:00Z',
-    linkedStudents: [
-      {
-        studentId: 'ISML20250012',
-        studentName: 'Sneha Sundaram',
-        programName: 'Korean TOPIK I Intensive & Hangul Fluency Track',
-        courseId: 'crs-04',
-        courseName: 'Korean TOPIK I Intensive & Hangul Fluency Track',
-        batchId: 'batch-2026-cs',
-        batchName: 'Cohort 2026–2029 (Korean Section A)',
-        collegeName: 'Loyola College of Arts & Science (Autonomous)',
-        attendancePercentage: 98.0,
-        feePendingAmount: 0,
-      },
-      {
-        studentId: 'ISML20250088',
-        studentName: 'Sanjay Sundaram',
-        programName: 'French A1 Intensive Certification Program',
-        courseId: 'crs-01',
-        courseName: 'French A1 Intensive Certification Program',
-        batchId: 'batch-2026-fr',
-        batchName: 'Cohort 2026–2029 (ISML Global)',
-        collegeName: 'Loyola College of Arts & Science (Autonomous)',
-        attendancePercentage: 91.5,
-        feePendingAmount: 0,
-      },
-    ],
-  },
-  {
-    id: 'prt-006',
-    name: 'Radhika Sharma',
-    email: 'radhika.sharma@yahoo.com',
-    mobile: '+91 94440 67890',
-    relationship: 'MOTHER',
-    status: 'ACTIVE',
-    credentialsDelivered: true,
-    portalLastLogin: '2026-10-09T18:00:00Z',
-    createdAt: '2025-06-15T12:00:00Z',
-    linkedStudents: [
-      {
-        studentId: 'ISML20250033',
-        studentName: 'Rohith Sharma R',
-        programName: 'German A1 Professional Career Track',
-        courseId: 'crs-02',
-        courseName: 'German A1 Professional Career Track',
-        batchId: 'batch-2026-bca',
-        batchName: 'Cohort 2026–2029 (BCA Section A)',
-        collegeName: 'Loyola College of Arts & Science (Autonomous)',
-        attendancePercentage: 64.0,
-        feePendingAmount: 15500,
-      },
-    ],
-  },
-  {
-    id: 'prt-007',
-    name: 'Antonio Fernandez',
-    email: 'antonio.fernandez@diplomatico.es',
-    mobile: '+91 94440 78901',
-    relationship: 'FATHER',
-    status: 'ACTIVE',
-    credentialsDelivered: true,
-    portalLastLogin: '2026-10-15T09:00:00Z',
-    createdAt: '2026-07-01T10:00:00Z',
-    linkedStudents: [
-      {
-        studentId: 'ISML20260099',
-        studentName: 'Isabella Fernandez',
-        programName: 'Spanish A1 Business & Diplomatic Track',
-        courseId: 'crs-05',
-        courseName: 'Spanish A1 Business & Diplomatic Track',
-        batchId: 'batch-smc-01',
-        batchName: 'Stella Maris Cohort 2026–2029',
-        collegeName: 'Stella Maris College for Women (Autonomous)',
-        attendancePercentage: 95.0,
-        feePendingAmount: 0,
-      },
-    ],
-  },
-];
+export const superAdminMockParents: ParentUser[] = [];
 
 export default function SuperAdminParentsDirectoryPage() {
   const { showSuccess, showInfo } = useToast();
@@ -291,6 +94,24 @@ export default function SuperAdminParentsDirectoryPage() {
 
   // Selected Parent for Quick Drawer
   const [inspectParent, setInspectParent] = useState<ParentUser | null>(null);
+  const [isAddParentOpen, setIsAddParentOpen] = useState(false);
+
+  const handleParentCreated = (user: SuperAdminUser) => {
+    const newParent: ParentUser = {
+      id: user.id || `parent-${Date.now()}`,
+      name: user.name,
+      email: user.email,
+      mobile: '+91 98765 43210',
+      status: 'ACTIVE',
+      relationship: 'FATHER',
+      linkedStudents: [],
+      credentialsDelivered: true,
+      portalLastLogin: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+    setParents((prev) => [newParent, ...prev]);
+    showSuccess(`Parent account for "${user.name}" created and onboarded successfully.`);
+  };
 
   const handleToggleParentStatus = (parentId: string, currentStatus: UserStatus) => {
     const nextStatus: UserStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -410,7 +231,15 @@ export default function SuperAdminParentsDirectoryPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsAddParentOpen(true)}
+            className="px-3.5 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+          >
+            <HeartHandshake className="w-4 h-4 text-blue-200" />
+            <span>+ Add Parent / Guardian</span>
+          </button>
           <Link
             href="/super-admin/students"
             className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-indigo-200 cursor-pointer shadow-2xs"
@@ -1094,6 +923,14 @@ export default function SuperAdminParentsDirectoryPage() {
           </div>
         </div>
       )}
+
+      {/* Add Parent Drawer */}
+      <AddUserDrawer
+        isOpen={isAddParentOpen}
+        onClose={() => setIsAddParentOpen(false)}
+        onUserCreated={handleParentCreated}
+        initialRoleId="role-parent"
+      />
     </div>
   );
 }

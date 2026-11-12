@@ -104,7 +104,7 @@ export default function CreateFeeStructureDrawer({
 
   const scheduleCode = editFeeStructure
     ? editFeeStructure.code
-    : `FEESTR-${selectedCourse.code.replace(/[^a-zA-Z0-9]/g, '-')}-V${Date.now().toString().slice(-2)}`;
+    : `FEESTR-${(selectedCourse?.code || 'GEN').replace(/[^a-zA-Z0-9]/g, '-')}-V${Date.now().toString().slice(-2)}`;
 
   useEffect(() => {
     if (isOpen) {
@@ -182,7 +182,7 @@ export default function CreateFeeStructureDrawer({
     e.preventDefault();
 
     const components: FeeStructureItem[] = [
-      { componentCode: 'TUITION_FEE', componentName: `${selectedCourse.name} Tuition`, amount: tuitionAmount, isOptional: false },
+      { componentCode: 'TUITION_FEE', componentName: `${selectedCourse?.name || 'General'} Tuition`, amount: tuitionAmount, isOptional: false },
       { componentCode: 'LAB_FEE', componentName: 'Practical Lab & Digital Sandbox', amount: labAmount, isOptional: false },
       { componentCode: 'EXAM_FEE', componentName: 'Certification & Course Evaluations', amount: examAmount, isOptional: false },
       { componentCode: 'REGISTRATION_FEE', componentName: 'Course Registration & Enrollment', amount: registrationAmount, isOptional: false },
@@ -192,11 +192,11 @@ export default function CreateFeeStructureDrawer({
     if (isEditMode && editFeeStructure) {
       const updatedStructure: FeeStructure = {
         ...editFeeStructure,
-        programId: selectedCourse.id,
-        programName: selectedCourse.name,
-        departmentName: selectedCourse.department,
-        batchId: selectedBatch.id,
-        batchName: selectedBatch.name,
+        programId: selectedCourse?.id || 'crs-01',
+        programName: selectedCourse?.name || 'Course',
+        departmentName: selectedCourse?.department || 'Department',
+        batchId: selectedBatch?.id || 'batch-01',
+        batchName: selectedBatch?.name || 'Batch',
         semesterNumber: 1, // Normalized standard unit
         courseTrackName: courseDuration,
         academicYear,
@@ -208,7 +208,7 @@ export default function CreateFeeStructureDrawer({
       };
 
       onFeeStructureUpdated?.(updatedStructure);
-      showSuccess(`Fee schedule ${editFeeStructure.code} updated for ${selectedCourse.name}.`);
+      showSuccess(`Fee schedule ${editFeeStructure.code} updated for ${selectedCourse?.name || 'Course'}.`);
       onClose();
       return;
     }
@@ -216,11 +216,11 @@ export default function CreateFeeStructureDrawer({
     const newStructure: FeeStructure = {
       id: `fee-${Date.now().toString().slice(-4)}`,
       code: scheduleCode,
-      programId: selectedCourse.id,
-      programName: selectedCourse.name,
-      departmentName: selectedCourse.department,
-      batchId: selectedBatch.id,
-      batchName: selectedBatch.name,
+      programId: selectedCourse?.id || 'crs-01',
+      programName: selectedCourse?.name || 'Course',
+      departmentName: selectedCourse?.department || 'Department',
+      batchId: selectedBatch?.id || 'batch-01',
+      batchName: selectedBatch?.name || 'Batch',
       semesterNumber: 1,
       courseTrackName: courseDuration,
       academicYear,
@@ -237,7 +237,7 @@ export default function CreateFeeStructureDrawer({
     };
 
     onFeeStructureCreated(newStructure);
-    showSuccess(`Fee schedule ${scheduleCode} (₹${totalAmount.toLocaleString('en-IN')}) provisioned for ${selectedCourse.name}.`);
+    showSuccess(`Fee schedule ${scheduleCode} (₹${totalAmount.toLocaleString('en-IN')}) provisioned for ${selectedCourse?.name || 'Course'}.`);
     onClose();
   };
 

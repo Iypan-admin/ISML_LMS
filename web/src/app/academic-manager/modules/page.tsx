@@ -100,13 +100,6 @@ export default function AcademicManagerModulesPage() {
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => setDeleteModule(row)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Delete Module"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
         </div>
       ),
     },

@@ -72,6 +72,32 @@ nextjs-portal {
   animation: live-pulse 1.8s infinite ease-in-out;
 }
 
+@keyframes floatFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1.15);
+  }
+  30% {
+    transform: translateY(-25px) scale(1);
+  }
+  75% {
+    opacity: 0.95;
+    transform: translateY(-80px) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-140px) scale(0.8);
+  }
+}
+
+.animate-float-fade {
+  animation: floatFadeUp 2.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
 /* Glassmorphism utilities */
 .isml-glass {
   background: rgba(255, 255, 255, 0.85);

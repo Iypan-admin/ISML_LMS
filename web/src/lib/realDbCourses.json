@@ -1,0 +1,122 @@
+[
+  {
+    "id": "5748249c-2ff7-41b6-b569-17226d91420b",
+    "code": "NM",
+    "name": "mmm",
+    "displayName": "mmm",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "department": "Languages & Humanities",
+    "program": "80h Track",
+    "semester": 1,
+    "academicYear": "2026–2027",
+    "duration": "90 Days",
+    "durationDays": 90,
+    "durationType": "3_MONTHS",
+    "facultyName": "Joy JK",
+    "substituteTutors": [
+      "Ms. Ananya Sharma"
+    ],
+    "enrolledStudents": 0,
+    "completionRate": 0,
+    "courseFee": 0,
+    "status": "PUBLISHED",
+    "createdAt": "2026-11-03T11:58:52.023Z"
+  },
+  {
+    "id": "344199a7-e204-4165-b9fd-1dc09e02e4b8",
+    "code": "TT1",
+    "name": "tt",
+    "displayName": "tt",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "department": "Languages & Humanities",
+    "program": "80h Track",
+    "semester": 1,
+    "academicYear": "2026–2027",
+    "duration": "90 Days",
+    "durationDays": 90,
+    "durationType": "3_MONTHS",
+    "facultyName": "Joy JK",
+    "substituteTutors": [
+      "Ms. Ananya Sharma"
+    ],
+    "enrolledStudents": 0,
+    "completionRate": 0,
+    "courseFee": 0,
+    "status": "PUBLISHED",
+    "createdAt": "2026-11-03T12:14:12.173Z"
+  },
+  {
+    "id": "fc609b6c-b5fe-455a-8644-7ac5e217d4f7",
+    "code": "NN",
+    "name": "nnn",
+    "displayName": "nnn",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "department": "Languages & Humanities",
+    "program": "80h Track",
+    "semester": 1,
+    "academicYear": "2026–2027",
+    "duration": "90 Days",
+    "durationDays": 90,
+    "durationType": "3_MONTHS",
+    "facultyName": "Joy JK",
+    "substituteTutors": [
+      "Ms. Ananya Sharma"
+    ],
+    "enrolledStudents": 0,
+    "completionRate": 0,
+    "courseFee": 0,
+    "status": "DRAFT",
+    "createdAt": "2026-11-03T12:30:32.091Z"
+  },
+  {
+    "id": "6db7a292-c5f3-4aac-b08f-277e368aa162",
+    "code": "AA",
+    "name": "aa",
+    "displayName": "aa",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "department": "Languages & Humanities",
+    "program": "80h Track",
+    "semester": 1,
+    "academicYear": "2026–2027",
+    "duration": "90 Days",
+    "durationDays": 90,
+    "durationType": "3_MONTHS",
+    "facultyName": "Joy JK",
+    "substituteTutors": [
+      "Ms. Ananya Sharma"
+    ],
+    "enrolledStudents": 0,
+    "completionRate": 0,
+    "courseFee": 0,
+    "status": "PUBLISHED",
+    "createdAt": "2026-11-03T13:11:11.750Z"
+  },
+  {
+    "id": "b9585673-9327-43d8-bef4-9d261fe0bb3e",
+    "code": "ET",
+    "name": "testtt",
+    "displayName": "testtt",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "department": "Languages & Humanities",
+    "program": "80h Track",
+    "semester": 1,
+    "academicYear": "2026–2027",
+    "duration": "90 Days",
+    "durationDays": 90,
+    "durationType": "3_MONTHS",
+    "facultyName": "Joy JK",
+    "substituteTutors": [
+      "Ms. Ananya Sharma"
+    ],
+    "enrolledStudents": 0,
+    "completionRate": 0,
+    "courseFee": 0,
+    "status": "PUBLISHED",
+    "createdAt": "2026-11-08T09:58:00.111Z"
+  }
+]

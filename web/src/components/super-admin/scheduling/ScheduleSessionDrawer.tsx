@@ -44,7 +44,7 @@ export default function ScheduleSessionDrawer({
   const isEditMode = Boolean(editSession);
 
   const [subjectName, setSubjectName] = useState(mockSubjects[0]?.name || 'Problem Solving & Python');
-  const [facultyName, setFacultyName] = useState('Dr. Anandhakumar V.');
+  const [facultyName, setFacultyName] = useState('Joy Jk');
   const [programName, setProgramName] = useState(mockPrograms[0]?.name || 'B.Sc Computer Science');
   const [batchName, setBatchName] = useState(mockBatches[0]?.name || 'Cohort 2026–2029 (Section A)');
   const [date, setDate] = useState('2026-10-12');
@@ -54,7 +54,7 @@ export default function ScheduleSessionDrawer({
   const [venueRoom, setVenueRoom] = useState('Computing Lab Hall 204');
   const [roomOrLink, setRoomOrLink] = useState('Virtual Studio A');
   const [attendeesCount, setAttendeesCount] = useState(60);
-  const [status, setStatus] = useState<'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED'>('UPCOMING');
+  const [status, setStatus] = useState<'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED' | 'DRAFT'>('UPCOMING');
 
   useEffect(() => {
     if (isOpen) {
@@ -73,7 +73,7 @@ export default function ScheduleSessionDrawer({
         setStatus(editSession.status);
       } else {
         setSubjectName(mockSubjects[0]?.name || 'Problem Solving & Python');
-        setFacultyName('Dr. Anandhakumar V.');
+        setFacultyName('Joy Jk');
         setProgramName(mockPrograms[0]?.name || 'B.Sc Computer Science');
         setBatchName(mockBatches[0]?.name || 'Cohort 2026–2029 (Section A)');
         setDate('2026-10-12');

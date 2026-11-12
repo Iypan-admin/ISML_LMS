@@ -91,48 +91,48 @@ export default function ParentCoursesPage() {
 
         {/* Units / Modules Progression List */}
         <div className="space-y-3">
-          {[
-            { num: 'Unit 01', title: 'Phonetics, Salutations & Alphabet Accord', status: 'COMPLETED', desc: 'Nasal vowel resonance [ɑ̃, ɛ̃, ɔ̃] and formal greetings' },
-            { num: 'Unit 02', title: 'Definite & Indefinite Articles, Gender of Nouns', status: 'COMPLETED', desc: 'Le, la, les, un, une, des & pluralization rules' },
-            { num: 'Unit 03', title: 'Numbers, Time, Days & Travel Dialogue', status: 'COMPLETED', desc: 'Ordering at a café, metro ticketing and time expressions' },
-            { num: 'Unit 04', title: 'Regular -ER, -IR Verbs & Present Tense Conjugation', status: 'COMPLETED', desc: 'Parler, Finir, Habiter with daily conversational drills' },
-            { num: 'Unit 05', title: 'Passé Composé with Avoir & Être (Narrative Past)', status: 'COMPLETED', desc: 'Irregular past participles (fait, pris, vu, été) and DR MRS VANDERTRAMP' },
-            { num: 'Unit 06', title: 'Reflexive Verbs & Daily Routine (Se Réveiller, Se Lever)', status: 'COMPLETED', desc: 'Pronominal verbs with negative form ne...pas' },
-            { num: 'Unit 07', title: 'Food, Cuisine & Ordering at a Parisian Bistro', status: 'COMPLETED', desc: 'Partitive articles du, de la, des & polite requests' },
-            { num: 'Unit 08', title: 'Future Proche & Travel Arrangements', status: 'IN_PROGRESS', desc: 'Aller + Infinitive construction for immediate future events' },
-            { num: 'Unit 09', title: 'Final DELF A1 Benchmark Revision & Mock CBT', status: 'UPCOMING', desc: 'Full 100-mark LSRW rehearsal under timed conditions' },
-          ].map((mod) => (
-            <div
-              key={mod.num}
-              className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
-                mod.status === 'COMPLETED'
-                  ? 'bg-emerald-50/40 border-emerald-200/70'
-                  : mod.status === 'IN_PROGRESS'
-                  ? 'bg-blue-50/60 border-[#0052CC]/50 ring-1 ring-blue-500/20'
-                  : 'bg-slate-50/60 border-slate-200'
-              }`}
-            >
-              <div className="space-y-0.5 truncate">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] font-black text-slate-500">{mod.num}</span>
-                  <h4 className="text-xs font-black text-[#0B2447] truncate">{mod.title}</h4>
-                </div>
-                <p className="text-[11px] text-slate-500 truncate">{mod.desc}</p>
-              </div>
-
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+          {([] as Array<{ num: string; title: string; status: string; desc: string }>).length === 0 ? (
+            <div className="p-8 rounded-xl border border-slate-200 bg-slate-50/50 text-center space-y-2">
+              <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-xs font-bold text-slate-700">No Curriculum Units Released Yet</p>
+              <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                Course units and syllabus milestones will be updated once the lead faculty publishes the academic schedule for this batch.
+              </p>
+            </div>
+          ) : (
+            ([] as Array<{ num: string; title: string; status: string; desc: string }>).map((mod) => (
+              <div
+                key={mod.num}
+                className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
                   mod.status === 'COMPLETED'
-                    ? 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-emerald-50/40 border-emerald-200/70'
                     : mod.status === 'IN_PROGRESS'
-                    ? 'bg-blue-100 text-[#0052CC] animate-pulse'
-                    : 'bg-slate-200 text-slate-600'
+                    ? 'bg-blue-50/60 border-[#0052CC]/50 ring-1 ring-blue-500/20'
+                    : 'bg-slate-50/60 border-slate-200'
                 }`}
               >
-                {mod.status.replace('_', ' ')}
-              </span>
-            </div>
-          ))}
+                <div className="space-y-0.5 truncate">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-black text-slate-500">{mod.num}</span>
+                    <h4 className="text-xs font-black text-[#0B2447] truncate">{mod.title}</h4>
+                  </div>
+                  <p className="text-[11px] text-slate-500 truncate">{mod.desc}</p>
+                </div>
+
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                    mod.status === 'COMPLETED'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : mod.status === 'IN_PROGRESS'
+                      ? 'bg-blue-100 text-[#0052CC] animate-pulse'
+                      : 'bg-slate-200 text-slate-600'
+                  }`}
+                >
+                  {mod.status.replace('_', ' ')}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -33,7 +33,7 @@ import {
   FileVideo,
 } from 'lucide-react';
 import { TUTOR_NAV_SECTIONS } from '@/config/tutorMenu';
-import { mockFacultyMembers } from '@/mock/facultyAssignments';
+import { mockFacultyMembers, DEFAULT_FACULTY_FALLBACK } from '@/mock/facultyAssignments';
 import { TutorProvider, useTutor } from '@/context/TutorContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { CollegeProvider } from '@/context/CollegeContext';
@@ -55,7 +55,12 @@ const iconMap: Record<string, React.ElementType> = {
 
 export function TutorSidebar({ activeFacultyId }: { activeFacultyId?: string }) {
   const pathname = usePathname();
-  const currentFaculty = mockFacultyMembers.find((f) => f.id === activeFacultyId) || mockFacultyMembers[0];
+  const { currentFaculty, myAllocations } = useTutor();
+
+  // Active courses or batches summary
+  const activeDutiesText = myAllocations.length > 0
+    ? myAllocations.map(a => a.courseName).filter((v, i, arr) => arr.indexOf(v) === i).join(' • ')
+    : 'No Active Allocations';
 
   // Determine which section contains the active route initially
   const activeSectionTitle = React.useMemo(() => {
@@ -125,13 +130,15 @@ export function TutorSidebar({ activeFacultyId }: { activeFacultyId?: string }) 
 
       {/* Role Pill Banner */}
       <div className="px-3.5 py-2 bg-[#0052CC]/15 border-b border-[#1E3A8A] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-200">
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-200 min-w-0">
           <UserCheck className="w-3.5 h-3.5 text-cyan-300 shrink-0" />
-          <span className="truncate">Active Duties:</span>
-          <span className="font-bold text-white text-[11px]">French A1 • A2 • B1 • B2</span>
+          <span className="shrink-0">Active Duties:</span>
+          <span className="font-bold text-white text-[11px] truncate" title={activeDutiesText}>
+            {activeDutiesText}
+          </span>
         </div>
-        <span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 text-[9px] font-extrabold rounded border border-cyan-400/30 uppercase tracking-wider">
-          CEFR
+        <span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 text-[9px] font-extrabold rounded border border-cyan-400/30 uppercase tracking-wider shrink-0 ml-1">
+          {myAllocations.length} Active
         </span>
       </div>
 
@@ -223,7 +230,7 @@ export function TutorSidebar({ activeFacultyId }: { activeFacultyId?: string }) 
 }
 
 export function TutorHeader({ activeFacultyId }: { activeFacultyId?: string }) {
-  const currentFaculty = mockFacultyMembers.find((f) => f.id === activeFacultyId) || mockFacultyMembers[0];
+  const { currentFaculty } = useTutor();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   return (
@@ -434,9 +441,17 @@ export default function TutorAppShell({ children }: { children: React.ReactNode 
 
 function TutorAppShellInner({ children }: { children: React.ReactNode }) {
   const { activeFacultyId } = useTutor();
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased w-full max-w-full overflow-x-hidden relative">
+    <div
+      className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased w-full max-w-full overflow-x-hidden relative"
+      suppressHydrationWarning
+    >
       <TutorSidebar activeFacultyId={activeFacultyId} />
       <div className="flex-1 flex flex-col min-w-0 w-full max-w-full min-h-screen pb-24 lg:pb-0 lg:pl-72 overflow-x-hidden">
         <TutorHeader activeFacultyId={activeFacultyId} />

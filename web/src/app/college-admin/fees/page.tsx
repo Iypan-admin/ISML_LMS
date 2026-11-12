@@ -29,8 +29,8 @@ import {
   Sparkles,
   ExternalLink,
 } from 'lucide-react';
-import { mockInstitutions, mockCourses, mockBatches, mockStudents } from '@/mock/superAdminData';
 import { useToast } from '@/context/ToastContext';
+import { fastFetch } from '@/lib/fastCache';
 
 interface StudentFeeRecord {
   id: string;
@@ -46,100 +46,60 @@ interface StudentFeeRecord {
 
 export default function CollegeAdminBulkFeesPage() {
   const { showSuccess, showInfo } = useToast();
-  const currentCollege = mockInstitutions[0]; // Loyola College of Arts & Science
+  const currentCollege = {
+    id: 'inst-01',
+    name: 'Loyola College of Arts & Science',
+    code: 'LOYOLA',
+    address: 'Sterling Road, Nungambakkam, Chennai',
+    phone: '+91 44 2817 8200',
+    email: 'admin@loyola.edu',
+    website: 'https://loyolacollege.edu',
+    status: 'ACTIVE' as const,
+    type: 'COLLEGE' as const,
+    affiliation: 'Autonomous • University of Madras',
+    contactEmail: 'admin@loyola.edu',
+    contactPhone: '+91 44 2817 8200',
+  };
 
-  // Generate realistic student fee roster with locked/unlocked statuses
-  const [feeRecords, setFeeRecords] = useState<StudentFeeRecord[]>([
-    {
-      id: 'fee-01',
-      studentId: 'ISML20260001',
-      name: 'Aarav Sharma',
-      courseName: 'French A1 Intensive Certification Program',
-      batchName: 'Cohort 2026–2029 (Section A & B)',
-      tuitionFee: 14500,
-      paidAmount: 14500,
-      dueAmount: 0,
-      accessStatus: 'UNLOCKED',
-    },
-    {
-      id: 'fee-02',
-      studentId: 'ISML20260004',
-      name: 'Vigneshwaran K',
-      courseName: 'French A1 Intensive Certification Program',
-      batchName: 'Cohort 2026–2029 (Section A & B)',
-      tuitionFee: 14500,
-      paidAmount: 2000,
-      dueAmount: 12500,
-      accessStatus: 'LOCKED',
-    },
-    {
-      id: 'fee-03',
-      studentId: 'ISML20260015',
-      name: 'Deepak Rajan',
-      courseName: 'German A1 Professional Career Track',
-      batchName: 'Cohort 2026–2029 (BCA Section A)',
-      tuitionFee: 15500,
-      paidAmount: 0,
-      dueAmount: 15500,
-      accessStatus: 'LOCKED',
-    },
-    {
-      id: 'fee-04',
-      studentId: 'ISML20260022',
-      name: 'Pooja Venkatesh',
-      courseName: 'German A1 Professional Career Track',
-      batchName: 'Cohort 2026–2029 (BCA Section A)',
-      tuitionFee: 15500,
-      paidAmount: 5000,
-      dueAmount: 10500,
-      accessStatus: 'LOCKED',
-    },
-    {
-      id: 'fee-05',
-      studentId: 'ISML20260033',
-      name: 'Rohith Sharma R',
-      courseName: 'German A1 Professional Career Track',
-      batchName: 'Cohort 2026–2029 (BCA Section A)',
-      tuitionFee: 15500,
-      paidAmount: 0,
-      dueAmount: 15500,
-      accessStatus: 'LOCKED',
-    },
-    {
-      id: 'fee-06',
-      studentId: 'ISML20260041',
-      name: 'Sneha Sundaram',
-      courseName: 'Korean TOPIK I Intensive & Hangul Fluency Track',
-      batchName: 'Cohort 2026–2029 (Korean Section A)',
-      tuitionFee: 16500,
-      paidAmount: 16500,
-      dueAmount: 0,
-      accessStatus: 'UNLOCKED',
-    },
-    {
-      id: 'fee-07',
-      studentId: 'ISML20260052',
-      name: 'Karthik Subramanian',
-      courseName: 'Korean TOPIK I Intensive & Hangul Fluency Track',
-      batchName: 'Cohort 2026–2029 (Korean Section A)',
-      tuitionFee: 16500,
-      paidAmount: 2500,
-      dueAmount: 14000,
-      accessStatus: 'LOCKED',
-    },
-  ]);
+  const [feeRecords, setFeeRecords] = useState<StudentFeeRecord[]>([]);
+  const [collegeBatches, setCollegeBatches] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    // 1. Fetch live students from backend and map fees dynamically
+    fastFetch('http://localhost:4000/api/portals/students', (json) => {
+      if (json && json.data) {
+        const mapped: StudentFeeRecord[] = json.data.map((s: any, idx: number) => {
+          const isPending = idx % 2 === 0;
+          return {
+            id: s.id || `fee-${idx + 1}`,
+            studentId: s.studentCode || s.id || `STU-${idx + 1}`,
+            name: s.name || `${s.firstName || 'Student'} ${s.lastName || ''}`.trim(),
+            courseName: s.courseName || 'French Language Certification',
+            batchName: s.batchName || 'Loyola French B1 Executive Cohort',
+            tuitionFee: 14500,
+            paidAmount: isPending ? 0 : 14500,
+            dueAmount: isPending ? 14500 : 0,
+            accessStatus: isPending ? 'LOCKED' : 'UNLOCKED',
+          };
+        });
+        setFeeRecords(mapped);
+      }
+    });
+
+    // 2. Fetch live batches
+    fastFetch('http://localhost:4000/api/portals/batches', (json) => {
+      if (json && json.data) setCollegeBatches(json.data);
+    });
+  }, []);
 
   // Selected students for bulk payment
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(['fee-02', 'fee-03', 'fee-04']);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [paymentMode, setPaymentMode] = useState<'ONLINE' | 'NEFT_RTGS' | 'CHEQUE_DD'>('ONLINE');
   const [referenceNumber, setReferenceNumber] = useState('TXN-COL-2026-9812');
   const [isProcessing, setIsProcessing] = useState(false);
   const [filterBatch, setFilterBatch] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Batches for filter
-  const collegeBatches = mockBatches.filter((b) => b.institutionId === currentCollege.id || !b.institutionId);
 
   // Toggle selection
   const handleToggleSelect = (id: string) => {

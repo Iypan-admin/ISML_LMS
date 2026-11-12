@@ -77,11 +77,11 @@ export default function RecordDeptSettlementDrawer({
   const { selectedCollegeId, isOverall } = useCollege();
 
   const [collegeId, setCollegeId] = useState(
-    !isOverall && selectedCollegeId ? selectedCollegeId : mockInstitutions[0].id
+    !isOverall && selectedCollegeId ? selectedCollegeId : mockInstitutions[0]?.id || 'inst-01'
   );
-  const [departmentId, setDepartmentId] = useState(mockDepartments[0].id);
-  const [programId, setProgramId] = useState(mockPrograms[0].id);
-  const [batchId, setBatchId] = useState(mockBatches[0].id);
+  const [departmentId, setDepartmentId] = useState(mockDepartments[0]?.id || 'dept-01');
+  const [programId, setProgramId] = useState(mockPrograms[0]?.id || 'prog-01');
+  const [batchId, setBatchId] = useState(mockBatches[0]?.id || 'batch-01');
   const [studentCohortSize, setStudentCohortSize] = useState<number>(60);
   const [perStudentFee, setPerStudentFee] = useState<number>(48000);
   const [paymentMode, setPaymentMode] = useState<DepartmentCohortSettlement['paymentMode']>('CORPORATE_RTGS');

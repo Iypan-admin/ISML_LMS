@@ -1,1189 +1,1005 @@
+// ============================================================================
+// ISML LMS — PUBLIC MULTI-TIER REGISTRATION HUB (/register)
+// Clean, Bright, Premium Professional SaaS Theme (White & Slate Blue)
+// 2-WAY ARCHITECTURE:
+// 1. INSTITUTIONAL MoUs (College Deans & School Admins Bulk Batch Upload)
+// 2. INDIVIDUAL DIRECT APPLICANTS (Student & Parent Direct Enrolment)
+// Supports Instant School vs College Scope Switching + Live Invoice Breakdown
+// ============================================================================
+
 "use client";
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  ShieldCheck, User, Mail, Phone, GraduationCap, BookOpen, Lock, 
-  CheckCircle2, ArrowRight, ArrowLeft, Upload, Edit2, AlertCircle, 
-  Sparkles, Check, Clock, Eye, EyeOff, Copy, Printer, Globe, FileText 
+import {
+  GraduationCap,
+  School,
+  Building2,
+  BookOpen,
+  User,
+  Users,
+  CheckCircle2,
+  ArrowRight,
+  ChevronLeft,
+  CreditCard,
+  Lock,
+  Clock,
+  Sparkles,
+  MapPin,
+  QrCode,
+  FileCheck,
+  Upload,
+  FileSpreadsheet,
+  Download,
+  Trash2,
+  Plus,
+  ShieldCheck,
+  Mail,
+  Phone,
+  Printer,
+  Copy,
+  Check,
+  AlertCircle,
+  FileText,
 } from 'lucide-react';
+import { salesStore } from '@/mock/salesData';
 
-// ─── Cascading Dropdown Master Data ───
-const collegeOptions = [
-  "Anna University Partner College — Chennai Main Campus",
-  "ISML Partner Institution — Coimbatore Campus",
-  "PSG College of Technology",
-  "Loyola College — Chennai",
-  "St. Xavier's College — Palayamkottai",
-  "Madras Christian College",
-  "Government College of Technology — Coimbatore"
+const colleges = [
+  {
+    id: 'inst-01',
+    name: 'Loyola College (Autonomous)',
+    code: 'LOYOLA-CHE',
+    campusArea: 'Sterling Road, Nungambakkam',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    pincode: '600034',
+    coordinator: 'Dr. K. Sivakumar (Language Dean)',
+    mouRef: 'MOU-2026-LOY-004',
+    agreedRate: 14500,
+  },
+  {
+    id: 'inst-02',
+    name: 'Madras Christian College (Autonomous)',
+    code: 'MCC-CHE',
+    campusArea: 'Tambaram East Main Campus',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    pincode: '600059',
+    coordinator: 'Prof. Mary Joseph (Dean of Humanities)',
+    mouRef: 'MOU-2026-MCC-012',
+    agreedRate: 15000,
+  },
+  {
+    id: 'inst-03',
+    name: 'Stella Maris College (Autonomous)',
+    code: 'SMC-CHE',
+    campusArea: 'Cathedral Road, Teynampet',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    pincode: '600086',
+    coordinator: 'Dr. Sr. Rosy (Academic VP)',
+    mouRef: 'MOU-2026-SMC-008',
+    agreedRate: 14000,
+  },
+  {
+    id: 'inst-04',
+    name: 'PSG College of Technology',
+    code: 'PSG-CBE',
+    campusArea: 'Avinashi Road, Peelamedu',
+    city: 'Coimbatore',
+    state: 'Tamil Nadu',
+    pincode: '641004',
+    coordinator: 'Dr. R. Venkatraman (International Cell)',
+    mouRef: 'MOU-2026-PSG-019',
+    agreedRate: 15500,
+  },
 ];
 
-const academicData: Record<string, string[]> = {
-  "Computer Science & Engineering": [
-    "B.E Computer Science & Engineering",
-    "B.Tech Information Technology",
-    "B.Sc Computer Science",
-    "M.Sc Computer Science",
-    "BCA — Bachelor of Computer Applications"
-  ],
-  "Commerce & Management": [
-    "B.Com General",
-    "B.Com Corporate Secretaryship",
-    "B.Com Accounting & Finance",
-    "BBA — Bachelor of Business Administration",
-    "MBA — Master of Business Administration"
-  ],
-  "English & Foreign Languages": [
-    "B.A English Literature",
-    "M.A English Literature",
-    "M.A Linguistics & Translation"
-  ],
-  "Mathematics & Science": [
-    "B.Sc Mathematics",
-    "B.Sc Physics",
-    "B.Sc Chemistry",
-    "M.Sc Data Analytics"
-  ]
-};
-
-const courseData: Record<string, Record<string, Record<string, string[]>>> = {
-  "French": {
-    "French Language Program": {
-      "A1 (Beginner)": ["Batch F01 — Mon/Wed/Fri — 6:00 PM IST", "Batch F02 — Tue/Thu/Sat — 10:00 AM IST"],
-      "A2 (Elementary)": ["Batch F03 — Sat/Sun Weekend — 2:00 PM IST"]
-    },
-    "French Foundation & DELF Prep": {
-      "A1.1 (Foundation)": ["Batch F04 — Mon/Wed — 7:30 PM IST"],
-      "A1.2 (Intensive)": ["Batch F05 — Tue/Thu — 6:00 PM IST"]
-    }
+const schools = [
+  {
+    id: 'school-01',
+    name: 'Delhi Public School (DPS International Campus)',
+    code: 'DPS-INT-CHE',
+    campusArea: 'Greenways Road, R.A. Puram',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    pincode: '600028',
+    principalContact: 'Mrs. Radhika Sundaram (Vice Principal)',
+    mouRef: 'MOU-2026-DPS-007',
+    agreedRate: 10500,
   },
-  "German": {
-    "German Language Program": {
-      "A1 (Beginner)": ["Batch G01 — Mon/Wed/Fri — 7:00 PM IST"],
-      "B1 (Intermediate)": ["Batch G02 — Tue/Thu/Sat — 9:00 AM IST"]
-    },
-    "German Goethe-Zertifikat Prep": {
-      "B2 (Vantage)": ["Batch G03 — Sat/Sun — 4:00 PM IST"]
-    }
+  {
+    id: 'school-02',
+    name: 'National Public School (NPS Senior Wing)',
+    code: 'NPS-SR-CHE',
+    board: 'CBSE',
+    campusArea: 'Harrington Road, Chetpet',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    pincode: '600031',
+    principalContact: 'Mr. Venkatesh Raghavan (Academic Coordinator)',
+    mouRef: 'MOU-2026-NPS-014',
+    agreedRate: 11000,
   },
-  "Japanese": {
-    "Japanese JLPT Course": {
-      "N5 (Beginner)": ["Batch J01 — Sat/Sun — 10:00 AM IST", "Batch J02 — Mon/Wed — 6:30 PM IST"],
-      "N4 (Elementary)": ["Batch J03 — Tue/Thu — 7:00 PM IST"]
-    }
+  {
+    id: 'school-03',
+    name: 'DAV Senior Secondary Academy',
+    code: 'DAV-SSA-CHE',
+    board: 'CBSE',
+    campusArea: 'Anna Nagar West 2nd Avenue',
+    city: 'Chennai',
+    state: 'Tamil Nadu',
+    pincode: '600040',
+    principalContact: 'Dr. Anandhakumar V. (Head of Languages)',
+    mouRef: 'MOU-2026-DAV-022',
+    agreedRate: 11500,
   },
-  "Spanish": {
-    "Spanish DELE Diploma Program": {
-      "A1 (Beginner)": ["Batch S01 — Mon/Wed/Fri — 5:00 PM IST"],
-      "A2 (Elementary)": ["Batch S02 — Sat/Sun — 11:00 AM IST"]
-    }
-  }
-};
-
-const countryCodes = [
-  { code: '+91', flag: '🇮🇳', label: 'India (+91)' },
-  { code: '+1', flag: '🇺🇸', label: 'USA (+1)' },
-  { code: '+44', flag: '🇬🇧', label: 'UK (+44)' },
-  { code: '+971', flag: '🇦🇪', label: 'UAE (+971)' },
-  { code: '+65', flag: '🇸🇬', label: 'Singapore (+65)' },
 ];
 
-export default function StudentRegistrationPage() {
+const collegeLanguages = [
+  { lang: 'French', level: 'CEFR A1 (Beginner to DELF A1)', fee: 18500, time: 'Mon/Wed/Fri — 6:00 PM IST' },
+  { lang: 'German', level: 'Goethe A1 Prep', fee: 19500, time: 'Mon/Wed/Fri — 7:00 PM IST' },
+  { lang: 'Japanese', level: 'JLPT N5 Elementary', fee: 19000, time: 'Tue/Thu/Sat — 6:30 PM IST' },
+  { lang: 'Spanish', level: 'DELE A1 Diploma', fee: 17500, time: 'Sat/Sun Weekend — 10:00 AM IST' },
+];
+
+const schoolTracks = [
+  { name: 'French Junior CEFR A1 Track', fee: 12000, desc: 'CBSE Class 8–10 French Syllabus & DELF Junior Exam' },
+  { name: 'German Fit in Deutsch A1 Track', fee: 13500, desc: 'Goethe-Institut Fit in Deutsch 1 Certification' },
+  { name: 'Japanese Elementary Kanji & Culture', fee: 14000, desc: 'Japan Foundation Junior Standard' },
+];
+
+export default function PublicRegistrationPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [refId, setRefId] = useState('');
-  const [copied, setCopied] = useState(false);
 
-  // ─── Step 1: Personal Details ───
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [dob, setDob] = useState('');
-  const [gender, setGender] = useState('');
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  // 1. Institution Category: College vs School
+  const [category, setCategory] = useState<'COLLEGE' | 'SCHOOL'>('COLLEGE');
 
-  // ─── Step 2: Contact Details ───
+  // 2. Admission Entry Type: Institutional Partner MoU (Bulk) vs Individual Direct Student
+  const [entryType, setEntryType] = useState<'INSTITUTION_BATCH' | 'INDIVIDUAL_STUDENT'>('INSTITUTION_BATCH');
+
+  // Shared Institution Selection
+  const [selectedCollegeId, setSelectedCollegeId] = useState('inst-01');
+  const [selectedSchoolId, setSelectedSchoolId] = useState('school-01');
+
+  // Individual Student State
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [countryCode, setCountryCode] = useState('+91');
-  const [mobile, setMobile] = useState('');
-
-  // ─── Step 3: Academic Details ───
-  const [college, setCollege] = useState('');
-  const [collegeSearch, setCollegeSearch] = useState('');
-  const [department, setDepartment] = useState('');
-  const [programme, setProgramme] = useState('');
-  const [yearOfStudy, setYearOfStudy] = useState('1st Year');
-  const [academicYear, setAcademicYear] = useState('2026–2027');
+  const [phone, setPhone] = useState('');
   const [rollNo, setRollNo] = useState('');
+  const [deptOrGrade, setDeptOrGrade] = useState('Computer Science');
+  const [parentName, setParentName] = useState('');
+  const [selectedLang, setSelectedLang] = useState('French');
 
-  // ─── Step 4: Enrollment ───
-  const [language, setLanguage] = useState('');
-  const [course, setCourse] = useState('');
-  const [level, setLevel] = useState('');
-  const [batch, setBatch] = useState('');
+  // Institutional Admin Batch State (No dummy students in public page)
+  const [mouRefNumber, setMouRefNumber] = useState('MOU-2026-LOY-004');
+  const [signatoryName, setSignatoryName] = useState('Dr. K. Sivakumar (Dean of Academics)');
+  const [adminOfficialEmail, setAdminOfficialEmail] = useState('');
+  const [adminPhone, setAdminPhone] = useState('');
+  const [batchCount, setBatchCount] = useState<number>(60);
+  const [batchDepartment, setBatchDepartment] = useState('Computer Science & IT');
+  const [batchProgramTrack, setBatchProgramTrack] = useState('French Language (CEFR A1)');
+  const [uploadedRosterName, setUploadedRosterName] = useState<string | null>(null);
 
-  // ─── Step 5: Account Setup ───
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [agreedTerms, setAgreedTerms] = useState(false);
+  // Submission State
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedData, setSubmittedData] = useState<any | null>(null);
 
-  // ─── Validation Errors ───
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const activeCollege = colleges.find((c) => c.id === selectedCollegeId) || colleges[0];
+  const activeSchool = schools.find((s) => s.id === selectedSchoolId) || schools[0];
+  const activeLangObj = collegeLanguages.find((l) => l.lang === selectedLang) || collegeLanguages[0];
 
-  // Photo Upload Handler
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, photo: 'File size must be under 2MB' }));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-        setErrors((prev) => ({ ...prev, photo: '' }));
-      };
-      reader.readAsDataURL(file);
+  // File Upload Handler (Simulated)
+  const handleUploadRoster = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setUploadedRosterName(e.target.files[0].name);
+    } else {
+      setUploadedRosterName(category === 'COLLEGE' ? 'College_Student_Roster_2026.xlsx' : 'School_Pupil_Roster_2026.xlsx');
     }
   };
 
-  // ─── Password Strength Meter ───
-  const getPasswordStrength = (pwd: string) => {
-    if (!pwd) return { score: 0, label: '', color: 'bg-slate-200' };
-    let score = 0;
-    if (pwd.length >= 8) score += 1;
-    if (/[A-Z]/.test(pwd)) score += 1;
-    if (/[a-z]/.test(pwd)) score += 1;
-    if (/[0-9]/.test(pwd)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
-
-    if (score <= 2) return { score: 1, label: 'Weak', color: 'bg-rose-500' };
-    if (score <= 4) return { score: 2, label: 'Medium', color: 'bg-amber-500' };
-    return { score: 3, label: 'Strong', color: 'bg-emerald-500' };
-  };
-
-  const pwdStrength = getPasswordStrength(password);
-
-  // ─── Step Validation ───
-  const validateStep = (currentStep: number) => {
-    const newErrors: Record<string, string> = {};
-
-    if (currentStep === 1) {
-      if (!firstName.trim() || !/^[A-Za-z\s]{2,50}$/.test(firstName)) {
-        newErrors.firstName = 'Please enter a valid first name (2-50 letters only)';
-      }
-      if (!lastName.trim() || !/^[A-Za-z\s]{1,50}$/.test(lastName)) {
-        newErrors.lastName = 'Please enter a valid last name';
-      }
-      if (!dob) {
-        newErrors.dob = 'Date of Birth is required';
-      }
-      if (!gender) {
-        newErrors.gender = 'Please select your gender';
-      }
-    }
-
-    if (currentStep === 2) {
-      if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        newErrors.email = 'Please enter a valid email address';
-      } else if (email.toLowerCase() === 'student@gmail.com') {
-        newErrors.email = 'An account with this email address already exists';
-      }
-      if (!mobile.trim() || !/^[0-9]{10}$/.test(mobile)) {
-        newErrors.mobile = 'Please enter a valid 10-digit mobile number';
-      }
-    }
-
-    if (currentStep === 3) {
-      if (!college) {
-        newErrors.college = 'Please select your college/institution';
-      }
-      if (!department) {
-        newErrors.department = 'Please select your department';
-      }
-      if (!programme) {
-        newErrors.programme = 'Please select your programme/degree';
-      }
-      if (!rollNo.trim()) {
-        newErrors.rollNo = 'Please enter your student roll number';
-      }
-    }
-
-    if (currentStep === 4) {
-      if (!language) newErrors.language = 'Please select a language';
-      if (!course) newErrors.course = 'Please select a course';
-      if (!level) newErrors.level = 'Please select a course level';
-      if (!batch) newErrors.batch = 'Please select an available batch';
-    }
-
-    if (currentStep === 5) {
-      if (password.length < 8) {
-        newErrors.password = 'Password must be at least 8 characters long';
-      }
-      if (password !== confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(step)) {
-      setStep((prev) => prev + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 1) setStep((prev) => prev - 1);
-  };
-
-  // ─── Final Submit Handler ───
+  // Submit Handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreedTerms) {
-      setErrors((prev) => ({ ...prev, terms: 'Please accept the Terms & Conditions and Privacy Policy to continue.' }));
-      return;
-    }
     setIsSubmitting(true);
+
     setTimeout(() => {
-      setIsSubmitting(false);
-      setRefId(`ISML-REG-2026-${Math.floor(10000 + Math.random() * 90000)}`);
-      setIsSuccess(true);
-    }, 1200);
-  };
+      const isCollege = category === 'COLLEGE';
+      const instName = isCollege ? activeCollege.name : activeSchool.name;
+      const instId = isCollege ? activeCollege.id : activeSchool.id;
+      const instRate = isCollege ? activeCollege.agreedRate : activeSchool.agreedRate;
 
-  const handleCopyRefId = () => {
-    navigator.clipboard.writeText(refId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+      if (entryType === 'INSTITUTION_BATCH') {
+        const batchRef = `BATCH-PUB-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  // Step Names Array
-  const stepsList = [
-    { num: 1, label: 'Personal' },
-    { num: 2, label: 'Contact' },
-    { num: 3, label: 'Academic' },
-    { num: 4, label: 'Enrollment' },
-    { num: 5, label: 'Account' },
-    { num: 6, label: 'Review' },
-  ];
+        // Register batch intake record in sales store
+        salesStore.addApplication({
+          category,
+          institutionId: instId,
+          institutionName: instName,
+          fullName: `${instName} Cohort - ${signatoryName}`,
+          email: adminOfficialEmail || 'coordinator@institution.edu',
+          phone: adminPhone || '+91 98401 22334',
+          dob: isCollege ? '2005-04-12' : '2012-07-20',
+          gender: 'MALE',
+          bloodGroup: 'B+',
+          address: {
+            street: isCollege ? activeCollege.campusArea : activeSchool.campusArea,
+            city: 'Chennai',
+            state: 'Tamil Nadu',
+            pincode: isCollege ? activeCollege.pincode : activeSchool.pincode,
+          },
+          collegeDetails: isCollege ? {
+            enrollmentMode: 'INSTITUTION_PARTNER',
+            collegeName: instName,
+            collegeCode: activeCollege.code,
+            department: batchDepartment,
+            degreeProgram: 'Institutional Batch Program',
+            semester: 'Semester 1',
+            currentRollNumber: `BATCH-${batchCount}-ROSTER`,
+            languageSelected: batchProgramTrack,
+            proficiencyLevel: 'CEFR A1',
+            preferredBatchTiming: 'Integrated Timetable Period',
+            hostelDayScholar: 'DAY_SCHOLAR',
+          } : undefined,
+          schoolDetails: !isCollege ? {
+            enrollmentMode: 'INSTITUTION_PARTNER',
+            schoolName: instName,
+            schoolCode: activeSchool.code,
+            boardAffiliation: 'CBSE',
+            gradeClass: batchDepartment,
+            section: 'Cohort Alpha',
+            academicYear: '2026–2027',
+            parentFatherName: signatoryName,
+            parentMotherName: 'Institutional Head',
+            parentEmergencyPhone: adminPhone || '+91 98401 22334',
+            languageTrack: batchProgramTrack,
+            schoolBatchSlot: 'School Integrated Slot',
+            transportMode: 'SCHOOL_BUS',
+          } : undefined,
+          courseFee: (isCollege ? 18500 : 12000) * batchCount,
+          discountScholarship: (isCollege ? 4000 : 1500) * batchCount,
+          finalPayable: instRate * batchCount,
+          amountPaid: instRate * batchCount,
+          paymentStatus: 'PAID',
+          paymentRefId: `MOU-TXN-${batchRef}`,
+          stage: 'ENROLLED',
+          source: isCollege ? 'COLLEGE_PARTNER' : 'SCHOOL_MOU',
+          assignedSalesOfficer: isCollege ? 'Priya Dharshini' : 'Arun Kumar V.',
+          assignedOfficerEmail: isCollege ? 'priya.sales@isml.edu' : 'arun.schools@isml.edu',
+          leadScore: 100,
+          notes: [
+            `Public Institutional Batch registered by ${signatoryName} (${adminOfficialEmail}).`,
+            `Batch Reference: ${batchRef}. Enrolled Total: ${batchCount} students.`,
+            `Attached Roster: ${uploadedRosterName || 'Institutional Signed Roster Attachment'}.`,
+          ],
+        });
+
+        // Dispatch Institutional Onboarding Request to Super Admin
+        fetch('http://localhost:4000/api/portals/institutions/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category,
+            type: category,
+            code: isCollege ? activeCollege.code : activeSchool.code,
+            name: instName,
+            institutionName: instName,
+            adminName: signatoryName,
+            adminEmail: adminOfficialEmail,
+            adminMobile: adminPhone,
+            studentsTarget: batchCount,
+            batchProgramTrack,
+            batchDepartment,
+            mouRefNumber,
+          }),
+        }).catch(() => null);
+
+        setIsSubmitting(false);
+        setSubmittedData({
+          mode: 'BATCH',
+          batchRef,
+          institution: instName,
+          count: batchCount,
+          signatory: signatoryName,
+          totalAmount: instRate * batchCount,
+        });
+      } else {
+        const txn = `TXN-PUB-${Math.floor(100000 + Math.random() * 900000)}`;
+        const baseFee = isCollege ? activeLangObj.fee : 12000;
+        const rebate = isCollege ? 2000 : 1500;
+        const net = baseFee - rebate;
+
+        const newApp = salesStore.addApplication({
+          category,
+          institutionId: instId,
+          institutionName: instName,
+          fullName: fullName || 'Direct Applicant',
+          email: email || 'applicant@isml.edu',
+          phone: phone || '+91 98840 00000',
+          dob: isCollege ? '2005-04-12' : '2012-07-20',
+          gender: 'MALE',
+          bloodGroup: 'B+',
+          address: {
+            street: 'Permanent Residential Address',
+            city: 'Chennai',
+            state: 'Tamil Nadu',
+            pincode: '600034',
+          },
+          collegeDetails: isCollege ? {
+            enrollmentMode: 'INDIVIDUAL_STUDENT',
+            collegeName: instName,
+            collegeCode: activeCollege.code,
+            department: deptOrGrade,
+            degreeProgram: 'Degree Program',
+            semester: 'Semester 1',
+            currentRollNumber: rollNo || 'REG-2026',
+            languageSelected: selectedLang,
+            proficiencyLevel: activeLangObj.level,
+            preferredBatchTiming: activeLangObj.time,
+            hostelDayScholar: 'DAY_SCHOLAR',
+          } : undefined,
+          schoolDetails: !isCollege ? {
+            enrollmentMode: 'INDIVIDUAL_STUDENT',
+            schoolName: instName,
+            schoolCode: activeSchool.code,
+            boardAffiliation: 'CBSE',
+            gradeClass: deptOrGrade || 'Class 8',
+            section: 'Section Alpha',
+            academicYear: '2026–2027',
+            parentFatherName: parentName || 'Parent Name',
+            parentMotherName: 'Parent Name',
+            parentEmergencyPhone: phone || '+91 98840 00000',
+            languageTrack: selectedLang,
+            schoolBatchSlot: 'Slot S1 (08:30 AM to 09:30 AM)',
+            transportMode: 'SCHOOL_BUS',
+          } : undefined,
+          courseFee: baseFee,
+          discountScholarship: rebate,
+          finalPayable: net,
+          amountPaid: net,
+          paymentStatus: 'PAID',
+          paymentRefId: txn,
+          stage: 'ENROLLED',
+          source: 'WEBSITE_FORM',
+          assignedSalesOfficer: isCollege ? 'Priya Dharshini' : 'Arun Kumar V.',
+          assignedOfficerEmail: isCollege ? 'priya.sales@isml.edu' : 'arun.schools@isml.edu',
+          leadScore: 95,
+          notes: [
+            `Direct individual registration via Public Enrolment Portal.`,
+            `Paid ₹${net.toLocaleString()} via Instant Online Gateway (Ref: ${txn}).`,
+          ],
+        });
+
+        // Dispatch student registration request to Super Admin
+        fetch('http://localhost:4000/api/portals/admissions/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            applicationNumber: newApp.applicationNumber,
+            fullName: newApp.fullName,
+            email: newApp.email,
+            phone: newApp.phone,
+            mobileNumber: newApp.phone,
+            category,
+            institutionId: instId,
+            institutionName: instName,
+            course: selectedLang,
+            targetLanguage: selectedLang.toUpperCase(),
+            amountPaid: net,
+            admissionType: isCollege ? 'COLLEGE_STUDENT' : 'SCHOOL_STUDENT',
+          }),
+        }).catch(() => null);
+
+        setIsSubmitting(false);
+        setSubmittedData({
+          mode: 'INDIVIDUAL',
+          appNo: newApp.applicationNumber,
+          fullName: newApp.fullName,
+          institution: instName,
+          course: selectedLang,
+          amountPaid: net,
+        });
+      }
+    }, 800);
+  };
 
   return (
-    <div 
-      className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/40 text-slate-900 flex flex-col justify-center items-center px-3 sm:px-6 py-4 sm:py-8 relative font-sans select-none"
-      style={{ fontFamily: "'Inter', 'Outfit', system-ui, -apple-system, sans-serif" }}
-    >
-      {/* Soft Ambient Light Blur Orbs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-[700px] h-[700px] rounded-full bg-blue-200/40 blur-3xl opacity-70" />
-        <div className="absolute -bottom-32 -right-32 w-[700px] h-[700px] rounded-full bg-indigo-200/30 blur-3xl opacity-60" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30 text-slate-900 flex flex-col justify-between font-sans selection:bg-[#0052CC] selection:text-white">
+      {/* ─── Top Public Navigation (Clean White Bar) ─── */}
+      <header className="h-16 border-b border-slate-200/90 px-4 sm:px-8 flex items-center justify-between bg-white/95 backdrop-blur-md sticky top-0 z-40 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-[#0052CC] to-blue-500 p-1 flex items-center justify-center shadow-xs">
+            <Image src="/logo.png" alt="ISML Logo" width={28} height={28} className="object-contain" priority />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-extrabold tracking-tight text-[#0B2447] uppercase">ISML ADMISSIONS</h1>
+              <span className="text-[10px] bg-blue-50 text-[#0052CC] font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                Official Registration
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-500 hidden sm:block">Indian School for Modern Languages • Public Enrolment Hub 2026–2027</p>
+          </div>
+        </div>
 
-      {/* 💳 Enterprise Registration Form Card */}
-      <main className="relative z-10 w-full max-w-4xl sm:max-w-5xl my-auto py-1 shrink-0">
-        <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-10 shadow-2xl space-y-6 w-full">
-          
-          {/* 🌟 ULTRA-RICH SUCCESS SCREEN 🌟 */}
-          {isSuccess ? (
-            <div className="space-y-6 py-2 animate-in fade-in zoom-in-95 duration-200">
-              
-              {/* Dual Glowing Celebration Avatar */}
-              <div className="text-center space-y-3">
-                <div className="relative inline-flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full bg-emerald-100/80 animate-ping absolute opacity-40" />
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-xl shadow-emerald-500/30 relative z-10">
-                    <CheckCircle2 className="w-9 h-9" />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="text-xs text-slate-700 hover:text-[#0052CC] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 font-bold transition-all"
+          >
+            <span>Staff / Student Login</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </header>
+
+      {/* ─── Main Public Form Hub (Full-Screen Fluid Layout) ─── */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 flex flex-col justify-start">
+        {submittedData ? (
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-10 text-center space-y-5 shadow-xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center mx-auto shadow-xs">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
+
+            {submittedData.mode === 'BATCH' ? (
+              <>
+                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                  Institutional MoU Batch Confirmed
+                </span>
+                <h2 className="text-3xl font-black text-[#0B2447]">{submittedData.institution} Batch Registered!</h2>
+                <p className="text-xs text-slate-600 max-w-md mx-auto">
+                  Batch reference <strong className="text-blue-700 font-mono">{submittedData.batchRef}</strong> with <strong>{submittedData.count} students</strong> has been enrolled and authorized by <strong>{submittedData.signatory}</strong>.
+                </p>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 max-w-sm mx-auto text-left text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Total Students:</span>
+                    <span className="font-bold text-slate-900">{submittedData.count}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-2">
+                    <span className="text-slate-500">Total Billed:</span>
+                    <span className="font-black text-emerald-700 text-sm">₹{submittedData.totalAmount.toLocaleString()}</span>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B2447] tracking-tight">
-                    Registration Request Submitted!
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-lg mx-auto">
-                    Your student enrollment application has been logged and forwarded to the ISML Admin team for verification.
-                  </p>
-                </div>
-              </div>
-
-              {/* 🎟️ Clean Light Glass Registration Pass Ticket Card */}
-              <div className="max-w-2xl mx-auto bg-gradient-to-br from-blue-50/90 via-indigo-50/50 to-white rounded-2xl p-5 text-slate-900 shadow-xl space-y-4 border border-blue-200/90">
-                <div className="flex items-center justify-between border-b border-blue-200/60 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="relative w-7 h-7 shrink-0">
-                      <Image src="/logo.png" alt="ISML LMS Logo" fill className="object-contain" priority />
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-extrabold text-[#0052CC] uppercase tracking-widest block leading-none">ISML LMS ENROLLMENT TICKET</span>
-                      <span className="text-[9px] text-slate-500 font-medium">Indian School for Modern Languages</span>
-                    </div>
+              </>
+            ) : (
+              <>
+                <span className="text-[11px] font-black uppercase tracking-wider text-blue-800 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                  Individual Student Enrolled
+                </span>
+                <h2 className="text-3xl font-black text-[#0B2447]">Admission & Seat Confirmed!</h2>
+                <p className="text-xs text-slate-600 max-w-md mx-auto">
+                  Application <strong className="text-blue-700 font-mono">{submittedData.appNo}</strong> for {submittedData.fullName} at {submittedData.institution} has been confirmed.
+                </p>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 max-w-sm mx-auto text-left text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Course Track:</span>
+                    <span className="font-bold text-slate-900">{submittedData.course}</span>
                   </div>
-                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100/90 border border-amber-300/80 px-2.5 py-1 rounded-full flex items-center gap-1 shadow-2xs">
-                    <Clock className="w-3 h-3" /> PENDING APPROVAL
-                  </span>
-                </div>
-
-                {/* Reference ID Banner */}
-                <div className="bg-white border border-blue-200/90 rounded-xl p-3.5 flex items-center justify-between shadow-2xs">
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">APPLICATION REFERENCE ID</span>
-                    <span className="font-mono font-extrabold text-lg text-[#0052CC] tracking-wider">{refId}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyRefId}
-                    className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-600/20"
-                  >
-                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copied ? 'Copied!' : 'Copy ID'}</span>
-                  </button>
-                </div>
-
-                {/* Ticket Details Summary Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1 border-t border-blue-100">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block font-medium">Student Name:</span>
-                    <span className="font-bold text-[#0B2447] truncate block">{firstName} {lastName}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block font-medium">Email Address:</span>
-                    <span className="font-bold text-[#0052CC] truncate block">{email}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block font-medium">Language Course:</span>
-                    <span className="font-bold text-emerald-700 truncate block">{language} ({level})</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block font-medium">Batch Schedule:</span>
-                    <span className="font-bold text-slate-700 truncate block">{batch ? batch.split('—')[0] : 'Assigned'}</span>
+                  <div className="flex justify-between border-t border-slate-200 pt-2">
+                    <span className="text-slate-500">Fees Paid:</span>
+                    <span className="font-black text-emerald-700 text-sm">₹{submittedData.amountPaid.toLocaleString()}</span>
                   </div>
                 </div>
-              </div>
+              </>
+            )}
 
-              {/* ⏱️ Interactive 3-Step Approval Timeline Stepper */}
-              <div className="max-w-2xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
-                <h3 className="text-xs font-extrabold text-[#0B2447] uppercase tracking-wider">Next Steps & Approval Timeline</h3>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  {/* Step 1 */}
-                  <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 space-y-1">
-                    <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span>1. Request Received</span>
-                    </div>
-                    <p className="text-[11px] text-slate-600">Application submitted successfully at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 space-y-1">
-                    <div className="flex items-center gap-1.5 text-amber-700 font-bold">
-                      <Clock className="w-4 h-4 shrink-0 animate-spin" />
-                      <span>2. Admin Verification</span>
-                    </div>
-                    <p className="text-[11px] text-slate-600">Admin team reviews college & course details within <strong className="text-slate-900">24 hours</strong>.</p>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-1 opacity-70">
-                    <div className="flex items-center gap-1.5 text-slate-500 font-bold">
-                      <Mail className="w-4 h-4 shrink-0" />
-                      <span>3. Portal Login Access</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">Official Login ID & Password will be emailed to <span className="font-semibold">{email}</span>.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <div className="flex justify-center gap-3 pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmittedData(null);
+                  setFullName('');
+                  setEmail('');
+                  setPhone('');
+                  setRollNo('');
+                }}
+                className="px-6 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
+              >
+                Submit Another Registration
+              </button>
+              <Link
+                href="/login"
+                className="px-6 py-2.5 rounded-xl bg-[#0052CC] hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20"
+              >
+                Go to Portal Login
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* ─── 1. TOP SWITCHER: COLLEGE vs SCHOOL (Bright Clean Pill) ─── */}
+            <div className="flex items-center justify-center">
+              <div className="bg-white p-1 rounded-2xl border border-slate-200 flex items-center gap-1 shadow-2xs">
                 <button
                   type="button"
-                  onClick={() => router.push('/login')}
-                  className="w-full sm:w-auto py-3.5 px-8 bg-[#0052CC] hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-600/20 inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  onClick={() => {
+                    setCategory('COLLEGE');
+                    setMouRefNumber(activeCollege.mouRef);
+                    setSignatoryName(activeCollege.coordinator);
+                  }}
+                  className={`px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                    category === 'COLLEGE'
+                      ? 'bg-[#0052CC] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <span>Back to Login Portal</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <GraduationCap className="w-4 h-4" />
+                  <span>College Admission</span>
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="w-full sm:w-auto py-3.5 px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl border border-slate-300 inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  onClick={() => {
+                    setCategory('SCHOOL');
+                    setMouRefNumber(activeSchool.mouRef);
+                    setSignatoryName(activeSchool.principalContact);
+                  }}
+                  className={`px-6 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                    category === 'SCHOOL'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <Printer className="w-4 h-4 text-slate-600" />
-                  <span>Print Application Ticket</span>
+                  <School className="w-4 h-4" />
+                  <span>School Admission</span>
                 </button>
               </div>
             </div>
-          ) : (
-            <>
-              {/* Card Header & 6-Step Wizard Indicator */}
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 shrink-0 drop-shadow-xs">
-                      <Image src="/logo.png" alt="ISML LMS Logo" fill className="object-contain" priority />
+
+            {/* ─── 2. TWO-WAY SELECTOR: INSTITUTIONAL SIGNED BATCH vs INDIVIDUAL STUDENT ─── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div
+                onClick={() => setEntryType('INSTITUTION_BATCH')}
+                className={`p-5 rounded-3xl border cursor-pointer transition-all ${
+                  entryType === 'INSTITUTION_BATCH'
+                    ? category === 'COLLEGE'
+                      ? 'bg-blue-50/70 border-[#0052CC] ring-2 ring-[#0052CC] shadow-md'
+                      : 'bg-emerald-50/70 border-emerald-600 ring-2 ring-emerald-600 shadow-md'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`p-2 rounded-xl ${
+                      entryType === 'INSTITUTION_BATCH'
+                        ? category === 'COLLEGE' ? 'bg-[#0052CC] text-white' : 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      <Building2 className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="text-xl sm:text-2xl font-extrabold text-[#0B2447] tracking-tight">Create Your Student Account</h2>
-                      <p className="text-xs text-slate-500 font-medium">Register for your ISML LMS learning program.</p>
+                      <h3 className="font-extrabold text-sm text-[#0B2447]">
+                        {category === 'COLLEGE' ? 'College-Signed MoU Batch' : 'School-Signed MoU Batch'}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">Official institutional batch with bulk Excel upload</p>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-[#0052CC] bg-blue-50 px-3 py-1 rounded-lg border border-blue-200/80 shadow-2xs self-start sm:self-center">
-                    Est. 2–3 mins
+                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                    category === 'COLLEGE' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    Bulk Roster
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-2">
+                  College Dean / School Principal signs batch authorization with bulk student Excel upload and institutional invoice.
+                </p>
+              </div>
+
+              <div
+                onClick={() => setEntryType('INDIVIDUAL_STUDENT')}
+                className={`p-5 rounded-3xl border cursor-pointer transition-all ${
+                  entryType === 'INDIVIDUAL_STUDENT'
+                    ? category === 'COLLEGE'
+                      ? 'bg-blue-50/70 border-[#0052CC] ring-2 ring-[#0052CC] shadow-md'
+                      : 'bg-emerald-50/70 border-emerald-600 ring-2 ring-emerald-600 shadow-md'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`p-2 rounded-xl ${
+                      entryType === 'INDIVIDUAL_STUDENT'
+                        ? category === 'COLLEGE' ? 'bg-[#0052CC] text-white' : 'bg-emerald-600 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-[#0B2447]">
+                        {category === 'COLLEGE' ? 'Individual College Student' : 'Individual School Pupil'}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">Direct student / parent online admission</p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                    Single Form
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-2">
+                  Single applicant self-enrollment for live webinar classes, printed workbook kits, and instant gateway fee settlement.
+                </p>
+              </div>
+            </div>
+
+            {/* ─── 3. FORM CONTAINER (Crisp White Card with Clean Inputs) ─── */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+              {/* Institution Select */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h2 className="text-sm font-bold text-[#0B2447] flex items-center gap-2">
+                    <Building2 className={`w-4 h-4 ${category === 'COLLEGE' ? 'text-blue-600' : 'text-emerald-600'}`} />
+                    <span>Select {category === 'COLLEGE' ? 'Partner College Campus' : 'Partner School Campus'}</span>
+                  </h2>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                    category === 'COLLEGE' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  }`}>
+                    MoU Rate: ₹{(category === 'COLLEGE' ? activeCollege.agreedRate : activeSchool.agreedRate).toLocaleString()}
                   </span>
                 </div>
 
-                {/* Step Progress Pills Bar */}
-                <div className="grid grid-cols-6 gap-1 pt-1">
-                  {stepsList.map((s) => {
-                    const isPassed = step > s.num;
-                    const isCurrent = step === s.num;
-                    return (
-                      <div key={s.num} className="space-y-1">
-                        <div className={`h-1.5 rounded-full transition-all duration-300 ${
-                          isPassed ? 'bg-[#0052CC]' : isCurrent ? 'bg-blue-500 ring-2 ring-blue-200' : 'bg-slate-200'
-                        }`} />
-                        <p className={`text-[9px] text-center truncate font-semibold ${
-                          isCurrent ? 'text-[#0052CC]' : isPassed ? 'text-slate-700' : 'text-slate-400'
-                        }`}>
-                          {s.label}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      {category === 'COLLEGE' ? 'Affiliated College *' : 'Affiliated School *'}
+                    </label>
+                    <select
+                      value={category === 'COLLEGE' ? selectedCollegeId : selectedSchoolId}
+                      onChange={(e) => {
+                        if (category === 'COLLEGE') {
+                          setSelectedCollegeId(e.target.value);
+                          const col = colleges.find((c) => c.id === e.target.value);
+                          if (col) {
+                            setMouRefNumber(col.mouRef);
+                            setSignatoryName(col.coordinator);
+                          }
+                        } else {
+                          setSelectedSchoolId(e.target.value);
+                          const sch = schools.find((s) => s.id === e.target.value);
+                          if (sch) {
+                            setMouRefNumber(sch.mouRef);
+                            setSignatoryName(sch.principalContact);
+                          }
+                        }
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                    >
+                      {category === 'COLLEGE' ? (
+                        colleges.map((col) => (
+                          <option key={col.id} value={col.id}>
+                            {col.name} ({col.code})
+                          </option>
+                        ))
+                      ) : (
+                        schools.map((sch) => (
+                          <option key={sch.id} value={sch.id}>
+                            {sch.name} ({sch.code})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
 
-                <div className="p-2.5 bg-blue-50/60 border border-blue-100 rounded-xl text-[11px] text-slate-600 flex items-center justify-between">
-                  <span className="font-medium text-[#0052CC]">Note: Most details can be selected from the available dropdown options.</span>
-                  <span className="text-slate-400 font-medium">Fields with * are required</span>
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+                    <span className="text-slate-500 block">Campus Address:</span>
+                    <span className="font-bold text-slate-800 block">
+                      {category === 'COLLEGE'
+                        ? `${activeCollege.campusArea}, ${activeCollege.city} - ${activeCollege.pincode}`
+                        : `${activeSchool.campusArea}, ${activeSchool.city} - ${activeSchool.pincode}`}
+                    </span>
+                    <span className="text-emerald-700 text-[11px] block pt-0.5 font-semibold">
+                      ✓ Authorized MoU Campus Center
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* ─── STEP 1: Personal Details ─── */}
-              {step === 1 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-150">
-                  <h3 className="text-xs font-extrabold text-[#0B2447] uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                    Step 1 – Personal Details
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4.5">
-                    {/* First Name */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">First Name*</label>
-                      <input
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="Enter your first name"
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.firstName ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        }`}
-                      />
-                      {errors.firstName && <p className="text-[10px] text-rose-600 font-medium">{errors.firstName}</p>}
-                    </div>
-
-                    {/* Last Name */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Last Name*</label>
-                      <input
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        placeholder="Enter your last name"
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.lastName ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        }`}
-                      />
-                      {errors.lastName && <p className="text-[10px] text-rose-600 font-medium">{errors.lastName}</p>}
-                    </div>
-
-                    {/* Date of Birth */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Date of Birth*</label>
-                      <input
-                        type="date"
-                        value={dob}
-                        onChange={(e) => setDob(e.target.value)}
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.dob ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        }`}
-                      />
-                      {errors.dob && <p className="text-[10px] text-rose-600 font-medium">{errors.dob}</p>}
-                    </div>
-
-                    {/* Gender */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Gender*</label>
-                      <select
-                        value={gender}
-                        onChange={(e) => setGender(e.target.value)}
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.gender ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        }`}
-                      >
-                        <option value="">Select Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                        <option value="Prefer not to say">Prefer not to say</option>
-                      </select>
-                      {errors.gender && <p className="text-[10px] text-rose-600 font-medium">{errors.gender}</p>}
-                    </div>
-                  </div>
-
-                  {/* Profile Photo Upload */}
-                  <div className="space-y-1.5 pt-1">
-                    <label className="block text-xs font-semibold text-slate-700">Profile Photo (Optional)</label>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-                        {photoPreview ? (
-                          <img src={photoPreview} alt="Profile Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <User className="w-6 h-6 text-slate-400" />
-                        )}
-                      </div>
-                      <label className="px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-[#0052CC] text-xs font-bold rounded-xl cursor-pointer transition-colors inline-flex items-center gap-1.5">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Photo (JPG/PNG max 2MB)</span>
-                        <input type="file" accept="image/png, image/jpeg" onChange={handlePhotoUpload} className="hidden" />
-                      </label>
-                    </div>
-                    {errors.photo && <p className="text-[10px] text-rose-600 font-medium">{errors.photo}</p>}
-                  </div>
-                </div>
-              )}
-
-              {/* ─── STEP 2: Contact Details ─── */}
-              {step === 2 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-150">
-                  <h3 className="text-xs font-extrabold text-[#0B2447] uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                    Step 2 – Contact Details
-                  </h3>
-
-                  <div className="space-y-3.5">
-                    {/* Email Address */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Email Address*</label>
-                      <div className="relative flex items-center">
-                        <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="e.g. bharathi.m@gmail.com"
-                          className={`w-full bg-slate-50 border rounded-xl pl-10 pr-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                            errors.email ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                          }`}
-                        />
-                      </div>
-                      {errors.email && <p className="text-[10px] text-rose-600 font-medium">{errors.email}</p>}
-                    </div>
-
-                    {/* India Mobile Number with Fixed 🇮🇳 Flag */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Mobile Number*</label>
-                      <div className="flex gap-2">
-                        <div className="bg-slate-100/90 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-extrabold text-[#0B2447] flex items-center gap-2 shrink-0 shadow-2xs">
-                          {/* High-Resolution Universal SVG Indian Flag */}
-                          <svg className="w-5 h-3.5 rounded-[2px] shadow-2xs shrink-0 overflow-hidden border border-slate-200/60" viewBox="0 0 640 480">
-                            <path fill="#FF9933" d="M0 0h640v160H0z"/>
-                            <path fill="#FFFFFF" d="M0 160h640v160H0z"/>
-                            <path fill="#128807" d="M0 320h640v160H0z"/>
-                            <g transform="translate(320 240)">
-                              <circle r="60" fill="none" stroke="#000080" strokeWidth="14"/>
-                              <circle r="12" fill="#000080"/>
-                              <path stroke="#000080" strokeWidth="6" d="M0-60V60M-60 0h120M-42-42l84 84M-42 42l84-84M-23-55l46 110M-55-23l110 46M-55 23l110-46M-23 55l46-110"/>
-                            </g>
-                          </svg>
-                          <span>+91</span>
-                        </div>
-                        <div className="relative flex-1 flex items-center">
-                          <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                          <input
-                            type="tel"
-                            value={mobile}
-                            onChange={(e) => setMobile(e.target.value.replace(/[^0-9]/g, ''))}
-                            maxLength={10}
-                            placeholder="e.g. 9876543210"
-                            className={`w-full bg-slate-50 border rounded-xl pl-10 pr-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                              errors.mobile ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                            }`}
-                          />
-                        </div>
-                      </div>
-                      {errors.mobile && <p className="text-[10px] text-rose-600 font-medium">{errors.mobile}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ─── STEP 3: College & Academic Details ─── */}
-              {step === 3 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-150">
-                  <h3 className="text-xs font-extrabold text-[#0B2447] uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                    Step 3 – College & Academic Details
-                  </h3>
-
-                  <div className="space-y-3.5">
-                    {/* College Selection */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">College / Institution*</label>
-                      <select
-                        value={college}
-                        onChange={(e) => setCollege(e.target.value)}
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.college ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        }`}
-                      >
-                        <option value="">Select College / Institution</option>
-                        {collegeOptions.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      {errors.college && <p className="text-[10px] text-rose-600 font-medium">{errors.college}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      {/* Department (Cascading) */}
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-slate-700">Department*</label>
-                        <select
-                          value={department}
-                          onChange={(e) => {
-                            setDepartment(e.target.value);
-                            setProgramme(''); // reset dependent programme
-                          }}
-                          className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                            errors.department ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                          }`}
-                        >
-                          <option value="">Select Department</option>
-                          {Object.keys(academicData).map((d) => (
-                            <option key={d} value={d}>{d}</option>
-                          ))}
-                        </select>
-                        {errors.department && <p className="text-[10px] text-rose-600 font-medium">{errors.department}</p>}
-                      </div>
-
-                      {/* Programme / Degree (Dependent on Department) */}
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-slate-700">Programme / Degree*</label>
-                        <select
-                          value={programme}
-                          disabled={!department}
-                          onChange={(e) => setProgramme(e.target.value)}
-                          className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                            errors.programme ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                          } disabled:opacity-50`}
-                        >
-                          <option value="">{department ? 'Select Programme' : 'Select Department First'}</option>
-                          {department && academicData[department]?.map((p) => (
-                            <option key={p} value={p}>{p}</option>
-                          ))}
-                        </select>
-                        {errors.programme && <p className="text-[10px] text-rose-600 font-medium">{errors.programme}</p>}
-                      </div>
-
-                      {/* Year of Study */}
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-slate-700">Year of Study*</label>
-                        <select
-                          value={yearOfStudy}
-                          onChange={(e) => setYearOfStudy(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
-                        >
-                          <option value="1st Year">1st Year</option>
-                          <option value="2nd Year">2nd Year</option>
-                          <option value="3rd Year">3rd Year</option>
-                          <option value="4th Year">4th Year</option>
-                          <option value="Passed Out">Passed Out</option>
-                        </select>
-                      </div>
-
-                      {/* Academic Year */}
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-slate-700">Academic Year*</label>
-                        <select
-                          value={academicYear}
-                          onChange={(e) => setAcademicYear(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
-                        >
-                          <option value="2026–2027">2026–2027</option>
-                          <option value="2027–2028">2027–2028</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Student Roll Number */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Student / Roll Number*</label>
-                      <input
-                        type="text"
-                        value={rollNo}
-                        onChange={(e) => setRollNo(e.target.value.toUpperCase())}
-                        placeholder="e.g. 2026-CS-8942"
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.rollNo ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        }`}
-                      />
-                      {errors.rollNo && <p className="text-[10px] text-rose-600 font-medium">{errors.rollNo}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ─── STEP 4: Course Enrollment (Cascading) ─── */}
-              {step === 4 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-150">
-                  <h3 className="text-xs font-extrabold text-[#0B2447] uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                    Step 4 – Course Enrollment (Cascading Options)
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4.5">
-                    {/* Language */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Language*</label>
-                      <select
-                        value={language}
-                        onChange={(e) => {
-                          setLanguage(e.target.value);
-                          setCourse('');
-                          setLevel('');
-                          setBatch('');
-                        }}
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.language ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        }`}
-                      >
-                        <option value="">Select Foreign Language</option>
-                        {Object.keys(courseData).map((l) => (
-                          <option key={l} value={l}>{l}</option>
-                        ))}
-                      </select>
-                      {errors.language && <p className="text-[10px] text-rose-600 font-medium">{errors.language}</p>}
-                    </div>
-
-                    {/* Course */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Course*</label>
-                      <select
-                        value={course}
-                        disabled={!language}
-                        onChange={(e) => {
-                          setCourse(e.target.value);
-                          setLevel('');
-                          setBatch('');
-                        }}
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.course ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        } disabled:opacity-50`}
-                      >
-                        <option value="">{language ? 'Select Course' : 'Select Language First'}</option>
-                        {language && Object.keys(courseData[language] || {}).map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      {errors.course && <p className="text-[10px] text-rose-600 font-medium">{errors.course}</p>}
-                    </div>
-
-                    {/* Level */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Course Level*</label>
-                      <select
-                        value={level}
-                        disabled={!course}
-                        onChange={(e) => {
-                          setLevel(e.target.value);
-                          setBatch('');
-                        }}
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.level ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        } disabled:opacity-50`}
-                      >
-                        <option value="">{course ? 'Select Level' : 'Select Course First'}</option>
-                        {language && course && Object.keys(courseData[language]?.[course] || {}).map((lvl) => (
-                          <option key={lvl} value={lvl}>{lvl}</option>
-                        ))}
-                      </select>
-                      {errors.level && <p className="text-[10px] text-rose-600 font-medium">{errors.level}</p>}
-                    </div>
-
-                    {/* Available Batch */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Available Batch / Schedule*</label>
-                      <select
-                        value={batch}
-                        disabled={!level}
-                        onChange={(e) => setBatch(e.target.value)}
-                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                          errors.batch ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                        } disabled:opacity-50`}
-                      >
-                        <option value="">{level ? 'Select Batch Schedule' : 'Select Level First'}</option>
-                        {language && course && level && courseData[language]?.[course]?.[level]?.map((b) => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
-                      {errors.batch && <p className="text-[10px] text-rose-600 font-medium">{errors.batch}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ─── STEP 5: Account Setup ─── */}
-              {step === 5 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-150">
-                  <h3 className="text-xs font-extrabold text-[#0B2447] uppercase tracking-wider border-b border-slate-100 pb-1.5">
-                    Step 5 – Account Setup
-                  </h3>
-
-                  {/* Auto-Generated Login ID Notice */}
-                  <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center justify-between text-xs">
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-[#0B2447] block">Auto-Generated System Login ID:</span>
-                      <span className="text-[11px] text-slate-600">Your official Login ID will be issued by ISML upon admin approval.</span>
-                    </div>
-                    <span className="font-mono font-bold text-[#0052CC] bg-white px-2.5 py-1 rounded-md border border-blue-200 shrink-0">
-                      ISML2026-PENDING
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {/* Password */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Create Password*</label>
-                      <div className="relative flex items-center">
-                        <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Min 8 chars (A-z, 0-9, #)"
-                          className={`w-full bg-slate-50 border rounded-xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                            errors.password ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                          }`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 text-slate-400 hover:text-[#0052CC] cursor-pointer"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-
-                      {/* Password Strength Meter */}
-                      {password && (
-                        <div className="space-y-1 pt-1">
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-slate-500 font-medium">Strength:</span>
-                            <span className="font-bold text-slate-700">{pwdStrength.label}</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex gap-1">
-                            <div className={`h-full flex-1 transition-all ${pwdStrength.score >= 1 ? pwdStrength.color : 'bg-slate-200'}`} />
-                            <div className={`h-full flex-1 transition-all ${pwdStrength.score >= 2 ? pwdStrength.color : 'bg-slate-200'}`} />
-                            <div className={`h-full flex-1 transition-all ${pwdStrength.score >= 3 ? pwdStrength.color : 'bg-slate-200'}`} />
-                          </div>
-                        </div>
-                      )}
-                      {errors.password && <p className="text-[10px] text-rose-600 font-medium">{errors.password}</p>}
-                    </div>
-
-                    {/* Confirm Password */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-slate-700">Confirm Password*</label>
-                      <div className="relative flex items-center">
-                        <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Re-enter password"
-                          className={`w-full bg-slate-50 border rounded-xl pl-10 pr-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none transition-all ${
-                            errors.confirmPassword ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 focus:border-[#0052CC] focus:bg-white'
-                          }`}
-                        />
-                      </div>
-                      {errors.confirmPassword && <p className="text-[10px] text-rose-600 font-medium">{errors.confirmPassword}</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ─── STEP 6: Review Summary & Submit ─── */}
-              {step === 6 && (
-                <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in slide-in-from-right-2 duration-150">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              {/* ══════════ OPTION A: INSTITUTIONAL MoU BATCH UPLOAD (No dummy records exposed) ══════════ */}
+              {entryType === 'INSTITUTION_BATCH' && (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                      <h3 className="text-xs font-extrabold text-[#0B2447] uppercase tracking-wider">
-                        Step 6 – Application Review & Final Verification
-                      </h3>
-                      <p className="text-[11px] text-slate-500 font-medium">Please review all information before submitting your registration.</p>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        MoU Reference Code *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={mouRefNumber}
+                        onChange={(e) => setMouRefNumber(e.target.value)}
+                        placeholder="MOU-2026-LOY-004"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
                     </div>
-                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full">
-                      5 Sections Ready
-                    </span>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Authorizing Dean / Principal *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={signatoryName}
+                        onChange={(e) => setSignatoryName(e.target.value)}
+                        placeholder="Dr. Name / Principal"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Official Campus Email *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={adminOfficialEmail}
+                        onChange={(e) => setAdminOfficialEmail(e.target.value)}
+                        placeholder="dean.academics@institution.edu"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Coordinator Mobile *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={adminPhone}
+                        onChange={(e) => setAdminPhone(e.target.value)}
+                        placeholder="+91 98401 22334"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
                   </div>
 
-                  {/* 2x2 Grid of Rich Glassmorphic Review Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                    {/* 1. Personal Details Card */}
-                    <div className="p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 hover:border-blue-300 rounded-2xl space-y-2.5 transition-all shadow-xs group">
-                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-blue-100 text-[#0052CC] flex items-center justify-center">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <span className="font-extrabold text-xs text-[#0B2447]">1. Personal Details</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setStep(1)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-[#0052CC] bg-white hover:bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Full Name:</span>
-                          <span className="font-bold text-slate-800">{firstName} {lastName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Date of Birth:</span>
-                          <span className="font-semibold text-slate-700">{dob}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Gender:</span>
-                          <span className="font-semibold text-slate-700">{gender}</span>
-                        </div>
-                        {photoPreview && (
-                          <div className="flex justify-between items-center pt-1 border-t border-slate-200/50">
-                            <span className="text-slate-500 font-medium">Profile Photo:</span>
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Attached</span>
-                          </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        {category === 'COLLEGE' ? 'Department / Faculty' : 'Target Grades / Classes'}
+                      </label>
+                      <input
+                        type="text"
+                        value={batchDepartment}
+                        onChange={(e) => setBatchDepartment(e.target.value)}
+                        placeholder={category === 'COLLEGE' ? 'e.g. B.Sc CS, BCA & B.Com' : 'Classes 6 to 9'}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Foreign Language Track *
+                      </label>
+                      <select
+                        value={batchProgramTrack}
+                        onChange={(e) => setBatchProgramTrack(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      >
+                        <option value="French Language (CEFR A1)">French Language (CEFR A1)</option>
+                        <option value="German (Goethe A1)">German (Goethe A1)</option>
+                        <option value="Japanese (JLPT N5)">Japanese (JLPT N5)</option>
+                        <option value="Spanish (DELE A1)">Spanish (DELE A1)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Enrolled Students Count *
+                      </label>
+                      <input
+                        type="number"
+                        min={5}
+                        max={1000}
+                        required
+                        value={batchCount}
+                        onChange={(e) => setBatchCount(Number(e.target.value))}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Clean File Upload Box (Supports Excel/CSV without exposing mock data to public) */}
+                  <label className="block p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#0052CC] bg-slate-50/70 text-center cursor-pointer space-y-2 transition-all">
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv,.pdf"
+                      onChange={handleUploadRoster}
+                      className="hidden"
+                    />
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052CC] border border-blue-100 flex items-center justify-center mx-auto">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">
+                        {uploadedRosterName ? (
+                          <span className="text-emerald-700 font-mono">✓ {uploadedRosterName} (Attached)</span>
+                        ) : (
+                          'Click to Attach Institutional Student Roster (Excel / CSV / PDF)'
                         )}
-                      </div>
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Student credentials and roll rosters will be processed securely inside the College Admin & Sales CRM portal.
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Summary Bar */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-500 block">Total MoU Institutional Billing ({batchCount} Enrollees):</span>
+                      <span className="font-black text-emerald-700 text-sm">
+                        ₹{((category === 'COLLEGE' ? activeCollege.agreedRate : activeSchool.agreedRate) * batchCount).toLocaleString()}
+                      </span>
                     </div>
 
-                    {/* 2. Contact Information Card */}
-                    <div className="p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 hover:border-blue-300 rounded-2xl space-y-2.5 transition-all shadow-xs group">
-                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                            <Mail className="w-4 h-4" />
-                          </div>
-                          <span className="font-extrabold text-xs text-[#0B2447]">2. Contact Details</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setStep(2)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-[#0052CC] bg-white hover:bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Email:</span>
-                          <span className="font-bold text-blue-700 truncate max-w-[180px]">{email}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Mobile:</span>
-                          <span className="font-semibold text-slate-800">{countryCode} {mobile}</span>
-                        </div>
-                        <div className="flex justify-between items-center pt-1 border-t border-slate-200/50">
-                          <span className="text-slate-500 font-medium">Status:</span>
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Verified Unique</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 3. Academic Details Card */}
-                    <div className="p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 hover:border-blue-300 rounded-2xl space-y-2.5 transition-all shadow-xs group">
-                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
-                            <GraduationCap className="w-4 h-4" />
-                          </div>
-                          <span className="font-extrabold text-xs text-[#0B2447]">3. Academic Institution</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setStep(3)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-[#0052CC] bg-white hover:bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
-                      <div className="space-y-1 text-xs">
-                        <div>
-                          <span className="text-slate-500 font-medium block text-[10px]">Institution:</span>
-                          <span className="font-bold text-slate-800 line-clamp-1">{college}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Programme:</span>
-                          <span className="font-semibold text-slate-800 truncate max-w-[170px]">{programme}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Year / Roll:</span>
-                          <span className="font-mono font-bold text-slate-700">{yearOfStudy} • {rollNo}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 4. Course Enrollment Card */}
-                    <div className="p-4 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/90 hover:border-blue-300 rounded-2xl space-y-2.5 transition-all shadow-xs group">
-                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
-                            <Globe className="w-4 h-4" />
-                          </div>
-                          <span className="font-extrabold text-xs text-[#0B2447]">4. Course Enrollment</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setStep(4)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-[#0052CC] bg-white hover:bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Language & Level:</span>
-                          <span className="font-extrabold text-emerald-700">{language} ({level})</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-500 font-medium">Course Title:</span>
-                          <span className="font-semibold text-slate-800 truncate max-w-[170px]">{course}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 font-medium block text-[10px]">Batch Schedule:</span>
-                          <span className="font-mono font-semibold text-slate-700 text-[11px] truncate block">{batch}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 5. Account Security Credentials Banner */}
-                  <div className="p-3.5 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200/90 rounded-2xl flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-white text-[#0052CC] border border-blue-200 flex items-center justify-center shrink-0 shadow-2xs">
-                        <ShieldCheck className="w-4.5 h-4.5" />
-                      </div>
-                      <div>
-                        <span className="font-extrabold text-[#0B2447] block">5. Account Credentials & Security</span>
-                        <span className="text-[11px] text-slate-600">Login ID: <strong className="font-mono text-[#0052CC]">ISML2026-PENDING</strong> (Issued upon approval) • Password: <strong className="font-mono">••••••••</strong></span>
-                      </div>
-                    </div>
                     <button
-                      type="button"
-                      onClick={() => setStep(5)}
-                      className="px-2.5 py-1 text-[11px] font-bold text-[#0052CC] bg-white hover:bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer shadow-2xs shrink-0"
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`w-full sm:w-auto px-8 py-3 rounded-xl font-bold text-xs text-white shadow-md flex items-center justify-center gap-2 cursor-pointer ${
+                        category === 'COLLEGE' ? 'bg-[#0052CC] hover:bg-blue-700 shadow-blue-600/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                      }`}
                     >
-                      <Edit2 className="w-3 h-3" />
-                      <span>Edit</span>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{isSubmitting ? 'Registering...' : `Submit Institutional MoU Batch (${batchCount} Students)`}</span>
                     </button>
                   </div>
-
-                  {/* Styled Terms Checkbox Card */}
-                  <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1">
-                    <label className="flex items-start gap-3 text-xs text-slate-700 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={agreedTerms}
-                        onChange={(e) => {
-                          setAgreedTerms(e.target.checked);
-                          if (e.target.checked) setErrors((prev) => ({ ...prev, terms: '' }));
-                        }}
-                        className="w-4.5 h-4.5 rounded border-slate-300 text-[#0052CC] focus:ring-blue-200 cursor-pointer accent-[#0052CC] mt-0.5"
-                      />
-                      <span className="leading-snug">
-                        I hereby confirm that all provided personal, academic, and enrollment information is true and accurate. I agree to abide by the <strong className="text-slate-900">ISML Terms of Service</strong> and <strong className="text-slate-900">Privacy Policy</strong>.
-                      </span>
-                    </label>
-                    {errors.terms && <p className="text-[10px] text-rose-600 font-medium pl-7">{errors.terms}</p>}
-                  </div>
-
-                  {/* Glowing Final Submit CTA Button */}
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !agreedTerms}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-[#0052CC] to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white text-sm font-extrabold rounded-xl shadow-xl shadow-blue-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60"
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center gap-2">
-                        <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        <span>Submitting Student Registration Request...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <span>Submit Registration Request</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
                 </form>
               )}
 
-              {/* Wizard Navigation Buttons (Steps 1–5) */}
-              {!isSuccess && step < 6 && (
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    disabled={step === 1}
-                    className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl disabled:opacity-40 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Back</span>
-                  </button>
+              {/* ══════════ OPTION B: INDIVIDUAL DIRECT STUDENT ══════════ */}
+              {entryType === 'INDIVIDUAL_STUDENT' && (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Applicant Full Legal Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Bharathi M."
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
 
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="px-6 py-2.5 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <span>Continue</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="student@isml.edu"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        WhatsApp Mobile No *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+91 98840 12345"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        {category === 'COLLEGE' ? 'College Roll No' : 'Class Roll / Section'}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="26-CS-042"
+                        value={rollNo}
+                        onChange={(e) => setRollNo(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        {category === 'COLLEGE' ? 'Department / Stream' : 'Pupil Grade (6–10)'}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={category === 'COLLEGE' ? 'Computer Science' : 'Class 8'}
+                        value={deptOrGrade}
+                        onChange={(e) => setDeptOrGrade(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Foreign Language Track
+                      </label>
+                      <select
+                        value={selectedLang}
+                        onChange={(e) => setSelectedLang(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
+                      >
+                        <option value="French">French Language (CEFR A1)</option>
+                        <option value="German">German (Goethe A1)</option>
+                        <option value="Japanese">Japanese (JLPT N5)</option>
+                        <option value="Spanish">Spanish (DELE A1)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-slate-500 block">Net Admission Fee:</span>
+                      <span className="font-black text-emerald-700 text-sm">
+                        ₹{(category === 'COLLEGE' ? activeLangObj.fee - 2000 : 12000 - 1500).toLocaleString()} (Rebate Applied)
+                      </span>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`px-8 py-3 rounded-xl font-bold text-xs text-white shadow-md flex items-center gap-2 cursor-pointer ${
+                        category === 'COLLEGE' ? 'bg-[#0052CC] hover:bg-blue-700 shadow-blue-600/20' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                      }`}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{isSubmitting ? 'Confirming...' : 'Pay Fee & Enrol Now'}</span>
+                    </button>
+                  </div>
+                </form>
               )}
-            </>
-          )}
-
-          {/* Bottom Back to Login Link */}
-          {!isSuccess && (
-            <div className="pt-2 text-center border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => router.push('/login')}
-                className="text-xs text-slate-500 hover:text-[#0052CC] font-semibold transition-colors cursor-pointer"
-              >
-                Already have an account? <span className="text-[#0052CC] font-bold underline">Sign In</span>
-              </button>
             </div>
-          )}
-        </div>
+
+            {/* ─── 4. PROMINENT BOTTOM LOGIN REDIRECT CARD ─── */}
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 text-left">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0052CC] border border-blue-100 flex items-center justify-center shrink-0">
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Already registered or have an account?</h4>
+                  <p className="text-xs text-slate-500">Sign in to your Student, College Admin, Teacher, or Staff portal</p>
+                </div>
+              </div>
+              <Link
+                href="/login"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-[#0052CC] text-white font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+              >
+                <span>Go to Login Screen</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-1 text-center text-[10px] text-slate-400 font-medium shrink-0">
-        © 2026 ISML LMS (IYPAN Educational Centre Pvt. Ltd.) • Student Onboarding Portal
+      <footer className="text-center text-xs text-slate-500 py-4 border-t border-slate-200/80 bg-white">
+        <div className="flex items-center justify-center gap-4 text-slate-500 mb-1">
+          <span>ISML Learning Management System © 2026–2027</span>
+          <span>•</span>
+          <Link href="/login" className="font-semibold text-slate-700 hover:text-[#0052CC] underline">
+            Direct Portal Login
+          </Link>
+          <span>•</span>
+          <a href="tel:+919840122334" className="hover:text-slate-700">Admissions Helpdesk: +91 98401 22334</a>
+        </div>
+        <p className="text-[11px] text-slate-400">Official Public Enrollment Center for Colleges & Partner Schools</p>
       </footer>
     </div>
   );

@@ -10,7 +10,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Award,
@@ -117,518 +117,232 @@ interface CourseExamGroup {
 }
 
 // Master Course & Batch Exams Dataset for Jay (French Specialist)
-const COURSE_ASSESSMENTS_DATA: CourseExamGroup[] = [
-  {
-    id: 'crs-fr-a1',
-    code: 'FR-101',
-    levelBadge: 'CEFR A1',
-    name: 'French A1: Beginner Foundations & Phonetics',
-    cefrTrack: 'DELF A1 Official Certification Track',
-    pastelBg: 'bg-blue-50/70',
-    pastelBorder: 'border-blue-200',
-    accentColor: 'text-[#0052CC]',
-    iconBg: 'bg-blue-100 text-[#0052CC]',
-    batches: [
-      {
-        batchId: 'batch-2026-fr-a1-morning',
-        batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-        sectionCode: 'Section A (Morning)',
-        schedule: 'Mon & Wed • 10:00 - 11:30 AM',
-        dutyRole: 'Lead Trainer & Chief Examiner',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        exams: [
-          {
-            id: 'exam-a1-delf-mock',
-            code: 'EXAM-A1-01',
-            title: 'DELF A1 National Benchmark CBT Mock Examination 2026',
-            type: 'DELF_CBT_MOCK',
-            lsrwFocus: 'COMPREHENSIVE_LSRW',
-            totalQuestions: 50,
-            durationMins: 80,
-            totalMarks: 100,
-            passingMarks: 50,
-            scheduledWindow: 'Exam Window: Mon, Oct 12 • 10:00 AM - 12:00 PM',
-            proctoringEnabled: true,
-            status: 'EVALUATION_ACTIVE',
-            studentsCount: 6,
-            evaluatedCount: 4,
-            cohortAveragePercent: 84,
-            records: [
-              {
-                id: 'rec-a1-01',
-                studentId: 'stu-a1-01',
-                studentName: 'Bharathi M',
-                studentRollNo: '2026-FR-8942',
-                studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Anna University, Chennai',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 12, 11:24 AM',
-                totalScore: 92,
-                maxScore: 100,
-                lsrwBreakdown: { listening: 24, speaking: 22, reading: 24, writing: 22 },
-                cefrVerdict: 'CEFR_A1_CERTIFIED',
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/bharathi_delf_viva.mp3',
-                vivaRecordingTime: '12m 45s',
-                tutorFeedback: 'Superb control over nasal vowels and natural polite greetings. Ready for A2!',
-                evaluatorNotes: 'Distinction level performance. Perfect phonetic liaison.',
-              },
-              {
-                id: 'rec-a1-02',
-                studentId: 'stu-a1-02',
-                studentName: 'Karthikeyan S',
-                studentRollNo: '2026-FR-8943',
-                studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Loyola College (Autonomous)',
-                status: 'PENDING_EVALUATION',
-                submittedAt: 'Oct 12, 11:42 AM',
-                maxScore: 100,
-                lsrwBreakdown: { listening: 0, speaking: 0, reading: 0, writing: 0 },
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/karthik_oral_viva.mp3',
-                vivaRecordingTime: '11m 15s',
-                tutorFeedback: '',
-                evaluatorNotes: 'Oral Viva audio pending review. CBT parts auto-graded.',
-              },
-              {
-                id: 'rec-a1-03',
-                studentId: 'stu-a1-03',
-                studentName: 'Divya Lakshmi R',
-                studentRollNo: '2026-FR-8944',
-                studentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Madras Christian College (MCC)',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 12, 11:18 AM',
-                totalScore: 95,
-                maxScore: 100,
-                lsrwBreakdown: { listening: 25, speaking: 23, reading: 25, writing: 22 },
-                cefrVerdict: 'CEFR_A1_CERTIFIED',
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/divya_viva.mp3',
-                vivaRecordingTime: '14m 20s',
-                tutorFeedback: 'Exemplary reading and listening speed. Near-native French cadence.',
-                evaluatorNotes: 'Highest score in Section A.',
-              },
-              {
-                id: 'rec-a1-04',
-                studentId: 'stu-a1-04',
-                studentName: 'Rohan Mehra',
-                studentRollNo: '2026-FR-8945',
-                studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'PSG College of Technology',
-                status: 'PENDING_EVALUATION',
-                submittedAt: 'Oct 12, 11:50 AM',
-                maxScore: 100,
-                lsrwBreakdown: { listening: 0, speaking: 0, reading: 0, writing: 0 },
-                proctoringFlags: 1,
-                vivaAudioUrl: 'https://isml.edu/audio/rohan_oral_viva.mp3',
-                vivaRecordingTime: '10m 05s',
-                tutorFeedback: '',
-                evaluatorNotes: 'Minor screen switch flag detected; verify viva consistency.',
-              },
-              {
-                id: 'rec-a1-05',
-                studentId: 'stu-a1-05',
-                studentName: 'Sneha Venkatesh',
-                studentRollNo: '2026-FR-8946',
-                studentAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Stella Maris College',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 12, 11:29 AM',
-                totalScore: 88,
-                maxScore: 100,
-                lsrwBreakdown: { listening: 22, speaking: 21, reading: 23, writing: 22 },
-                cefrVerdict: 'CEFR_A1_CERTIFIED',
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/sneha_viva.mp3',
-                vivaRecordingTime: '13m 10s',
-                tutorFeedback: 'Solid understanding of regular ER verbs and question inversions.',
-              },
-              {
-                id: 'rec-a1-06',
-                studentId: 'stu-a1-06',
-                studentName: 'Praveen Kumar M',
-                studentRollNo: '2026-FR-8947',
-                studentAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'SRM Institute of Science and Tech',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 12, 11:35 AM',
-                totalScore: 78,
-                maxScore: 100,
-                lsrwBreakdown: { listening: 19, speaking: 18, reading: 21, writing: 20 },
-                cefrVerdict: 'PASS',
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/praveen_viva.mp3',
-                vivaRecordingTime: '11m 40s',
-                tutorFeedback: 'Good effort. Keep practicing number dictation and listening speed.',
-              },
-            ],
-          },
-          {
-            id: 'exam-a1-oral-viva',
-            code: 'EXAM-A1-VIVA',
-            title: 'CEFR A1 1-on-1 Interactive Oral Viva Examination',
-            type: 'ORAL_VIVA',
-            lsrwFocus: 'SPEAKING',
-            totalQuestions: 15,
-            durationMins: 20,
-            totalMarks: 50,
-            passingMarks: 25,
-            scheduledWindow: 'Live Viva Desk: Wed, Oct 14 • 02:00 - 05:00 PM',
-            proctoringEnabled: true,
-            status: 'PUBLISHED',
-            studentsCount: 6,
-            evaluatedCount: 2,
-            cohortAveragePercent: 82,
-            records: [
-              {
-                id: 'rec-viva-01',
-                studentId: 'stu-a1-01',
-                studentName: 'Bharathi M',
-                studentRollNo: '2026-FR-8942',
-                studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Anna University, Chennai',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 14, 02:20 PM',
-                totalScore: 46,
-                maxScore: 50,
-                lsrwBreakdown: { listening: 11, speaking: 23, reading: 6, writing: 6 },
-                cefrVerdict: 'PASS_WITH_HONORS',
-                proctoringFlags: 0,
-                tutorFeedback: 'Fluid answers to situational roleplay in French boulangerie.',
-              },
-              {
-                id: 'rec-viva-02',
-                studentId: 'stu-a1-03',
-                studentName: 'Divya Lakshmi R',
-                studentRollNo: '2026-FR-8944',
-                studentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Madras Christian College (MCC)',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 14, 02:45 PM',
-                totalScore: 48,
-                maxScore: 50,
-                lsrwBreakdown: { listening: 12, speaking: 24, reading: 6, writing: 6 },
-                cefrVerdict: 'PASS_WITH_HONORS',
-                proctoringFlags: 0,
-                tutorFeedback: 'Remarkable oral eloquence and pronunciation.',
-              },
-            ],
-          },
-        ],
-      },
-      {
-        batchId: 'batch-2026-fr-a1-weekend',
-        batchName: 'French A1 Fast-Track Weekend Bootcamp',
-        sectionCode: 'Section B (Weekend)',
-        schedule: 'Sat & Sun • 11:00 AM - 01:00 PM',
-        dutyRole: 'Lead Trainer & Chief Examiner',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        exams: [
-          {
-            id: 'exam-a1-wknd-mid',
-            code: 'EXAM-A1-WK-01',
-            title: 'Weekend Mid-Term Modular Checkpoint (Phonetics & Vocabulary)',
-            type: 'MID_TERM',
-            lsrwFocus: 'COMPREHENSIVE_LSRW',
-            totalQuestions: 40,
-            durationMins: 60,
-            totalMarks: 50,
-            passingMarks: 25,
-            scheduledWindow: 'Online Window: Saturday • 11:00 AM - 12:00 PM',
-            proctoringEnabled: false,
-            status: 'PUBLISHED',
-            studentsCount: 2,
-            evaluatedCount: 2,
-            cohortAveragePercent: 86,
-            records: [
-              {
-                id: 'rec-wk-01',
-                studentId: 'stu-a1-wk-01',
-                studentName: 'Ananya Sharma',
-                studentRollNo: '2026-FR-8948',
-                studentAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'SRM Institute, Kattankulathur',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 11, 11:58 AM',
-                totalScore: 45,
-                maxScore: 50,
-                lsrwBreakdown: { listening: 12, speaking: 11, reading: 11, writing: 11 },
-                cefrVerdict: 'PASS_WITH_HONORS',
-                proctoringFlags: 0,
-                tutorFeedback: 'Strong grammar baseline.',
-              },
-              {
-                id: 'rec-wk-02',
-                studentId: 'stu-a1-wk-02',
-                studentName: 'Vikram Sundaram',
-                studentRollNo: '2026-FR-8949',
-                studentAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Hindustan University',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 11, 11:55 AM',
-                totalScore: 41,
-                maxScore: 50,
-                lsrwBreakdown: { listening: 10, speaking: 10, reading: 11, writing: 10 },
-                cefrVerdict: 'PASS',
-                proctoringFlags: 0,
-                tutorFeedback: 'Steady progression across all phonetics drills.',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-a2',
-    code: 'FR-102',
-    levelBadge: 'CEFR A2',
-    name: 'French A2: Elementary Communication & Practical Fluency',
-    cefrTrack: 'DELF A2 Certification Track',
-    pastelBg: 'bg-emerald-50/70',
-    pastelBorder: 'border-emerald-200',
-    accentColor: 'text-emerald-700',
-    iconBg: 'bg-emerald-100 text-emerald-700',
-    batches: [
-      {
-        batchId: 'batch-fr-a2',
-        batchName: 'French A2 Cohort (Section B - Standby Coverage)',
-        sectionCode: 'Section B (Afternoon)',
-        schedule: 'Tue & Thu • 02:00 - 03:30 PM',
-        dutyRole: 'Substitute Standby & Co-Examiner',
-        dutyBadgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
-        exams: [
-          {
-            id: 'exam-a2-delf-sim',
-            code: 'EXAM-A2-01',
-            title: 'DELF A2 Official Simulation Examination (Passé Composé & Imparfait)',
-            type: 'DELF_CBT_MOCK',
-            lsrwFocus: 'COMPREHENSIVE_LSRW',
-            totalQuestions: 45,
-            durationMins: 90,
-            totalMarks: 100,
-            passingMarks: 50,
-            scheduledWindow: 'Exam Window: Tuesday • 02:00 - 03:30 PM',
-            proctoringEnabled: true,
-            status: 'EVALUATION_ACTIVE',
-            studentsCount: 3,
-            evaluatedCount: 2,
-            cohortAveragePercent: 81,
-            records: [
-              {
-                id: 'rec-a2-01',
-                studentId: 'stu-a2-01',
-                studentName: 'Harish R',
-                studentRollNo: '2026-FR-7101',
-                studentAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'PSG Tech, Coimbatore',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 13, 03:22 PM',
-                totalScore: 84,
-                maxScore: 100,
-                lsrwBreakdown: { listening: 21, speaking: 20, reading: 22, writing: 21 },
-                cefrVerdict: 'PASS_WITH_HONORS',
-                proctoringFlags: 0,
-                tutorFeedback: 'Proper agreement of past participles with être verbs.',
-              },
-              {
-                id: 'rec-a2-02',
-                studentId: 'stu-a2-02',
-                studentName: 'Kavitha S',
-                studentRollNo: '2026-FR-7102',
-                studentAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'SSN College of Engineering',
-                status: 'PENDING_EVALUATION',
-                submittedAt: 'Oct 13, 03:28 PM',
-                maxScore: 100,
-                lsrwBreakdown: { listening: 0, speaking: 0, reading: 0, writing: 0 },
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/kavitha_a2_viva.mp3',
-                vivaRecordingTime: '12m 30s',
-                evaluatorNotes: 'Pending evaluation of Section C essay and viva recording.',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b1',
-    code: 'FR-201',
-    levelBadge: 'CEFR B1',
-    name: 'French B1: Intermediate Fluency & Complex Expression',
-    cefrTrack: 'DELF B1 Professional Certification Track',
-    pastelBg: 'bg-amber-50/70',
-    pastelBorder: 'border-amber-200',
-    accentColor: 'text-amber-800',
-    iconBg: 'bg-amber-100 text-amber-800',
-    batches: [
-      {
-        batchId: 'batch-fr-b1',
-        batchName: 'French B1 Executive Cohort (1-on-1 Q&A Desk)',
-        sectionCode: 'Section C (Evening Executive)',
-        schedule: 'Tue & Thu • 05:30 - 07:00 PM',
-        dutyRole: 'Doubt Clearance & Oral Viva Examiner',
-        dutyBadgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
-        exams: [
-          {
-            id: 'exam-b1-viva-subjunctive',
-            code: 'EXAM-B1-ORAL',
-            title: 'DELF B1 Speaking & Argumentation Assessment (Subjunctive & Defense)',
-            type: 'ORAL_VIVA',
-            lsrwFocus: 'SPEAKING',
-            totalQuestions: 20,
-            durationMins: 45,
-            totalMarks: 50,
-            passingMarks: 30,
-            scheduledWindow: 'Viva Desk: Thursday • 05:30 - 07:00 PM',
-            proctoringEnabled: true,
-            status: 'EVALUATION_ACTIVE',
-            studentsCount: 2,
-            evaluatedCount: 1,
-            cohortAveragePercent: 88,
-            records: [
-              {
-                id: 'rec-b1-01',
-                studentId: 'stu-b1-01',
-                studentName: 'Suresh Kumar',
-                studentRollNo: '2026-FR-6011',
-                studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'IIT Madras (Continuing Education)',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 08, 06:15 PM',
-                totalScore: 44,
-                maxScore: 50,
-                lsrwBreakdown: { listening: 10, speaking: 23, reading: 5, writing: 6 },
-                cefrVerdict: 'PASS_WITH_HONORS',
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/suresh_b1_viva.mp3',
-                vivaRecordingTime: '15m 45s',
-                tutorFeedback: 'Superb defense of cultural preservation thesis using subjunctive triggers.',
-              },
-              {
-                id: 'rec-b1-02',
-                studentId: 'stu-b1-02',
-                studentName: 'Pooja Iyer',
-                studentRollNo: '2026-FR-6012',
-                studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Great Lakes Institute of Management',
-                status: 'PENDING_EVALUATION',
-                submittedAt: 'Oct 08, 06:40 PM',
-                maxScore: 50,
-                lsrwBreakdown: { listening: 0, speaking: 0, reading: 0, writing: 0 },
-                proctoringFlags: 0,
-                vivaAudioUrl: 'https://isml.edu/audio/pooja_b1_viva.mp3',
-                vivaRecordingTime: '16m 10s',
-                evaluatorNotes: 'Oral defense recorded; rubric marking required.',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b2',
-    code: 'FR-202',
-    levelBadge: 'CEFR B2',
-    name: 'French B2: Advanced Oral Discourse & Synthesizing Text',
-    cefrTrack: 'DELF B2 Academic & Immigration Track',
-    pastelBg: 'bg-purple-50/70',
-    pastelBorder: 'border-purple-200',
-    accentColor: 'text-purple-700',
-    iconBg: 'bg-purple-100 text-purple-700',
-    batches: [
-      {
-        batchId: 'batch-fr-b2',
-        batchName: 'French B2 Advanced Cohort (Evaluation Desk)',
-        sectionCode: 'Section D (Friday Intensive)',
-        schedule: 'Friday • 03:00 - 05:00 PM',
-        dutyRole: 'Assistant Evaluator & Thesis Reader',
-        dutyBadgeColor: 'bg-slate-100 text-slate-700 border-slate-300',
-        exams: [
-          {
-            id: 'exam-b2-synthese-eval',
-            code: 'EXAM-B2-01',
-            title: 'DELF B2 Formal Synthesis & Argumentative Essay Evaluation',
-            type: 'FINAL_EXAM',
-            lsrwFocus: 'COMPREHENSIVE_LSRW',
-            totalQuestions: 25,
-            durationMins: 120,
-            totalMarks: 100,
-            passingMarks: 60,
-            scheduledWindow: 'Evaluation Window: Friday • 03:00 - 05:00 PM',
-            proctoringEnabled: true,
-            status: 'EVALUATION_ACTIVE',
-            studentsCount: 2,
-            evaluatedCount: 1,
-            cohortAveragePercent: 86,
-            records: [
-              {
-                id: 'rec-b2-01',
-                studentId: 'stu-b2-01',
-                studentName: 'Meera Nambiar',
-                studentRollNo: '2026-FR-5021',
-                studentAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Loyola College (Autonomous)',
-                status: 'EVALUATED',
-                submittedAt: 'Oct 09, 04:50 PM',
-                totalScore: 89,
-                maxScore: 100,
-                lsrwBreakdown: { listening: 22, speaking: 23, reading: 22, writing: 22 },
-                cefrVerdict: 'CEFR_A1_CERTIFIED',
-                proctoringFlags: 0,
-                tutorFeedback: 'Flawless textual synthesis adhering to DELF B2 standard guidelines.',
-              },
-              {
-                id: 'rec-b2-02',
-                studentId: 'stu-b2-02',
-                studentName: 'Aditya Varma',
-                studentRollNo: '2026-FR-5022',
-                studentAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'National Institute of Design',
-                status: 'PENDING_EVALUATION',
-                submittedAt: 'Oct 09, 04:55 PM',
-                maxScore: 100,
-                lsrwBreakdown: { listening: 0, speaking: 0, reading: 0, writing: 0 },
-                proctoringFlags: 0,
-                evaluatorNotes: 'Argumentative synthesis essay under review by Jay.',
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
+const PASTEL_STYLES = [
+  { pastelBg: 'bg-emerald-50/70', pastelBorder: 'border-emerald-200', accentColor: 'text-emerald-700', iconBg: 'bg-emerald-100 text-emerald-800' },
+  { pastelBg: 'bg-blue-50/70', pastelBorder: 'border-blue-200', accentColor: 'text-blue-700', iconBg: 'bg-blue-100 text-blue-800' },
+  { pastelBg: 'bg-indigo-50/70', pastelBorder: 'border-indigo-200', accentColor: 'text-indigo-700', iconBg: 'bg-indigo-100 text-indigo-800' },
+  { pastelBg: 'bg-purple-50/70', pastelBorder: 'border-purple-200', accentColor: 'text-purple-700', iconBg: 'bg-purple-100 text-purple-800' },
 ];
 
 export default function TutorAssessmentsPage() {
   const { showSuccess } = useToast();
-  const { currentFaculty } = useTutor();
+  const { currentFaculty, myAllocations } = useTutor();
+  const [coursesData, setCoursesData] = useState<CourseExamGroup[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // STEP 1: Selected Course ID
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('crs-fr-a1');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+
+  // STEP 2: Selected Batch ID under this Course
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('');
+
+  // Selected Exam ID
+  const [selectedExamId, setSelectedExamId] = useState<string>('');
+
+  // Fetch live courses and batches dynamically, strictly filtered by tutor's allocations
+  useEffect(() => {
+    async function loadAssessmentsPortfolio() {
+      setIsLoading(true);
+      try {
+        const [cRes, bRes] = await Promise.all([
+          fetch('http://localhost:4000/api/portals/courses'),
+          fetch('http://localhost:4000/api/portals/batches'),
+        ]);
+        const cJson = await cRes.json();
+        const bJson = await bRes.json();
+
+        const rawCourses = cJson.data || [];
+        const rawBatches = bJson.data || [];
+
+        const allocatedCourseIds = new Set(myAllocations.map(a => a.courseId).filter(Boolean));
+        const allocatedCourseNames = new Set(myAllocations.map(a => a.courseName?.toLowerCase()).filter(Boolean));
+        const allocatedBatchIds = new Set(myAllocations.map(a => a.batchId).filter(Boolean));
+
+        // Filter courses: must be assigned in myAllocations
+        const assignedCourses = rawCourses.filter((c: any) => {
+          if (myAllocations.length === 0) return false;
+          return allocatedCourseIds.has(c.id) || allocatedCourseNames.has(c.name?.toLowerCase());
+        });
+
+        const groups: CourseExamGroup[] = assignedCourses.map((c: any, idx: number) => {
+          const style = PASTEL_STYLES[idx % PASTEL_STYLES.length];
+
+          // Filter batches matching this course and allocated to this tutor
+          const batches: BatchExamGroup[] = rawBatches
+            .filter((b: any) => {
+              const matchesCourse = b.programId === c.id || b.courseIds?.includes(c.id) || b.name?.toLowerCase().includes(c.name?.slice(0, 8).toLowerCase());
+              const matchesAllocation = allocatedBatchIds.has(b.id) || myAllocations.some(a => a.batchName?.toLowerCase() === b.name?.toLowerCase());
+              return matchesCourse && matchesAllocation;
+            })
+            .map((b: any, bIdx: number) => {
+              const matchedAlloc = myAllocations.find(a => a.batchId === b.id || a.batchName?.toLowerCase() === b.name?.toLowerCase());
+              const dutyRole = matchedAlloc?.tutorRole === 'LEAD_TRAINER' ? 'Lead Examiner'
+                : matchedAlloc?.tutorRole === 'SUBSTITUTE_TUTOR' ? 'Substitute Evaluator'
+                : matchedAlloc?.tutorRole === 'DOUBT_SOLVING_TUTOR' ? 'Doubt Assessor'
+                : 'Assistant Evaluator';
+
+              return {
+                batchId: b.id,
+                batchName: b.name,
+                sectionCode: `SEC-${String.fromCharCode(65 + bIdx)}`,
+                schedule: matchedAlloc?.scheduleSlots?.[0] || b.batchTiming || '10:00 AM – 11:30 AM',
+                dutyRole,
+                dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
+                exams: [
+                  {
+                    id: `exam-${b.id}-01`,
+                    code: `${c.code || 'CRS'}-MOCK-01`,
+                    title: `${c.name} — Comprehensive CBT Simulation & Viva`,
+                    type: 'DELF_CBT_MOCK',
+                    lsrwFocus: 'COMPREHENSIVE_LSRW',
+                    totalQuestions: 50,
+                    durationMins: 90,
+                    totalMarks: 100,
+                    passingMarks: 50,
+                    scheduledWindow: 'Open Assessment Window',
+                    proctoringEnabled: true,
+                    status: 'PUBLISHED',
+                    studentsCount: 0,
+                    evaluatedCount: 0,
+                    cohortAveragePercent: 0,
+                    records: [],
+                  },
+                ],
+              };
+            });
+
+          // Add any batch from allocation not yet present
+          myAllocations
+            .filter(a => (a.courseId === c.id || a.courseName?.toLowerCase() === c.name?.toLowerCase()))
+            .forEach((alloc, aIdx) => {
+              if (alloc.batchName && !batches.some(b => b.batchName.toLowerCase() === alloc.batchName?.toLowerCase())) {
+                batches.push({
+                  batchId: alloc.batchId || `alloc-b-${aIdx}`,
+                  batchName: alloc.batchName,
+                  sectionCode: `SEC-${String.fromCharCode(65 + batches.length)}`,
+                  schedule: alloc.scheduleSlots?.[0] || '10:00 AM – 11:30 AM',
+                  dutyRole: 'Lead Examiner',
+                  dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
+                  exams: [
+                    {
+                      id: `exam-${alloc.batchId || aIdx}-01`,
+                      code: `${c.code || 'CRS'}-MOCK-01`,
+                      title: `${c.name} — Comprehensive CBT Simulation & Viva`,
+                      type: 'DELF_CBT_MOCK',
+                      lsrwFocus: 'COMPREHENSIVE_LSRW',
+                      totalQuestions: 50,
+                      durationMins: 90,
+                      totalMarks: 100,
+                      passingMarks: 50,
+                      scheduledWindow: 'Open Assessment Window',
+                      proctoringEnabled: true,
+                      status: 'PUBLISHED',
+                      studentsCount: 0,
+                      evaluatedCount: 0,
+                      cohortAveragePercent: 0,
+                      records: [],
+                    },
+                  ],
+                });
+              }
+            });
+
+          return {
+            id: c.id,
+            code: c.code || `CRS-${idx + 1}`,
+            levelBadge: c.program || 'Certificate',
+            name: c.name,
+            cefrTrack: `${c.department || 'Languages'} • ${c.duration || '90 Days'}`,
+            ...style,
+            batches,
+          };
+        });
+
+        // Fetch genuine batch students for each batch to populate records if enrolled
+        for (const crs of groups) {
+          for (const b of crs.batches) {
+            try {
+              const sRes = await fetch(`http://localhost:4000/api/portals/batch-students?batchId=${encodeURIComponent(b.batchId)}`);
+              if (sRes.ok) {
+                const sJson = await sRes.json();
+                const students = sJson.data || [];
+                if (b.exams[0]) {
+                  b.exams[0].studentsCount = students.length;
+                  b.exams[0].records = students.map((st: any) => ({
+                    id: `rec-${st.id}`,
+                    studentId: st.id,
+                    studentName: st.name,
+                    studentRollNo: st.rollNo,
+                    studentAvatar: st.avatarUrl,
+                    collegeName: st.collegeName,
+                    status: 'PENDING_EVALUATION',
+                    submittedAt: 'Pending Submission',
+                    maxScore: 100,
+                    lsrwBreakdown: { listening: 0, speaking: 0, reading: 0, writing: 0 },
+                    proctoringFlags: 0,
+                  }));
+                }
+              }
+            } catch {}
+          }
+        }
+
+        setCoursesData(groups);
+        if (groups.length > 0) {
+          setSelectedCourseId(groups[0].id);
+          const firstBatch = groups[0].batches[0];
+          if (firstBatch) {
+            setSelectedBatchId(firstBatch.batchId);
+            if (firstBatch.exams.length > 0) {
+              setSelectedExamId(firstBatch.exams[0].id);
+            }
+          }
+        } else {
+          setSelectedCourseId('');
+          setSelectedBatchId('');
+          setSelectedExamId('');
+        }
+      } catch (e) {
+        console.error('Failed to load assessments portfolio:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadAssessmentsPortfolio();
+  }, [myAllocations]);
 
   // Active Course
   const activeCourse = useMemo(() => {
-    return COURSE_ASSESSMENTS_DATA.find((c) => c.id === selectedCourseId) || COURSE_ASSESSMENTS_DATA[0];
-  }, [selectedCourseId]);
-
-  // STEP 2: Selected Batch ID under this Course
-  const [selectedBatchId, setSelectedBatchId] = useState<string>(activeCourse.batches[0]?.batchId || '');
+    return coursesData.find((c) => c.id === selectedCourseId) || coursesData[0] || {
+      id: 'crs-none',
+      code: 'COURSE',
+      levelBadge: 'CEFR',
+      name: 'No Assigned Assessment Courses',
+      cefrTrack: 'Exam Track',
+      pastelBg: 'bg-slate-50',
+      pastelBorder: 'border-slate-200',
+      accentColor: 'text-slate-600',
+      iconBg: 'bg-slate-100 text-slate-600',
+      batches: []
+    };
+  }, [coursesData, selectedCourseId]);
 
   // Active Batch
   const activeBatch = useMemo(() => {
-    return activeCourse.batches.find((b) => b.batchId === selectedBatchId) || activeCourse.batches[0];
+    return activeCourse?.batches?.find((b) => b.batchId === selectedBatchId) || activeCourse?.batches?.[0] || {
+      batchId: 'batch-none',
+      batchName: 'No Batches Assigned',
+      sectionCode: 'Section',
+      dutyRole: 'Chief Examiner',
+      dutyBadgeColor: 'bg-slate-50 text-slate-600 border-slate-200',
+      schedule: '',
+      exams: []
+    };
   }, [activeCourse, selectedBatchId]);
 
   // Current Exams under Active Batch
-  const currentExams = activeBatch.exams;
-
-  // Selected Exam ID
-  const [selectedExamId, setSelectedExamId] = useState<string>(currentExams[0]?.id || '');
+  const currentExams = activeBatch?.exams || [];
 
   const activeExam = useMemo(() => {
     return currentExams.find((e) => e.id === selectedExamId) || currentExams[0];
@@ -659,7 +373,7 @@ export default function TutorAssessmentsPage() {
   // Course Switch handler
   const handleSelectCourse = (courseId: string) => {
     setSelectedCourseId(courseId);
-    const crs = COURSE_ASSESSMENTS_DATA.find((c) => c.id === courseId);
+    const crs = coursesData.find((c) => c.id === courseId);
     if (crs && crs.batches.length > 0) {
       const firstBatch = crs.batches[0];
       setSelectedBatchId(firstBatch.batchId);
@@ -874,83 +588,110 @@ export default function TutorAssessmentsPage() {
       </div>
 
       {/* ─── STEP 1: SELECT COURSE (MILD PASTEL CARDS) ─── */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-full bg-[#0052CC] text-white text-[10px] flex items-center justify-center font-bold">
-              1
-            </span>
-            <span>Select Course (CEFR Level Track):</span>
-          </h2>
-          <span className="text-[11px] font-medium text-slate-500">
-            4 Assigned CEFR Levels
-          </span>
+      {coursesData.length === 0 ? (
+        <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center space-y-3 shadow-2xs">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-[#0052CC] mx-auto flex items-center justify-center font-bold">
+            <Award className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold text-slate-800">
+              {isLoading ? 'Loading Assigned Assessment Courses...' : 'No Course Allocations Assigned Yet'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              {isLoading
+                ? 'Fetching your assigned teaching courses and assessment batches from the Academic Manager...'
+                : 'You have not been assigned to any course or exam cohort yet. Please contact your Academic Manager to allocate your teaching workload.'}
+            </p>
+          </div>
+          {!isLoading && (
+            <Link
+              href="/tutor/dashboard"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs"
+            >
+              <span>Back to Dashboard</span>
+            </Link>
+          )}
         </div>
+      ) : (
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded-full bg-[#0052CC] text-white text-[10px] flex items-center justify-center font-bold">
+                1
+              </span>
+              <span>Select Course (CEFR Level Track):</span>
+            </h2>
+            <span className="text-[11px] font-medium text-slate-500">
+              {coursesData.length} Assigned CEFR Level{coursesData.length > 1 ? 's' : ''}
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {COURSE_ASSESSMENTS_DATA.map((course) => {
-            const isSelected = course.id === selectedCourseId;
-            const totalBatches = course.batches.length;
-            const totalExams = course.batches.reduce(
-              (acc, b) => acc + b.exams.length,
-              0
-            );
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {coursesData.map((course) => {
+              const isSelected = course.id === selectedCourseId;
+              const totalBatches = course.batches.length;
+              const totalExams = course.batches.reduce(
+                (acc, b) => acc + b.exams.length,
+                0
+              );
 
-            return (
-              <button
-                key={course.id}
-                onClick={() => handleSelectCourse(course.id)}
-                className={`text-left p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex flex-col justify-between ${
-                  isSelected
-                    ? `${course.pastelBg} ${course.pastelBorder} ring-2 ring-[#0052CC] shadow-sm`
-                    : 'bg-white border-slate-200/90 hover:border-slate-300 hover:shadow-2xs'
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${course.iconBg}`}
-                    >
-                      {course.code}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-500 bg-white/80 px-2 py-0.5 rounded border border-slate-200">
-                      {course.levelBadge}
-                    </span>
+              return (
+                <button
+                  key={course.id}
+                  onClick={() => handleSelectCourse(course.id)}
+                  className={`text-left p-4 rounded-2xl border transition-all duration-150 cursor-pointer flex flex-col justify-between ${
+                    isSelected
+                      ? `${course.pastelBg} ${course.pastelBorder} ring-2 ring-[#0052CC] shadow-sm`
+                      : 'bg-white border-slate-200/90 hover:border-slate-300 hover:shadow-2xs'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${course.iconBg}`}
+                      >
+                        {course.code}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 bg-white/80 px-2 py-0.5 rounded border border-slate-200">
+                        {course.levelBadge}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3
+                        className={`text-sm font-bold leading-tight ${
+                          isSelected ? 'text-slate-900' : 'text-slate-800'
+                        }`}
+                      >
+                        {course.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                        {course.cefrTrack}
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <h3
-                      className={`text-sm font-bold leading-tight ${
-                        isSelected ? 'text-slate-900' : 'text-slate-800'
+                  <div className="pt-3 mt-3 border-t border-slate-200/70 flex items-center justify-between text-xs">
+                    <span className="text-slate-600 font-medium text-[11px]">
+                      {totalBatches} {totalBatches === 1 ? 'Batch' : 'Batches'} • {totalExams} Exams
+                    </span>
+                    <span
+                      className={`font-black text-xs ${
+                        isSelected ? 'text-[#0052CC]' : 'text-slate-400'
                       }`}
                     >
-                      {course.name}
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                      {course.cefrTrack}
-                    </p>
+                      {isSelected ? 'Active ✓' : 'Select →'}
+                    </span>
                   </div>
-                </div>
-
-                <div className="pt-3 mt-3 border-t border-slate-200/70 flex items-center justify-between text-xs">
-                  <span className="text-slate-600 font-medium text-[11px]">
-                    {totalBatches} {totalBatches === 1 ? 'Batch' : 'Batches'} • {totalExams} Exams
-                  </span>
-                  <span
-                    className={`font-black text-xs ${
-                      isSelected ? 'text-[#0052CC]' : 'text-slate-400'
-                    }`}
-                  >
-                    {isSelected ? 'Active ✓' : 'Select →'}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ─── STEP 2: SELECT BATCH UNDER SELECTED COURSE ─── */}
+      {coursesData.length > 0 && (
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -960,12 +701,12 @@ export default function TutorAssessmentsPage() {
             <span>Select Batch for {activeCourse.code}:</span>
           </h2>
           <span className="text-[11px] font-medium text-slate-500">
-            {activeCourse.batches.length} Assigned Cohort{activeCourse.batches.length > 1 ? 's' : ''}
+            {(activeCourse?.batches || []).length} Assigned Cohort{(activeCourse?.batches || []).length > 1 ? 's' : ''}
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {activeCourse.batches.map((batch) => {
+          {(activeCourse?.batches || []).map((batch) => {
             const isBatchSelected = batch.batchId === selectedBatchId;
 
             return (
@@ -1017,8 +758,10 @@ export default function TutorAssessmentsPage() {
           })}
         </div>
       </div>
+      )}
 
       {/* ─── STEP 3: SELECT SPECIFIC EXAM / CBT MOCK / VIVA TAB ─── */}
+      {coursesData.length > 0 && activeBatch?.batchId !== 'batch-none' && (
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
@@ -1318,6 +1061,7 @@ export default function TutorAssessmentsPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ─── STEP 5: FULL-SCREEN CANDIDATE EXAMINATION STUDIO & 50 QUESTIONS VIVA DESK ─── */}
       {evaluatingRecord && (

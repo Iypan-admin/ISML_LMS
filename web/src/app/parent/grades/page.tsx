@@ -33,7 +33,7 @@ export default function ParentGradesPage() {
         <Breadcrumbs
           items={[
             { label: 'Parent Portal', href: '/parent/dashboard' },
-            { label: 'Marks & DELF Gradebook' },
+            { label: 'Marks & Assessment Gradebook' },
           ]}
         />
         {/* Child Quick Switcher */}
@@ -135,41 +135,51 @@ export default function ParentGradesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {selectedChild.gradebook.map((grd) => (
-                <tr key={grd.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-[#0B2447] whitespace-nowrap">
-                    {grd.date}
-                  </td>
-                  <td className="py-3.5 px-4 font-extrabold text-slate-900">
-                    {grd.assessmentTitle}
-                  </td>
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
-                      {grd.type.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
-                    {grd.marksObtained} / {grd.maxMarks}
-                  </td>
-                  <td className="py-3.5 px-4 font-black text-[#0052CC]">
-                    {grd.percentage}%
-                  </td>
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
-                        grd.grade.startsWith('A')
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {grd.grade}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-600 italic max-w-sm">
-                    "{grd.tutorFeedback}"
+              {selectedChild.gradebook.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-slate-400">
+                    <Award className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-600">No Assessment Records Available</p>
+                    <p className="text-[11px] text-slate-400">Mark entries and tutor feedback will appear here after evaluations.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                selectedChild.gradebook.map((grd) => (
+                  <tr key={grd.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-[#0B2447] whitespace-nowrap">
+                      {grd.date}
+                    </td>
+                    <td className="py-3.5 px-4 font-extrabold text-slate-900">
+                      {grd.assessmentTitle}
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                        {grd.type.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                      {grd.marksObtained} / {grd.maxMarks}
+                    </td>
+                    <td className="py-3.5 px-4 font-black text-[#0052CC]">
+                      {grd.percentage}%
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                          grd.grade.startsWith('A')
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {grd.grade}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600 italic max-w-sm">
+                      "{grd.tutorFeedback}"
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

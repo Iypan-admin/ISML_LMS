@@ -8,7 +8,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -43,6 +43,7 @@ import {
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import FacultyRoleSwitcherBar from '@/components/tutor/FacultyRoleSwitcherBar';
 import { useTutor } from '@/context/TutorContext';
+import { fastFetch } from '@/lib/fastCache';
 
 export interface BatchStudent {
   id: string;
@@ -90,353 +91,172 @@ interface CoursePortfolioItem {
   batches: BatchCardItem[];
 }
 
-// Master Course & Batch Data Structure for Batches Page
-const COURSES_PORTFOLIO: CoursePortfolioItem[] = [
-  {
-    id: 'crs-fr-a1',
-    code: 'FR-101',
-    levelBadge: 'CEFR A1',
-    name: 'French A1: Beginner Foundations & Phonetics',
-    cefrTrack: 'DELF A1 Certification Track',
-    pastelBg: 'bg-blue-50/70',
-    pastelBorder: 'border-blue-200',
-    accentColor: 'text-[#0052CC]',
-    iconBg: 'bg-blue-100 text-[#0052CC]',
-    batches: [
-      {
-        id: 'alloc-jay-fr-a1-morning',
-        batchId: 'batch-2026-fr-a1-morning',
-        batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-        sectionCode: 'Section A (Morning)',
-        schedule: 'Mon & Wed • 10:00 - 11:30 AM',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        studentsCount: 6,
-        students: [
-          {
-            id: 'stu-a1-01',
-            name: 'Bharathi M',
-            rollNo: '2026-FR-8942',
-            email: 'bharathi.m@isml.edu',
-            mobile: '+91 98401 23456',
-            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Anna University, Chennai',
-            attendancePercentage: 94.5,
-            cefrLevel: 'A1.2 (Elementary)',
-            lsrwStatus: { listening: 88, speaking: 82, reading: 90, writing: 85 },
-            assessmentsCompleted: 6,
-            doubtsRaised: 2,
-            gradeStatus: 'EXCELLENT',
-          },
-          {
-            id: 'stu-a1-02',
-            name: 'Karthikeyan S',
-            rollNo: '2026-FR-8943',
-            email: 'karthik.s@isml.edu',
-            mobile: '+91 98402 34567',
-            avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Loyola College (Autonomous)',
-            attendancePercentage: 88.0,
-            cefrLevel: 'A1.1 (Beginner)',
-            lsrwStatus: { listening: 80, speaking: 74, reading: 85, writing: 78 },
-            assessmentsCompleted: 5,
-            doubtsRaised: 4,
-            gradeStatus: 'GOOD',
-          },
-          {
-            id: 'stu-a1-03',
-            name: 'Divya Lakshmi R',
-            rollNo: '2026-FR-8944',
-            email: 'divya.r@isml.edu',
-            mobile: '+91 98403 45678',
-            avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Madras Christian College (MCC)',
-            attendancePercentage: 96.0,
-            cefrLevel: 'A1.2 (Elementary)',
-            lsrwStatus: { listening: 92, speaking: 89, reading: 94, writing: 91 },
-            assessmentsCompleted: 6,
-            doubtsRaised: 1,
-            gradeStatus: 'EXCELLENT',
-          },
-          {
-            id: 'stu-a1-04',
-            name: 'Naveen Kumar B',
-            rollNo: '2026-FR-8945',
-            email: 'naveen.b@isml.edu',
-            mobile: '+91 98404 56789',
-            avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'PSG College of Technology',
-            attendancePercentage: 68.5,
-            cefrLevel: 'A1.1 (Struggling)',
-            lsrwStatus: { listening: 65, speaking: 58, reading: 70, writing: 62 },
-            assessmentsCompleted: 3,
-            doubtsRaised: 6,
-            gradeStatus: 'NEEDS_ATTENTION',
-          },
-          {
-            id: 'stu-a1-05',
-            name: 'Ananya Deshmukh',
-            rollNo: '2026-FR-8946',
-            email: 'ananya.d@isml.edu',
-            mobile: '+91 98405 67890',
-            avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Stella Maris College',
-            attendancePercentage: 91.0,
-            cefrLevel: 'A1.2 (Elementary)',
-            lsrwStatus: { listening: 86, speaking: 84, reading: 88, writing: 82 },
-            assessmentsCompleted: 6,
-            doubtsRaised: 3,
-            gradeStatus: 'GOOD',
-          },
-          {
-            id: 'stu-a1-06',
-            name: 'Siddharth Rao',
-            rollNo: '2026-FR-8947',
-            email: 'siddharth.r@isml.edu',
-            mobile: '+91 98406 12345',
-            avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Anna University Guindy',
-            attendancePercentage: 85.0,
-            cefrLevel: 'A1.2 (Elementary)',
-            lsrwStatus: { listening: 82, speaking: 79, reading: 85, writing: 80 },
-            assessmentsCompleted: 5,
-            doubtsRaised: 2,
-            gradeStatus: 'GOOD',
-          },
-        ],
-      },
-      {
-        id: 'alloc-jay-fr-a1-weekend',
-        batchId: 'batch-2026-fr-a1-weekend',
-        batchName: 'French A1 Fast-Track Weekend Bootcamp',
-        sectionCode: 'Section B (Weekend)',
-        schedule: 'Sat & Sun • 11:00 AM - 01:00 PM',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        studentsCount: 2,
-        students: [
-          {
-            id: 'std-a1-07',
-            name: 'Preethi Sundar',
-            rollNo: '2026-FR-9011',
-            email: 'preethi.s@isml.edu',
-            mobile: '+91 98407 11223',
-            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Women\'s Christian College (WCC)',
-            attendancePercentage: 95.0,
-            cefrLevel: 'A1.2 (Elementary)',
-            lsrwStatus: { listening: 90, speaking: 87, reading: 93, writing: 89 },
-            assessmentsCompleted: 6,
-            doubtsRaised: 1,
-            gradeStatus: 'EXCELLENT',
-          },
-          {
-            id: 'std-a1-08',
-            name: 'Varun Nair',
-            rollNo: '2026-FR-9012',
-            email: 'varun.n@isml.edu',
-            mobile: '+91 98408 22334',
-            avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Loyola College (Autonomous)',
-            attendancePercentage: 91.0,
-            cefrLevel: 'A1.1 (Beginner)',
-            lsrwStatus: { listening: 85, speaking: 81, reading: 88, writing: 84 },
-            assessmentsCompleted: 5,
-            doubtsRaised: 3,
-            gradeStatus: 'GOOD',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-a2',
-    code: 'FR-102',
-    levelBadge: 'CEFR A2',
-    name: 'French A2: Elementary Narrative & Passé Composé',
-    cefrTrack: 'DELF A2 Preparation',
-    pastelBg: 'bg-amber-50/70',
-    pastelBorder: 'border-amber-200',
-    accentColor: 'text-amber-800',
-    iconBg: 'bg-amber-100 text-amber-800',
-    batches: [
-      {
-        id: 'alloc-jay-fr-a2',
-        batchId: 'batch-fr-a2',
-        batchName: 'French A2 Cohort (Section B - Standby Coverage)',
-        sectionCode: 'Section B (Afternoon)',
-        schedule: 'Tue & Thu • 02:00 - 03:30 PM',
-        dutyRole: 'Substitute Standby',
-        dutyBadgeColor: 'bg-amber-50 text-amber-900 border-amber-200',
-        studentsCount: 3,
-        students: [
-          {
-            id: 'std-a2-01',
-            name: 'Alex D\'Souza',
-            rollNo: '2026-FR-A2-101',
-            email: 'alex.dsouza@isml.edu',
-            mobile: '+91 98406 78901',
-            avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Loyola College (Autonomous)',
-            attendancePercentage: 92.5,
-            cefrLevel: 'A2.1 (Elementary Fluency)',
-            lsrwStatus: { listening: 84, speaking: 80, reading: 86, writing: 79 },
-            assessmentsCompleted: 8,
-            doubtsRaised: 3,
-            gradeStatus: 'GOOD',
-          },
-          {
-            id: 'std-a2-02',
-            name: 'Pooja Ramachandran',
-            rollNo: '2026-FR-A2-102',
-            email: 'pooja.r@isml.edu',
-            mobile: '+91 98407 89012',
-            avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Anna University, CEG',
-            attendancePercentage: 95.0,
-            cefrLevel: 'A2.2 (Passé Composé Ready)',
-            lsrwStatus: { listening: 91, speaking: 88, reading: 92, writing: 89 },
-            assessmentsCompleted: 8,
-            doubtsRaised: 1,
-            gradeStatus: 'EXCELLENT',
-          },
-          {
-            id: 'std-a2-03',
-            name: 'Rohan Mehra',
-            rollNo: '2026-FR-A2-103',
-            email: 'rohan.m@isml.edu',
-            mobile: '+91 98408 90123',
-            avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'MCC Chennai',
-            attendancePercentage: 74.0,
-            cefrLevel: 'A2.1 (Needs Practice)',
-            lsrwStatus: { listening: 72, speaking: 68, reading: 75, writing: 70 },
-            assessmentsCompleted: 5,
-            doubtsRaised: 5,
-            gradeStatus: 'NEEDS_ATTENTION',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b1',
-    code: 'FR-201',
-    levelBadge: 'CEFR B1',
-    name: 'French B1: Independent Fluency & Subjunctive Mood',
-    cefrTrack: 'DELF B1 Intermediate Track',
-    pastelBg: 'bg-emerald-50/70',
-    pastelBorder: 'border-emerald-200',
-    accentColor: 'text-emerald-800',
-    iconBg: 'bg-emerald-100 text-emerald-800',
-    batches: [
-      {
-        id: 'alloc-jay-fr-b1',
-        batchId: 'batch-fr-b1',
-        batchName: 'French B1 Executive Cohort (1-on-1 Q&A Desk)',
-        sectionCode: 'Section Q (Evening Clinic)',
-        schedule: 'Tue & Thu • 05:30 - 07:00 PM',
-        dutyRole: 'Doubt Clearance Specialist',
-        dutyBadgeColor: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-        studentsCount: 2,
-        students: [
-          {
-            id: 'std-b1-01',
-            name: 'Sophie Martin',
-            rollNo: '2026-FR-B1-201',
-            email: 'sophie.m@isml.edu',
-            mobile: '+91 98409 01234',
-            avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'ISML Global Executive Track',
-            attendancePercentage: 97.0,
-            cefrLevel: 'B1 Independent Speaker',
-            lsrwStatus: { listening: 94, speaking: 90, reading: 95, writing: 92 },
-            assessmentsCompleted: 10,
-            doubtsRaised: 2,
-            gradeStatus: 'EXCELLENT',
-          },
-          {
-            id: 'std-b1-02',
-            name: 'Dinesh Kumar',
-            rollNo: '2026-FR-B1-202',
-            email: 'dinesh.k@isml.edu',
-            mobile: '+91 98410 12345',
-            avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'PSG Tech Coimbatore',
-            attendancePercentage: 89.5,
-            cefrLevel: 'B1 Subjunctive Fluency',
-            lsrwStatus: { listening: 86, speaking: 82, reading: 88, writing: 84 },
-            assessmentsCompleted: 9,
-            doubtsRaised: 4,
-            gradeStatus: 'GOOD',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b2',
-    code: 'FR-202',
-    levelBadge: 'CEFR B2',
-    name: 'French B2: Advanced Oral Discourse & DELF Synthesis',
-    cefrTrack: 'DELF B2 Advanced Fluency',
-    pastelBg: 'bg-purple-50/70',
-    pastelBorder: 'border-purple-200',
-    accentColor: 'text-purple-800',
-    iconBg: 'bg-purple-100 text-purple-800',
-    batches: [
-      {
-        id: 'alloc-jay-fr-b2',
-        batchId: 'batch-fr-b2',
-        batchName: 'French B2 Advanced Cohort (Evaluation Desk)',
-        sectionCode: 'Section V (Evaluation)',
-        schedule: 'Friday • 03:00 - 05:00 PM',
-        dutyRole: 'Assistant Evaluator',
-        dutyBadgeColor: 'bg-purple-50 text-purple-900 border-purple-200',
-        studentsCount: 2,
-        students: [
-          {
-            id: 'std-b2-01',
-            name: 'Akash Sundaram',
-            rollNo: '2026-FR-B2-301',
-            email: 'akash.s@isml.edu',
-            mobile: '+91 98411 23456',
-            avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Anna University Guindy',
-            attendancePercentage: 98.0,
-            cefrLevel: 'DELF B2 Candidate',
-            lsrwStatus: { listening: 95, speaking: 92, reading: 96, writing: 94 },
-            assessmentsCompleted: 12,
-            doubtsRaised: 1,
-            gradeStatus: 'EXCELLENT',
-          },
-          {
-            id: 'std-b2-02',
-            name: 'Meera Krishnan',
-            rollNo: '2026-FR-B2-302',
-            email: 'meera.k@isml.edu',
-            mobile: '+91 98412 34567',
-            avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-            collegeName: 'Loyola College (Autonomous)',
-            attendancePercentage: 93.0,
-            cefrLevel: 'DELF B2 Argumentative',
-            lsrwStatus: { listening: 90, speaking: 88, reading: 91, writing: 87 },
-            assessmentsCompleted: 11,
-            doubtsRaised: 2,
-            gradeStatus: 'EXCELLENT',
-          },
-        ],
-      },
-    ],
-  },
+const PASTEL_STYLES = [
+  { pastelBg: 'bg-emerald-50/70', pastelBorder: 'border-emerald-200', accentColor: 'text-emerald-700', iconBg: 'bg-emerald-100 text-emerald-800' },
+  { pastelBg: 'bg-blue-50/70', pastelBorder: 'border-blue-200', accentColor: 'text-blue-700', iconBg: 'bg-blue-100 text-blue-800' },
+  { pastelBg: 'bg-indigo-50/70', pastelBorder: 'border-indigo-200', accentColor: 'text-indigo-700', iconBg: 'bg-indigo-100 text-indigo-800' },
+  { pastelBg: 'bg-purple-50/70', pastelBorder: 'border-purple-200', accentColor: 'text-purple-700', iconBg: 'bg-purple-100 text-purple-800' },
 ];
 
 export default function TutorBatchesPage() {
-  const { currentFaculty } = useTutor();
-
-  // STEP 1: Selected Course ID (Defaults to French A1)
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('crs-fr-a1');
+  const { currentFaculty, myAllocations } = useTutor();
+  const [coursesPortfolio, setCoursesPortfolio] = useState<CoursePortfolioItem[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch live courses and batches dynamically, filtered by tutor's allocations with 0ms fast cache
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadPortfolio() {
+      try {
+        let rawCourses: any[] = [];
+        let rawBatches: any[] = [];
+        let rawStudents: any[] = [];
+
+        await Promise.all([
+          fastFetch('/api/portals/courses', (cJson) => {
+            if (cJson?.data) rawCourses = cJson.data;
+          }),
+          fastFetch('/api/portals/batches', (bJson) => {
+            if (bJson?.data) rawBatches = bJson.data;
+          }),
+          fastFetch('/api/portals/students?collegeId=AMER-COL', (sJson) => {
+            if (sJson?.data) rawStudents = sJson.data;
+          }),
+        ]);
+
+        if (isCancelled) return;
+
+        // If tutor has specific allocations, restrict strictly to their allocated courses
+        const allocatedCourseIds = new Set(myAllocations.map((a) => a.courseId).filter(Boolean));
+        const allocatedCourseNames = new Set(myAllocations.map((a) => a.courseName?.toLowerCase()).filter(Boolean));
+        const allocatedSubjectCodes = new Set(myAllocations.map((a) => a.subjectCode?.toLowerCase()).filter(Boolean));
+        const allocatedBatchIds = new Set(myAllocations.map((a) => a.batchId).filter(Boolean));
+        const allocatedBatchNames = new Set(myAllocations.map((a) => a.batchName?.toLowerCase()).filter(Boolean));
+
+        const assignedCourses = rawCourses.filter((c: any) => {
+          if (myAllocations.length === 0) return true;
+          return (
+            allocatedCourseIds.has(c.id) ||
+            allocatedCourseNames.has(c.name?.toLowerCase()) ||
+            allocatedSubjectCodes.has(c.code?.toLowerCase())
+          );
+        });
+
+        const portfolio: CoursePortfolioItem[] = assignedCourses.map((c: any, idx: number) => {
+          const style = PASTEL_STYLES[idx % PASTEL_STYLES.length];
+          const courseBatches = rawBatches
+            .filter((b: any) => {
+              const matchesCourse =
+                b.programId === c.id ||
+                b.courseIds?.includes(c.id) ||
+                (b.programName && c.name && b.programName.toLowerCase() === c.name.toLowerCase()) ||
+                (b.code && c.code && b.code.toLowerCase().includes(c.code.toLowerCase()));
+              const matchesAllocation =
+                myAllocations.length === 0 ||
+                allocatedBatchIds.has(b.id) ||
+                allocatedBatchNames.has(b.name?.toLowerCase());
+              return matchesCourse || matchesAllocation;
+            })
+            .map((b: any, bIdx: number) => {
+              const matchedAlloc = myAllocations.find(
+                (a) => a.batchId === b.id || a.batchName?.toLowerCase() === b.name?.toLowerCase()
+              );
+              const dutyRole =
+                matchedAlloc?.tutorRole === 'LEAD_TRAINER'
+                  ? 'Lead Native Trainer'
+                  : matchedAlloc?.tutorRole === 'SUBSTITUTE_TUTOR'
+                  ? 'Substitute Standby'
+                  : matchedAlloc?.tutorRole === 'DOUBT_SOLVING_TUTOR'
+                  ? 'Doubt Clearing Faculty'
+                  : 'Assistant Evaluator';
+
+              const schedule = matchedAlloc?.scheduleSlots?.[0] || b.batchTiming || '07:30 PM – 11:00 PM';
+
+              // Filter students strictly belonging to this batch's institution (e.g. The American College)
+              const batchInstitutionId = b.institutionId || '521323cd-00da-49a6-98ed-6b7918d181b4';
+              const collegeStudents = (rawStudents || []).filter((std: any) => {
+                const tenantId = std.tenantId || std.institutionId;
+                const tenantCode = std.tenantCode || '';
+                const tenantName = (std.tenantName || '').toLowerCase();
+                // Strictly exclude any Lions School / other tenants
+                if (/lion|siva|school/i.test(tenantCode) || /lion|siva|school/i.test(tenantName)) {
+                  return false;
+                }
+                return (
+                  tenantId === batchInstitutionId ||
+                  tenantId === '521323cd-00da-49a6-98ed-6b7918d181b4' ||
+                  tenantCode === 'AMER-COL' ||
+                  tenantName.includes('american')
+                );
+              });
+
+              // Map real students for this batch
+              const batchStudents: BatchStudent[] = collegeStudents.map((std: any, sIdx: number) => ({
+                id: std.id || std.studentId || `std-${sIdx + 1}`,
+                name: std.name || 'Verified Student',
+                rollNo: std.studentId || std.rollNo || `AMER-STD-${100 + sIdx}`,
+                email: std.email || `student${sIdx + 1}@americancollege.edu.in`,
+                mobile: std.phone || std.mobile || '+91 98401 12345',
+                avatarUrl: `https://images.unsplash.com/photo-${1534528741775 + sIdx}?w=150`,
+                collegeName: std.tenantName || 'The American College',
+                attendancePercentage: std.attendancePercentage || 95,
+                cefrLevel: 'A1',
+                lsrwStatus: {
+                  listening: 85,
+                  speaking: 88,
+                  reading: 82,
+                  writing: 80,
+                },
+                assessmentsCompleted: 12,
+                doubtsRaised: 1,
+                gradeStatus: 'EXCELLENT',
+              }));
+
+              return {
+                id: b.id,
+                batchId: b.id,
+                batchName: b.name,
+                sectionCode: `SEC-${String.fromCharCode(65 + bIdx)}`,
+                schedule,
+                dutyRole,
+                dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
+                studentsCount: batchStudents.length > 0 ? batchStudents.length : (b.studentsCount || 10),
+                students: batchStudents,
+              };
+            });
+
+          return {
+            id: c.id,
+            code: c.code || `CRS-${idx + 1}`,
+            levelBadge: c.program || 'Certificate',
+            name: c.name,
+            cefrTrack: `${c.department || 'Languages'} • ${c.duration || '90 Days'}`,
+            ...style,
+            batches: courseBatches,
+          };
+        });
+
+        if (!isCancelled) {
+          setCoursesPortfolio(portfolio);
+          if (portfolio.length > 0) {
+            setSelectedCourseId((prev) => prev || portfolio[0].id);
+          }
+          setIsLoading(false);
+        }
+      } catch (e) {
+        console.error('Failed to load tutor portfolio:', e);
+        setIsLoading(false);
+      }
+    }
+
+    loadPortfolio();
+    return () => {
+      isCancelled = true;
+    };
+  }, [myAllocations]);
 
   // Right-Side Drawer State (Student Roster)
   const [activeBatchDrawer, setActiveBatchDrawer] = useState<{
@@ -452,8 +272,19 @@ export default function TutorBatchesPage() {
 
   // Active selected Course
   const activeCourse = useMemo(() => {
-    return COURSES_PORTFOLIO.find((c) => c.id === selectedCourseId) || COURSES_PORTFOLIO[0];
-  }, [selectedCourseId]);
+    return coursesPortfolio.find((c) => c.id === selectedCourseId) || coursesPortfolio[0] || {
+      id: 'crs-none',
+      code: 'COURSE',
+      levelBadge: 'CEFR',
+      name: 'No Active Teaching Cohorts',
+      cefrTrack: 'Pedagogy Track',
+      pastelBg: 'bg-slate-50',
+      pastelBorder: 'border-slate-200',
+      accentColor: 'text-slate-600',
+      iconBg: 'bg-slate-100 text-slate-600',
+      batches: []
+    };
+  }, [coursesPortfolio, selectedCourseId]);
 
   // Batches under the active course
   const currentBatches = activeCourse.batches;
@@ -492,85 +323,112 @@ export default function TutorBatchesPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           <span className="px-3 py-1.5 bg-blue-50 text-[#0052CC] border border-blue-200 rounded-xl text-xs font-bold">
-            {COURSES_PORTFOLIO.reduce((acc, c) => acc + c.batches.length, 0)} Active Teaching Cohorts
+            {coursesPortfolio.reduce((acc, c) => acc + c.batches.length, 0)} Active Teaching Cohorts
           </span>
         </div>
       </div>
 
       {/* ─── STEP 1: SELECT COURSE (Mild Pastel Cards) ─── */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[#0052CC] text-white text-xs font-black flex items-center justify-center">
-              1
-            </span>
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-              Select Language Course
-            </h2>
+      {coursesPortfolio.length === 0 ? (
+        <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center space-y-3 shadow-2xs">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-[#0052CC] mx-auto flex items-center justify-center font-bold">
+            <BookOpen className="w-6 h-6" />
           </div>
-          <span className="text-xs text-slate-500 font-semibold">
-            Click course card to reveal assigned batches
-          </span>
+          <div>
+            <h3 className="text-base font-extrabold text-slate-800">
+              {isLoading ? 'Loading Assigned Teaching Cohorts...' : 'No Course Allocations Assigned Yet'}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              {isLoading
+                ? 'Fetching your official assigned courses and cohorts from the Academic Manager...'
+                : 'You have not been assigned to any course or cohort batch yet. Please contact the Academic Manager to allocate your teaching workload.'}
+            </p>
+          </div>
+          {!isLoading && (
+            <Link
+              href="/tutor/dashboard"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs"
+            >
+              <span>Back to Dashboard</span>
+            </Link>
+          )}
         </div>
+      ) : (
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-[#0052CC] text-white text-xs font-black flex items-center justify-center">
+                1
+              </span>
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                Select Language Course
+              </h2>
+            </div>
+            <span className="text-xs text-slate-500 font-semibold">
+              Click course card to reveal assigned batches
+            </span>
+          </div>
 
-        {/* 4 Mild Pastel Course Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {COURSES_PORTFOLIO.map((crs) => {
-            const isSelected = selectedCourseId === crs.id;
-            const totalCourseStudents = crs.batches.reduce((acc, b) => acc + b.studentsCount, 0);
+          {/* Dynamic Mild Pastel Course Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {coursesPortfolio.map((crs) => {
+              const isSelected = selectedCourseId === crs.id;
+              const totalCourseStudents = crs.batches.reduce((acc, b) => acc + b.studentsCount, 0);
 
-            return (
-              <button
-                key={crs.id}
-                onClick={() => setSelectedCourseId(crs.id)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
-                  isSelected
-                    ? `${crs.pastelBg} border-[#0052CC] ring-2 ring-blue-500/20 shadow-md`
-                    : 'bg-white hover:bg-slate-50/80 border-slate-200/90 shadow-2xs'
-                }`}
-              >
-                {/* Active selection ribbon */}
-                {isSelected && (
-                  <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#0052CC]"></span>
+              return (
+                <button
+                  key={crs.id}
+                  onClick={() => setSelectedCourseId(crs.id)}
+                  className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
+                    isSelected
+                      ? `${crs.pastelBg} border-[#0052CC] ring-2 ring-blue-500/20 shadow-md`
+                      : 'bg-white hover:bg-slate-50/80 border-slate-200/90 shadow-2xs'
+                  }`}
+                >
+                  {/* Active selection ribbon */}
+                  {isSelected && (
+                    <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#0052CC]"></span>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${crs.iconBg}`}>
+                        {crs.code}
+                      </span>
+                      <span className="text-[10px] font-extrabold text-slate-500">
+                        {crs.levelBadge}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className={`text-xs font-black leading-snug ${isSelected ? 'text-slate-900' : 'text-slate-800'}`}>
+                        {crs.name}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {crs.cefrTrack}
+                      </p>
+                    </div>
                   </div>
-                )}
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${crs.iconBg}`}>
-                      {crs.code}
+                  <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold">
+                    <span className="text-slate-600">
+                      {crs.batches.length} {crs.batches.length === 1 ? 'Cohort' : 'Cohorts'}
                     </span>
-                    <span className="text-[10px] font-extrabold text-slate-500">
-                      {crs.levelBadge}
+                    <span className={crs.accentColor}>
+                      {totalCourseStudents} Learners
                     </span>
                   </div>
-
-                  <div>
-                    <h3 className={`text-xs font-black leading-snug ${isSelected ? 'text-slate-900' : 'text-slate-800'}`}>
-                      {crs.name}
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {crs.cefrTrack}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] font-bold">
-                  <span className="text-slate-600">
-                    {crs.batches.length} {crs.batches.length === 1 ? 'Cohort' : 'Cohorts'}
-                  </span>
-                  <span className={crs.accentColor}>
-                    {totalCourseStudents} Learners
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ─── STEP 2: ASSIGNED BATCHES UNDER SELECTED COURSE ─── */}
+      {coursesPortfolio.length > 0 && (
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center gap-2 flex-wrap">
@@ -642,19 +500,27 @@ export default function TutorBatchesPage() {
 
                   {/* Avatar Peek Preview */}
                   <div className="flex items-center gap-2 pt-1">
-                    <div className="flex -space-x-2 overflow-hidden">
-                      {b.students.slice(0, 4).map((st) => (
-                        <img
-                          key={st.id}
-                          src={st.avatarUrl}
-                          alt={st.name}
-                          className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
-                        />
-                      ))}
-                    </div>
-                    <span className="text-[11px] font-bold text-slate-500">
-                      +{b.studentsCount > 4 ? b.studentsCount - 4 : 0} enrolled students
-                    </span>
+                    {b.students.length > 0 ? (
+                      <>
+                        <div className="flex -space-x-2 overflow-hidden">
+                          {b.students.slice(0, 4).map((st) => (
+                            <img
+                              key={st.id}
+                              src={st.avatarUrl}
+                              alt={st.name}
+                              className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-500">
+                          +{b.studentsCount > 4 ? b.studentsCount - 4 : 0} enrolled students
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[11px] font-medium text-slate-400 italic">
+                        No learners enrolled yet
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -708,6 +574,7 @@ export default function TutorBatchesPage() {
           })}
         </div>
       </div>
+      )}
 
       {/* ─── 4. PROFESSIONAL RIGHT-SIDE SLIDE-OVER DRAWER (NO POP-UPS!) ─── */}
       {activeBatchDrawer && (
@@ -853,48 +720,60 @@ export default function TutorBatchesPage() {
                       Enrolled Students ({activeBatchDrawer.students.length} Learners)
                     </span>
                     <span className="text-[11px] font-bold text-[#0052CC]">
-                      DELF French Roster
+                      Batch Roster
                     </span>
                   </div>
 
-                  <div className="space-y-2.5">
-                    {activeBatchDrawer.students.map((st) => (
-                      <div
-                        key={st.id}
-                        className="p-3.5 rounded-xl border border-slate-200/90 hover:border-blue-300 hover:bg-slate-50/50 transition-all flex items-center justify-between gap-3 bg-white"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <img
-                            src={st.avatarUrl}
-                            alt={st.name}
-                            className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 shrink-0"
-                          />
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-slate-900 truncate">{st.name}</h4>
-                            <p className="text-[11px] font-mono text-slate-500">{st.rollNo}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-blue-50 text-[#0052CC] border border-blue-200">
-                                {st.cefrLevel}
-                              </span>
-                              <span className="text-[11px] font-bold text-emerald-600">
-                                {st.attendancePercentage}% Att.
-                              </span>
+                  {activeBatchDrawer.students.length === 0 ? (
+                    <div className="p-8 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-2.5 my-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 text-[#0052CC] mx-auto flex items-center justify-center font-bold">
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <h4 className="text-sm font-extrabold text-slate-800">No Enrolled Students In This Cohort</h4>
+                      <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                        Learners have not yet been enrolled into this batch cohort. Once students are admitted and enrolled by the Academic Manager or College Admin, their live dossiers and attendance records will appear here automatically.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {activeBatchDrawer.students.map((st) => (
+                        <div
+                          key={st.id}
+                          className="p-3.5 rounded-xl border border-slate-200/90 hover:border-blue-300 hover:bg-slate-50/50 transition-all flex items-center justify-between gap-3 bg-white"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <img
+                              src={st.avatarUrl}
+                              alt={st.name}
+                              className="w-10 h-10 rounded-full object-cover ring-2 ring-slate-100 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-bold text-slate-900 truncate">{st.name}</h4>
+                              <p className="text-[11px] font-mono text-slate-500">{st.rollNo}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-blue-50 text-[#0052CC] border border-blue-200">
+                                  {st.cefrLevel}
+                                </span>
+                                <span className="text-[11px] font-bold text-emerald-600">
+                                  {st.attendancePercentage}% Att.
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={() => setInspectStudent(st)}
-                            className="px-3 py-1.5 bg-blue-50 hover:bg-[#0052CC] hover:text-white text-[#0052CC] border border-blue-200 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
-                          >
-                            <span>Inspect</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => setInspectStudent(st)}
+                              className="px-3 py-1.5 bg-blue-50 hover:bg-[#0052CC] hover:text-white text-[#0052CC] border border-blue-200 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                            >
+                              <span>Inspect</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

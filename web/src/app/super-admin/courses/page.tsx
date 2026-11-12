@@ -6,7 +6,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { BookOpen, Plus, Edit2, Trash2, Globe, Archive, IndianRupee, Users } from 'lucide-react';
+import { BookOpen, Plus, Edit2, Trash2, Globe, Archive, IndianRupee, Users, Eye } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -17,20 +17,75 @@ import { mockCourses, mockDepartments, mockStudents } from '@/mock/superAdminDat
 import { useToast } from '@/context/ToastContext';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import ViewEnrolledStudentsDrawer from '@/components/super-admin/academic/ViewEnrolledStudentsDrawer';
+import DeleteConfirmDrawer from '@/components/common/DeleteConfirmDrawer';
+import CourseDetailDrawer from '@/components/academic-manager/CourseDetailDrawer';
 import { useCollege } from '@/context/CollegeContext';
+import { fastFetch } from '@/lib/fastCache';
 
 export default function CoursesPage() {
   const { showSuccess } = useToast();
   const { selectedCollegeId, isOverall } = useCollege();
-  const [courses, setCourses] = useState<CourseSummary[]>(mockCourses);
+  const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [studentsDrawerCourse, setStudentsDrawerCourse] = useState<CourseSummary | null>(null);
+  const [deleteCourse, setDeleteCourse] = useState<CourseSummary | null>(null);
+  const [viewCourseDetail, setViewCourseDetail] = useState<CourseSummary | null>(null);
+
+  // Fetch live courses from backend with 0ms fast cache
+  const fetchLiveCourses = React.useCallback(() => {
+    fastFetch('http://localhost:4000/api/portals/courses', (res) => {
+      if (res?.status === 'success' && Array.isArray(res.data)) {
+        const live: CourseSummary[] = res.data.map((c: any) => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          collegeId: c.collegeId || c.tenantId || 'inst-01',
+          collegeName: c.collegeName || 'Loyola College of Arts & Science',
+          department: c.department || 'Languages & Linguistics',
+          program: c.program || `${c.durationDays || 90} Days Track`,
+          semester: 1,
+          academicYear: c.academicYear || '2026–2027',
+          duration: c.duration || `${c.durationDays || 90} Days`,
+          durationDays: Number(c.durationDays) || 90,
+          durationType: c.durationType || '3_MONTHS',
+          facultyName: c.facultyName || 'Lead Academic Faculty',
+          substituteTutors: c.substituteTutors || [],
+          doubtSupportTutor: c.doubtSupportTutor,
+          enrolledStudents: c.enrolledStudents || 0,
+          completionRate: c.completionRate || 0,
+          courseFee: c.courseFee || 12000,
+          status: c.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
+        }));
+        setCourses(live);
+      }
+    });
+  }, []);
+
+  React.useEffect(() => {
+    fetchLiveCourses();
+    const interval = setInterval(fetchLiveCourses, 6000);
+    return () => clearInterval(interval);
+  }, [fetchLiveCourses]);
+
+  const handleDeleteCourse = async () => {
+    if (!deleteCourse) return;
+    try {
+      await fetch(`http://localhost:4000/api/portals/courses/${deleteCourse.id}/delete`, {
+        method: 'POST',
+      });
+      setCourses((prev) => prev.filter((c) => c.id !== deleteCourse.id));
+      showSuccess(`Course "${deleteCourse.name}" (${deleteCourse.code}) deleted permanently by Super Admin.`);
+      setDeleteCourse(null);
+    } catch {
+      setCourses((prev) => prev.filter((c) => c.id !== deleteCourse.id));
+      setDeleteCourse(null);
+    }
+  };
 
   // Filter courses based on selected college or overall
   const displayCourses = courses.filter((c) => {
     if (isOverall) return true;
-    if (c.collegeId) return c.collegeId === selectedCollegeId;
-    const dept = mockDepartments.find((d) => d.name.toLowerCase() === c.department.toLowerCase());
-    return !dept?.institutionId || dept.institutionId === selectedCollegeId;
+    if (!selectedCollegeId) return true;
+    return c.collegeId === selectedCollegeId || c.collegeId === 'inst-01';
   });
 
   const handleTogglePublish = (course: CourseSummary) => {
@@ -50,18 +105,18 @@ export default function CoursesPage() {
   const columns: Column<CourseSummary>[] = [
     {
       key: 'name',
-      header: 'Course & Code',
+      header: 'Course Name',
       sortable: true,
       className: 'min-w-[220px]',
       render: (row) => (
         <div className="space-y-1">
-          <p className="font-bold text-[#0B2447] text-xs leading-snug line-clamp-1">{row.name}</p>
+          <p className="font-bold text-[#0B2447] text-sm leading-snug line-clamp-1">{row.name}</p>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-              {row.code}
-            </span>
             <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
               AY {row.academicYear || '2026–2027'}
+            </span>
+            <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+              ⏳ {row.durationDays ? `${row.durationDays} Days` : (row.duration || '90 Days')}
             </span>
           </div>
         </div>
@@ -186,9 +241,16 @@ export default function CoursesPage() {
     {
       key: 'actions',
       header: 'Actions',
-      className: 'text-right min-w-[120px]',
+      className: 'text-right min-w-[150px]',
       render: (row) => (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1.5">
+          <button
+            onClick={() => setViewCourseDetail(row)}
+            className="p-1.5 text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 border border-blue-200 rounded-lg transition-colors cursor-pointer"
+            title="View Full Course Specifications & Code"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={() => setStudentsDrawerCourse(row)}
             className="px-2.5 py-1 text-slate-700 hover:text-[#0052CC] bg-blue-50/70 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-blue-200"
@@ -196,6 +258,13 @@ export default function CoursesPage() {
           >
             <Users className="w-3.5 h-3.5 text-[#0052CC]" />
             <span>Learners</span>
+          </button>
+          <button
+            onClick={() => setDeleteCourse(row)}
+            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            title="Delete Course (Super Admin Only)"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       ),
@@ -322,12 +391,28 @@ export default function CoursesPage() {
         )}
       />
 
+      <CourseDetailDrawer
+        isOpen={!!viewCourseDetail}
+        onClose={() => setViewCourseDetail(null)}
+        course={viewCourseDetail}
+      />
+
       <ViewEnrolledStudentsDrawer
         isOpen={!!studentsDrawerCourse}
         onClose={() => setStudentsDrawerCourse(null)}
         title={studentsDrawerCourse ? `${studentsDrawerCourse.name} (${studentsDrawerCourse.code})` : 'Enrolled Learners'}
         subtitle={`Campus: ${studentsDrawerCourse?.collegeName || 'All Campuses'} • ${studentsDrawerCourse?.department || ''}`}
         students={enrolledLearnersForDrawer}
+      />
+
+      <DeleteConfirmDrawer
+        isOpen={!!deleteCourse}
+        onClose={() => setDeleteCourse(null)}
+        onConfirm={handleDeleteCourse}
+        title="Delete Course (Super Admin Only)"
+        entityType="Course"
+        entityName={deleteCourse?.name}
+        description="Are you sure you want to permanently delete this course? Only Super Admins have the authorization to perform this deletion."
       />
     </div>
   );

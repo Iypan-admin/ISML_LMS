@@ -109,6 +109,18 @@ export default function ApprovalDetailDrawer({
 
             <div className="space-y-1">
               <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5 text-purple-500" /> Originating Portal
+              </span>
+              <p className="font-bold text-purple-900 bg-purple-50/80 px-2 py-0.5 rounded border border-purple-200 inline-block text-[11px]">
+                {request.sourcePortal || (request.requestType === 'STUDENT_ADMISSION' ? 'Student Public Form' : request.requestType === 'INSTITUTION_CREATION' ? 'Institutional MoU Desk' : `${request.module} Portal`)}
+              </p>
+              <p className="text-slate-500 text-[10px]">
+                Campus: {request.payload?.institutionName || request.institutionId || 'Overall System'}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-slate-400" /> Operational Submitter
               </span>
               <p className="font-semibold text-slate-800">{request.submittedBy.name}</p>
@@ -119,25 +131,160 @@ export default function ApprovalDetailDrawer({
 
             <div className="space-y-1">
               <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" /> Submission Date
+                <Calendar className="w-3.5 h-3.5 text-slate-400" /> Submission Date & Time
               </span>
               <p className="font-medium text-slate-800">
-                {new Date(request.submittedDate).toLocaleDateString(undefined, {
+                {new Date(request.submittedDate).toLocaleString(undefined, {
                   weekday: 'short',
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
               </p>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 sm:col-span-2">
               <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-slate-400" /> Entity Identifier
               </span>
-              <p className="font-mono text-slate-700">{request.entityId}</p>
+              <p className="font-mono text-slate-700 bg-white p-1 rounded border border-slate-200">{request.entityId}</p>
             </div>
           </div>
+
+          {/* Timetable Schedule Specs Banner */}
+          {(request.requestType === 'TIMETABLE_SLOT' || request.entityType === 'TIMETABLE') && request.payload && (
+            <div className="p-4 bg-cyan-50/70 border border-cyan-200 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-cyan-200/60">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-cyan-700" />
+                  <span className="font-extrabold text-xs text-cyan-950 uppercase tracking-wider">
+                    Timetable Slot Specification
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-cyan-600 text-white">
+                  {request.payload.daysFormatted || (request.payload.days ? request.payload.days.join(', ') : 'WEEKLY')}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-white/90 rounded-xl border border-cyan-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Class Details</span>
+                  <p className="font-bold text-slate-900">{request.payload.courseName || request.entityName}</p>
+                  <p className="text-[11px] text-slate-600">Cohort: <strong>{request.payload.batchName}</strong></p>
+                  <p className="text-[11px] text-cyan-800 font-semibold">🕒 {request.payload.timeSlot || request.payload.timetablePayload?.timeSlot}</p>
+                </div>
+
+                <div className="p-3 bg-white/90 rounded-xl border border-cyan-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Faculty & Campus</span>
+                  <p className="font-bold text-slate-900">👨‍🏫 {request.payload.facultyName || request.payload.timetablePayload?.facultyName || 'Faculty'}</p>
+                  <p className="text-[11px] text-slate-600 truncate">🏛️ {request.payload.institutionName || 'Campus Scope'}</p>
+                  <p className="text-[11px] text-emerald-700 font-bold">📡 Delivery: Online Live Studio</p>
+                </div>
+              </div>
+
+              {Array.isArray(request.payload.slotsInstances) && request.payload.slotsInstances.length > 0 && (
+                <div className="p-3 bg-white/90 rounded-xl border border-cyan-100 text-xs space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                    Scheduled Days ({request.payload.slotsInstances.length} recurring slots to activate)
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {request.payload.slotsInstances.map((s: any) => (
+                      <span key={s.id} className="px-2.5 py-1 bg-cyan-100 text-cyan-900 font-bold rounded-lg text-xs border border-cyan-300 flex items-center gap-1">
+                        <span>🗓️ {s.day}</span>
+                        <span className="text-[10px] opacity-75 font-mono">({s.timeSlot})</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {(request.requestType === 'STUDENT_ADMISSION' || request.entityType === 'STUDENT' || (request.module as string) === 'Admissions') && request.payload && (
+            <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+                    🎓
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-emerald-950 uppercase tracking-wider">
+                      Student Admission Profile & Enrolment Specs
+                    </h4>
+                    <p className="text-[10px] text-emerald-700">
+                      Auto-provisioned upon Super Admin authorization
+                    </p>
+                  </div>
+                </div>
+                <span className="font-mono text-xs font-bold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                  {request.payload.applicationNumber || request.entityId}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-2.5 bg-white rounded-xl border border-emerald-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Candidate Identity</span>
+                  <div className="font-bold text-slate-900 text-sm">
+                    {request.payload.fullName || request.entityName}
+                  </div>
+                  <div className="text-[11px] text-slate-600">
+                    📧 {request.payload.email || '—'}
+                  </div>
+                  <div className="text-[11px] text-slate-600">
+                    📱 {request.payload.mobileNumber || request.payload.phone || '—'}
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-white rounded-xl border border-emerald-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Academic Campus & Track</span>
+                  <div className="font-bold text-blue-700">
+                    {request.payload.course || request.payload.targetLanguage || 'Language Track'}
+                  </div>
+                  <div className="text-[11px] text-slate-600 truncate">
+                    🏛️ {request.payload.institutionName || 'Partner Institution'}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    Category: {request.payload.category || (request.payload.admissionType === 'SCHOOL_STUDENT' ? 'School Pupil' : 'College Student')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Parents / Guardian & Emergency Information */}
+              {(request.payload.parentFatherName || request.payload.parentMotherName || request.payload.parentOrGuardianName || request.payload.parentEmergencyPhone) && (
+                <div className="p-3 bg-white/90 rounded-xl border border-emerald-100 text-xs space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Parents / Legal Guardian</span>
+                  <div className="flex items-center justify-between text-[11px] text-slate-800">
+                    <span>
+                      <strong>Father / Guardian:</strong> {request.payload.parentFatherName || request.payload.parentOrGuardianName || '—'}
+                    </span>
+                    <span>
+                      <strong>Mother:</strong> {request.payload.parentMotherName || '—'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 flex items-center justify-between pt-1 border-t border-slate-100">
+                    <span>Emergency Contact: <strong className="font-mono text-emerald-800">{request.payload.parentEmergencyPhone || request.payload.emergencyContactNumber || '—'}</strong></span>
+                    <span>Parent Email: {request.payload.parentEmail || '—'}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Auto Credentials Box */}
+              <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="font-bold text-blue-900 block text-[11px]">🔐 Credentials Auto-Dispatch Guarantee</span>
+                  <span className="text-[10px] text-blue-700 block">
+                    Approving will automatically activate Student & Parent LMS portals and deliver SMS/Email notifications
+                  </span>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="font-mono text-[10px] font-bold text-blue-800 bg-white px-2 py-0.5 rounded border border-blue-200">
+                    Stud@{String(request.payload.mobileNumber || request.payload.phone || '2026').slice(-4)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Impact Analysis Banner */}
           {request.impactAnalysis && (

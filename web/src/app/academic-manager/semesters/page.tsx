@@ -99,13 +99,6 @@ export default function AcademicManagerSemestersPage() {
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => setDeleteSemester(row)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Delete Semester"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
         </div>
       ),
     },

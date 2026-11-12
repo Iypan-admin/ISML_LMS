@@ -167,13 +167,14 @@ export function AcademicManagerSidebar() {
       </div>
 
       {/* Categorized Dropdown / Accordion Navigation List */}
-      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-2">
+      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-2" suppressHydrationWarning>
         {ACADEMIC_MANAGER_NAV_SECTIONS.map((section) => {
           const isOpen = openSectionTitle === section.title;
           return (
             <div key={section.title} className="space-y-1">
               <button
                 type="button"
+                suppressHydrationWarning
                 onClick={() => toggleSection(section.title)}
                 className={`w-full flex items-center justify-between px-2.5 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
                   isOpen
@@ -338,15 +339,6 @@ export function AcademicManagerHeader() {
                 ))}
               </select>
             </div>
-
-            <Link
-              href="/academic-manager/approvals"
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0052CC] border border-blue-200 rounded-xl text-xs font-bold transition-colors"
-            >
-              <CheckSquare className="w-3.5 h-3.5 text-[#0052CC]" />
-              <span>Approvals</span>
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse ml-0.5" />
-            </Link>
 
             <Link
               href="/academic-manager/live-classes"
@@ -567,19 +559,25 @@ export function AcademicManagerMobileNav() {
 
 function AcademicManagerShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isBuilderStudio = pathname?.startsWith('/academic-manager/curriculum/builder');
 
   // Full-screen immersive canvas for Course Builder Studio
   if (isBuilderStudio) {
     return (
-      <div className="h-screen w-full max-w-full overflow-hidden bg-slate-100 text-slate-900 font-sans antialiased flex flex-col">
+      <div className="h-screen w-full max-w-full overflow-hidden bg-slate-100 text-slate-900 font-sans antialiased flex flex-col" suppressHydrationWarning>
         {children}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased w-full max-w-full overflow-x-hidden relative">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased w-full max-w-full overflow-x-hidden relative" suppressHydrationWarning>
       <AcademicManagerSidebar />
       <div className="flex-1 flex flex-col min-w-0 w-full max-w-full min-h-screen pb-24 lg:pb-0 lg:pl-72 overflow-x-hidden pt-[53px] lg:pt-0">
         <AcademicManagerHeader />

@@ -115,38 +115,48 @@ export default function ParentFeesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              <tr className="hover:bg-slate-50/70 transition-colors">
-                <td className="py-3.5 px-4 font-mono font-bold text-[#0B2447]">
-                  {fee.lastReceiptNo}
-                </td>
-                <td className="py-3.5 px-4 text-slate-700 font-medium">
-                  05 Aug 2026
-                </td>
-                <td className="py-3.5 px-4 font-semibold text-slate-900">
-                  Semester I French DELF Certification & Tuition Package
-                </td>
-                <td className="py-3.5 px-4 text-slate-600">
-                  Online NetBanking (HDFC Bank)
-                </td>
-                <td className="py-3.5 px-4 font-black text-emerald-700">
-                  ₹{fee.paidAmount.toLocaleString()}
-                </td>
-                <td className="py-3.5 px-4">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
-                    SETTLED
-                  </span>
-                </td>
-                <td className="py-3.5 px-4 text-right">
-                  <button
-                    type="button"
-                    onClick={() => alert(`Downloading Official Bursar Receipt ${fee.lastReceiptNo}...`)}
-                    className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0052CC] border border-blue-200 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>PDF Receipt</span>
-                  </button>
-                </td>
-              </tr>
+              {fee.paidAmount === 0 || fee.lastReceiptNo === 'NONE' ? (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-slate-400">
+                    <Receipt className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-bold text-slate-600">No Payment Receipts Available</p>
+                    <p className="text-[11px] text-slate-400">Official bursar vouchers and tax invoices will generate upon fee settlement.</p>
+                  </td>
+                </tr>
+              ) : (
+                <tr className="hover:bg-slate-50/70 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-bold text-[#0B2447]">
+                    {fee.lastReceiptNo}
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-700 font-medium">
+                    05 Aug 2026
+                  </td>
+                  <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    Semester I Foreign Language Certification & Tuition Package
+                  </td>
+                  <td className="py-3.5 px-4 text-slate-600">
+                    Online NetBanking (HDFC Bank)
+                  </td>
+                  <td className="py-3.5 px-4 font-black text-emerald-700">
+                    ₹{fee.paidAmount.toLocaleString()}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
+                      SETTLED
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => alert(`Downloading Official Bursar Receipt ${fee.lastReceiptNo}...`)}
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0052CC] border border-blue-200 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>PDF Receipt</span>
+                    </button>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

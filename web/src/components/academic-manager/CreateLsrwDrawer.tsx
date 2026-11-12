@@ -168,9 +168,9 @@ export default function CreateLsrwDrawer({
       {
         id: `mod-${selectedSubjectId}-01`,
         subjectId: selectedSubjectId,
-        subjectName: selectedSubject.name,
+        subjectName: selectedSubject?.name || 'Language',
         moduleNumber: 1,
-        title: `Unit 1: ${selectedSubject.name} Fundamentals`,
+        title: `Unit 1: ${selectedSubject?.name || 'Language'} Fundamentals`,
         description: 'Core concepts, foundational vocabulary and basic structures.',
         topicsCount: 4,
         estimatedHours: 12,
@@ -310,12 +310,12 @@ export default function CreateLsrwDrawer({
     const newItem: LsrwExerciseItem = {
       id: `lsrw-${Date.now().toString().slice(-4)}`,
       skillType,
-      title: title || `${selectedSubject.code} ${skillType} Drill: ${selectedModule?.title || 'Chapter 1'}`,
-      subjectId: selectedSubject.id,
-      subjectName: selectedSubject.name,
+      title: title || `${selectedSubject?.code || 'SUBJ'} ${skillType} Drill: ${selectedModule?.title || 'Chapter 1'}`,
+      subjectId: selectedSubject?.id || 'subj-01',
+      subjectName: selectedSubject?.name || 'Language',
       moduleId: selectedModule?.id,
       moduleName: selectedModule?.title || 'Module 1',
-      courseName: selectedSubject.name,
+      courseName: selectedSubject?.name || 'Language',
       cefrLevel,
       audioUrl: skillType === 'LISTENING' || skillType === 'SPEAKING' ? audioFileUrl : undefined,
       speakerAccent: skillType === 'LISTENING' ? speakerAccent : undefined,
@@ -330,7 +330,7 @@ export default function CreateLsrwDrawer({
     };
 
     onExerciseCreated(newItem);
-    showSuccess(`LSRW ${skillType} drill mapped to "${selectedSubject.name}" (${cefrLevel}) published!`);
+    showSuccess(`LSRW ${skillType} drill mapped to "${selectedSubject?.name || 'Language'}" (${cefrLevel}) published!`);
     onClose();
   };
 
@@ -523,7 +523,7 @@ export default function CreateLsrwDrawer({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={`e.g. ${selectedSubject.code} ${skillType} Practice Drill`}
+                placeholder={`e.g. ${selectedSubject?.code || 'SUBJ'} ${skillType} Practice Drill`}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0052CC]"
                 required
               />
@@ -920,7 +920,7 @@ export default function CreateLsrwDrawer({
           {/* Drawer Actions */}
           <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
             <span className="text-[11px] text-slate-500 font-medium truncate max-w-[200px]">
-              Mapped to: <strong>{selectedSubject.code}</strong> • {cefrLevel}
+              Mapped to: <strong>{selectedSubject?.code || 'SUBJ'}</strong> • {cefrLevel}
             </span>
             <div className="flex items-center gap-2.5">
               <button

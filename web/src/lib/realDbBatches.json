@@ -1,0 +1,38 @@
+[
+  {
+    "id": "batch-4168",
+    "name": "MRNG BATCH",
+    "code": "BAT-ET-168",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "institutionName": "The American College",
+    "programId": "b9585673-9327-43d8-bef4-9d261fe0bb3e",
+    "programName": "testtt",
+    "departmentName": "Languages & Humanities",
+    "academicYear": "2026–2027",
+    "admissionYear": 2026,
+    "graduationYear": 2027,
+    "currentSemesterNumber": 1,
+    "sectionsCount": 1,
+    "studentsCount": 10,
+    "enrolledStudentsCount": 10,
+    "courseIds": [
+      "b9585673-9327-43d8-bef4-9d261fe0bb3e"
+    ],
+    "courseNames": [
+      "testtt"
+    ],
+    "batchTiming": "09:00 AM – 10:30 AM (Morning Intensive)",
+    "scheduleDays": [
+      "MON",
+      "WED",
+      "FRI"
+    ],
+    "assignedFacultyName": "Joy JK",
+    "assignedStaffNames": [
+      "Ms. Ananya Sharma (TA)",
+      "Joy JK"
+    ],
+    "status": "ACTIVE",
+    "createdAt": "2026-11-11T09:52:14.470Z"
+  }
+]

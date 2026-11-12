@@ -9,7 +9,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ClipboardList,
@@ -234,617 +234,172 @@ export const GENERATE_50_LSRW_QUESTIONS = (
 };
 
 // Master Course & Batch Assignment Dataset
-const COURSE_ASSIGNMENTS_DATA: CourseAssignmentGroup[] = [
-  {
-    id: 'crs-fr-a1',
-    code: 'FR-101',
-    levelBadge: 'CEFR A1',
-    name: 'French A1: Beginner Foundations & Phonetics',
-    cefrTrack: 'DELF A1 Certification Track',
-    pastelBg: 'bg-blue-50/70',
-    pastelBorder: 'border-blue-200',
-    accentColor: 'text-[#0052CC]',
-    iconBg: 'bg-blue-100 text-[#0052CC]',
-    batches: [
-      {
-        batchId: 'batch-2026-fr-a1-morning',
-        batchName: 'French A1 Intensive Cohort 2026 (Live Webinar Batch)',
-        sectionCode: 'Section A (Morning)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        schedule: 'Mon & Wed • 10:00 - 11:30 AM',
-        assignments: [
-          {
-            id: 'asg-a1-01',
-            code: 'HW-FR-A1-101',
-            title: 'Audio Self-Introduction Drill & Nasal Vowel Recording',
-            moduleName: 'Module 1: Salutations & Phonetics',
-            lsrwSkill: 'S',
-            dueDate: 'Tomorrow, 11:59 PM',
-            totalSubmissionsCount: 6,
-            maxScore: 50,
-            description: 'Record a 90-second voice introduction stating your name, nationality, profession, and hometown using formal Vous register.',
-            submissions: [
-              {
-                id: 'sub-01',
-                studentId: 'stu-a1-01',
-                studentName: 'Bharathi M',
-                studentRollNo: '2026-FR-8942',
-                studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Anna University, Chennai',
-                submittedAt: 'Today, 08:30 AM',
-                status: 'EVALUATED',
-                scoreAwarded: 47,
-                maxScore: 50,
-                rubricScores: {
-                  grammarAccuracy: 12,
-                  vocabularyRange: 12,
-                  phoneticsPronunciation: 12,
-                  coherenceContext: 11,
-                },
-                tutorFeedback: 'Superbe prononciation des voyelles nasales! Clean liaison observed in "Je suis étudiante".',
-                evaluatedAt: 'Today, 10:15 AM',
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'bharathi_self_intro_parisienne.mp3',
-                  fileSize: '3.4 MB',
-                  fileUrl: 'https://isml.edu/audio/bharathi_intro.mp3',
-                },
-                studentNotes: 'I practiced the nasal vowels three times with the laboratory audio guide.',
-                studentSubmittedContent: {
-                  frenchText: "Bonjour Monsieur le Professeur. Je m'appelle Bharathi. Je suis étudiante en informatique à l'Université Anna de Chennai. Je viens de Madurai en Inde. J'ai vingt ans et j'aime apprendre la langue française pour mes études en France.",
-                  englishTranslation: "Hello Professor. My name is Bharathi. I am a computer science student at Anna University, Chennai. I come from Madurai, India. I am twenty years old and I love learning French for my master's studies in France.",
-                },
-                tutorCorrections: {
-                  correctedText: "Bonjour Monsieur le Professeur. Je m'appelle Bharathi. Je suis étudiante en informatique à l'Université Anna de Chennai. Je viens de Madurai, en Inde. J'ai vingt ans et j'aime apprendre le français pour mes études en France.",
-                  grammarNotes: [
-                    'Good use of formal title "Monsieur le Professeur".',
-                    'Changed "la langue française" to the more natural phrasing "le français" in this communicative context.',
-                  ],
-                  phoneticTips: [
-                    'Excellent nasal vowel resonance on "vingt" [vɛ̃] and "française" [fʁɑ̃sɛz].',
-                    'Ensure final "s" in "ans" stays silent before pause.',
-                  ],
-                },
-                submittedToAcademicManager: true,
-                academicManagerApprovedAt: 'Today, 10:30 AM',
-              },
-              {
-                id: 'sub-02',
-                studentId: 'stu-a1-02',
-                studentName: 'Karthikeyan S',
-                studentRollNo: '2026-FR-8943',
-                studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Loyola College (Autonomous)',
-                submittedAt: 'Yesterday, 09:12 PM',
-                status: 'PENDING_REVIEW',
-                maxScore: 50,
-                rubricScores: {
-                  grammarAccuracy: 0,
-                  vocabularyRange: 0,
-                  phoneticsPronunciation: 0,
-                  coherenceContext: 0,
-                },
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'karthik_presentation_a1.mp3',
-                  fileSize: '2.9 MB',
-                  fileUrl: 'https://isml.edu/audio/karthik_intro.mp3',
-                },
-                studentNotes: 'Please check my pronunciation of numbers 1 to 20.',
-                studentSubmittedContent: {
-                  frenchText: "Salut! Je suis Karthik. J'ai 19 ans. J'habite à Chennai. Mon père est ingénieur et ma mère est professeur. J'étudie le commerce au collège Loyola.",
-                  englishTranslation: "Hi! I am Karthik. I am 19 years old. I live in Chennai. My father is an engineer and my mother is a teacher. I study commerce at Loyola College.",
-                },
-                tutorCorrections: {
-                  correctedText: "Bonjour Monsieur. Je m'appelle Karthik. J'ai dix-neuf ans. J'habite à Chennai. Mon père est ingénieur et ma mère est professeure. J'étudie le commerce à l'université Loyola.",
-                  grammarNotes: [
-                    'In formal presentations, avoid casual "Salut" — use "Bonjour".',
-                    'Feminine form of professor is "professeure".',
-                    'Write numbers in letters ("dix-neuf") rather than digits in DELF written evaluations.',
-                  ],
-                  phoneticTips: [
-                    'Pronounce the "t" in "dix-neuf" softly as [diznœf].',
-                    'Liaison required between "dix-neuf" and "ans" -> [diznœf z‿ɑ̃].',
-                  ],
-                },
-                submittedToAcademicManager: false,
-              },
-              {
-                id: 'sub-03',
-                studentId: 'stu-a1-03',
-                studentName: 'Divya Lakshmi R',
-                studentRollNo: '2026-FR-8944',
-                studentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Madras Christian College (MCC)',
-                submittedAt: 'Yesterday, 06:40 PM',
-                status: 'EVALUATED',
-                scoreAwarded: 49,
-                maxScore: 50,
-                rubricScores: {
-                  grammarAccuracy: 12.5,
-                  vocabularyRange: 12.5,
-                  phoneticsPronunciation: 12,
-                  coherenceContext: 12,
-                },
-                tutorFeedback: 'Impeccable fluency! Intonation matches native Parisian rhythm.',
-                evaluatedAt: 'Today, 09:40 AM',
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'divya_a1_speaking.mp3',
-                  fileSize: '3.8 MB',
-                  fileUrl: 'https://isml.edu/audio/divya_intro.mp3',
-                },
-                studentNotes: 'Focused on correct elision in "je m\'appelle".',
-              },
-              {
-                id: 'sub-04',
-                studentId: 'stu-a1-04',
-                studentName: 'Ananya Sharma',
-                studentRollNo: '2026-FR-8945',
-                studentAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Stella Maris College (Autonomous)',
-                submittedAt: '2 days ago',
-                status: 'EVALUATED',
-                scoreAwarded: 45,
-                maxScore: 50,
-                rubricScores: {
-                  grammarAccuracy: 11,
-                  vocabularyRange: 11,
-                  phoneticsPronunciation: 11.5,
-                  coherenceContext: 11.5,
-                },
-                tutorFeedback: 'Very confident speech. Watch out for the distinction between [u] and [y].',
-                evaluatedAt: 'Yesterday, 04:20 PM',
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'ananya_speech_a1.mp3',
-                  fileSize: '3.1 MB',
-                  fileUrl: 'https://isml.edu/audio/ananya.mp3',
-                },
-              },
-              {
-                id: 'sub-05',
-                studentId: 'stu-a1-05',
-                studentName: 'Rohan Mehra',
-                studentRollNo: '2026-FR-8946',
-                studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'PSG College of Technology',
-                submittedAt: 'Today, 07:15 AM',
-                status: 'PENDING_REVIEW',
-                maxScore: 50,
-                rubricScores: {
-                  grammarAccuracy: 0,
-                  vocabularyRange: 0,
-                  phoneticsPronunciation: 0,
-                  coherenceContext: 0,
-                },
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'rohan_audio_submission.mp3',
-                  fileSize: '2.7 MB',
-                  fileUrl: 'https://isml.edu/audio/rohan.mp3',
-                },
-                studentSubmittedContent: {
-                  frenchText: "Bonjour Monsieur. Je m'appelle Rohan Mehra. J'habite à Coimbatore. J'étudie l'ingénierie mécanique au PSG College. J'ai vingt-et-un ans et je veux travailler en France.",
-                  englishTranslation: "Hello Sir. My name is Rohan Mehra. I live in Coimbatore. I study mechanical engineering at PSG College. I am 21 years old and I want to work in France.",
-                },
-                tutorCorrections: {
-                  correctedText: "Bonjour Monsieur. Je m'appelle Rohan Mehra. J'habite à Coimbatore. J'étudie le génie mécanique au PSG College of Technology. J'ai vingt et un ans et je souhaite travailler en France.",
-                  grammarNotes: [
-                    'Use "le génie mécanique" for mechanical engineering in university terminology.',
-                    'Use "je souhaite" for a more polite, refined professional register than "je veux".',
-                  ],
-                  phoneticTips: [
-                    'Liaison in "vingt et un" [vɛ̃teœ̃].',
-                    'Nasal vowel in "France" [fʁɑ̃s].',
-                  ],
-                },
-              },
-              {
-                id: 'sub-06',
-                studentId: 'stu-a1-06',
-                studentName: 'Siddharth Rao',
-                studentRollNo: '2026-FR-8947',
-                studentAvatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Anna University Guindy',
-                submittedAt: '--:--',
-                status: 'NOT_SUBMITTED',
-                maxScore: 50,
-                rubricScores: {
-                  grammarAccuracy: 0,
-                  vocabularyRange: 0,
-                  phoneticsPronunciation: 0,
-                  coherenceContext: 0,
-                },
-                studentNotes: 'Extension requested due to semester lab exams.',
-              },
-            ],
-          },
-          {
-            id: 'asg-a1-02',
-            code: 'HW-FR-A1-102',
-            title: 'Grammar Worksheet: Definite & Indefinite Articles in Context',
-            moduleName: 'Module 2: La Famille & Articles',
-            lsrwSkill: 'W',
-            dueDate: 'In 3 days',
-            totalSubmissionsCount: 6,
-            maxScore: 50,
-            description: 'Fill in the blanks with le/la/l\'/les or un/une/des and compose 5 sentences describing your family tree.',
-            submissions: [],
-          },
-        ],
-      },
-      {
-        batchId: 'batch-2026-fr-a1-weekend',
-        batchName: 'French A1 Fast-Track Weekend Bootcamp',
-        sectionCode: 'Section B (Weekend)',
-        dutyRole: 'Lead Trainer',
-        dutyBadgeColor: 'bg-blue-50 text-[#0052CC] border-blue-200',
-        schedule: 'Sat & Sun • 11:00 AM - 01:00 PM',
-        assignments: [
-          {
-            id: 'asg-a1-wk-01',
-            code: 'HW-FR-A1-201',
-            title: 'Weekend Vocabulary Flashcard Synthesis & Spoken Dialogue',
-            moduleName: 'Module 1: Everyday Salutations',
-            lsrwSkill: 'S',
-            dueDate: 'Sunday, 08:00 PM',
-            totalSubmissionsCount: 2,
-            maxScore: 100,
-            description: 'Record an exchange with a peer ordering coffee and croissants in a Parisian café scenario.',
-            submissions: [
-              {
-                id: 'sub-wk-01',
-                studentId: 'std-a1-07',
-                studentName: 'Preethi Sundar',
-                studentRollNo: '2026-FR-9011',
-                studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Women\'s Christian College (WCC)',
-                submittedAt: 'Yesterday, 11:00 AM',
-                status: 'EVALUATED',
-                scoreAwarded: 96,
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 24,
-                  vocabularyRange: 24,
-                  phoneticsPronunciation: 24,
-                  coherenceContext: 24,
-                },
-                tutorFeedback: 'Remarkable accuracy in polite requests ("Je voudrais un café, s\'il vous plaît").',
-                evaluatedAt: 'Yesterday, 02:00 PM',
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'preethi_cafe_dialogue.mp3',
-                  fileSize: '4.1 MB',
-                  fileUrl: 'https://isml.edu/audio/preethi.mp3',
-                },
-              },
-              {
-                id: 'sub-wk-02',
-                studentId: 'std-a1-08',
-                studentName: 'Varun Nair',
-                studentRollNo: '2026-FR-9012',
-                studentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Loyola College (Autonomous)',
-                submittedAt: 'Today, 06:20 AM',
-                status: 'PENDING_REVIEW',
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 22,
-                  vocabularyRange: 21,
-                  phoneticsPronunciation: 20,
-                  coherenceContext: 22,
-                },
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'varun_cafe_drill.mp3',
-                  fileSize: '3.6 MB',
-                  fileUrl: 'https://isml.edu/audio/varun.mp3',
-                },
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-a2',
-    code: 'FR-102',
-    levelBadge: 'CEFR A2',
-    name: 'French A2: Elementary Narrative & Passé Composé',
-    cefrTrack: 'DELF A2 Preparation',
-    pastelBg: 'bg-amber-50/70',
-    pastelBorder: 'border-amber-200',
-    accentColor: 'text-amber-800',
-    iconBg: 'bg-amber-100 text-amber-800',
-    batches: [
-      {
-        batchId: 'batch-fr-a2',
-        batchName: 'French A2 Cohort (Section B - Standby Coverage)',
-        sectionCode: 'Section B (Afternoon)',
-        dutyRole: 'Substitute Standby',
-        dutyBadgeColor: 'bg-amber-50 text-amber-900 border-amber-200',
-        schedule: 'Tue & Thu • 02:00 - 03:30 PM',
-        assignments: [
-          {
-            id: 'asg-a2-01',
-            code: 'HW-FR-A2-301',
-            title: 'Narrative Essay: "Un Voyage Mémorable" (Passé Composé vs Imparfait)',
-            moduleName: 'Module 3: Les Temps du Passé',
-            lsrwSkill: 'W',
-            dueDate: 'Friday, 05:00 PM',
-            totalSubmissionsCount: 3,
-            maxScore: 100,
-            description: 'Write a 180-word personal reflection describing a past holiday trip using accurate auxiliary agreements with être and avoir.',
-            submissions: [
-              {
-                id: 'sub-a2-01',
-                studentId: 'std-a2-01',
-                studentName: 'Alex D\'Souza',
-                studentRollNo: '2026-FR-A2-101',
-                studentAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Loyola College (Autonomous)',
-                submittedAt: 'Yesterday, 03:10 PM',
-                status: 'EVALUATED',
-                scoreAwarded: 88,
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 22,
-                  vocabularyRange: 21,
-                  phoneticsPronunciation: 22,
-                  coherenceContext: 23,
-                },
-                tutorFeedback: 'Good past participle agreements with Dr. & Mrs. Vandertramp verbs. Be careful with imparfait weather descriptions.',
-                evaluatedAt: 'Today, 08:30 AM',
-                submissionAttachment: {
-                  type: 'PDF',
-                  fileName: 'alex_dsouza_voyage_passe_compose.pdf',
-                  fileSize: '1.9 MB',
-                  fileUrl: 'https://isml.edu/pdf/alex_essay.pdf',
-                },
-              },
-              {
-                id: 'sub-a2-02',
-                studentId: 'std-a2-02',
-                studentName: 'Sneha Patel',
-                studentRollNo: '2026-FR-A2-102',
-                studentAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Anna University Guindy',
-                submittedAt: 'Today, 09:00 AM',
-                status: 'PENDING_REVIEW',
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 23,
-                  vocabularyRange: 23,
-                  phoneticsPronunciation: 22,
-                  coherenceContext: 24,
-                },
-                submissionAttachment: {
-                  type: 'PDF',
-                  fileName: 'sneha_patel_a2_essay.pdf',
-                  fileSize: '2.4 MB',
-                  fileUrl: 'https://isml.edu/pdf/sneha_essay.pdf',
-                },
-              },
-              {
-                id: 'sub-a2-03',
-                studentId: 'std-a2-03',
-                studentName: 'Harish Kumar',
-                studentRollNo: '2026-FR-A2-103',
-                studentAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Madras Christian College (MCC)',
-                submittedAt: '--:--',
-                status: 'NOT_SUBMITTED',
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 0,
-                  vocabularyRange: 0,
-                  phoneticsPronunciation: 0,
-                  coherenceContext: 0,
-                },
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b1',
-    code: 'FR-201',
-    levelBadge: 'CEFR B1',
-    name: 'French B1: Intermediate & Subjunctive Mood',
-    cefrTrack: 'DELF B1 Intermediate Professional',
-    pastelBg: 'bg-emerald-50/70',
-    pastelBorder: 'border-emerald-200',
-    accentColor: 'text-emerald-800',
-    iconBg: 'bg-emerald-100 text-emerald-800',
-    batches: [
-      {
-        batchId: 'batch-fr-b1',
-        batchName: 'French B1 Executive Cohort (1-on-1 Q&A Desk)',
-        sectionCode: 'Section Q (Executive)',
-        dutyRole: 'Doubt Clearance Specialist',
-        dutyBadgeColor: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-        schedule: 'Tue & Thu • 05:30 - 07:00 PM',
-        assignments: [
-          {
-            id: 'asg-b1-01',
-            code: 'HW-FR-B1-401',
-            title: 'Subjunctive Mood Argumentative Debate Speech: "Le Télétravail"',
-            moduleName: 'Module 4: Le Subjonctif Présent',
-            lsrwSkill: 'S',
-            dueDate: 'Saturday, 12:00 PM',
-            totalSubmissionsCount: 2,
-            maxScore: 100,
-            description: 'Construct a 3-minute debate speech on remote working utilizing at least 6 expressions of necessity and doubt with subjunctive.',
-            submissions: [
-              {
-                id: 'sub-b1-01',
-                studentId: 'std-b1-01',
-                studentName: 'Naveen Chandran',
-                studentRollNo: '2026-FR-B1-201',
-                studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Anna University Guindy',
-                submittedAt: 'Yesterday, 07:45 PM',
-                status: 'EVALUATED',
-                scoreAwarded: 95,
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 24,
-                  vocabularyRange: 24,
-                  phoneticsPronunciation: 23,
-                  coherenceContext: 24,
-                },
-                tutorFeedback: 'Excellente argumentation! "Il faut que nous soyons conscients" utilized flawlessly.',
-                evaluatedAt: 'Today, 10:00 AM',
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'naveen_teletravail_subjonctif.mp3',
-                  fileSize: '5.2 MB',
-                  fileUrl: 'https://isml.edu/audio/naveen.mp3',
-                },
-              },
-              {
-                id: 'sub-b1-02',
-                studentId: 'std-b1-02',
-                studentName: 'Pooja Venkatesh',
-                studentRollNo: '2026-FR-B1-202',
-                studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Stella Maris College (Autonomous)',
-                submittedAt: 'Today, 08:15 AM',
-                status: 'PENDING_REVIEW',
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 24,
-                  vocabularyRange: 23,
-                  phoneticsPronunciation: 24,
-                  coherenceContext: 23,
-                },
-                submissionAttachment: {
-                  type: 'AUDIO',
-                  fileName: 'pooja_subjonctif_speech.mp3',
-                  fileSize: '4.8 MB',
-                  fileUrl: 'https://isml.edu/audio/pooja.mp3',
-                },
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'crs-fr-b2',
-    code: 'FR-202',
-    levelBadge: 'CEFR B2',
-    name: 'French B2: Advanced Oral Discourse & DELF Synthesis',
-    cefrTrack: 'DELF B2 Advanced Fluency',
-    pastelBg: 'bg-purple-50/70',
-    pastelBorder: 'border-purple-200',
-    accentColor: 'text-purple-800',
-    iconBg: 'bg-purple-100 text-purple-800',
-    batches: [
-      {
-        batchId: 'batch-fr-b2',
-        batchName: 'French B2 Advanced Cohort (Evaluation Desk)',
-        sectionCode: 'Section V (Evaluation)',
-        dutyRole: 'Assistant Evaluator',
-        dutyBadgeColor: 'bg-purple-50 text-purple-900 border-purple-200',
-        schedule: 'Friday • 03:00 - 05:00 PM',
-        assignments: [
-          {
-            id: 'asg-b2-01',
-            code: 'HW-FR-B2-501',
-            title: 'DELF B2 Dossier Synthèse: Transition Écologique & Énergies Renouvelables',
-            moduleName: 'Module 5: Synthèse de Documents',
-            lsrwSkill: 'W',
-            dueDate: 'Sunday, 11:59 PM',
-            totalSubmissionsCount: 2,
-            maxScore: 100,
-            description: 'Synthesize three distinct journalistic texts regarding carbon taxation into a neutral 250-word synthesis adhering to DELF B2 standards.',
-            submissions: [
-              {
-                id: 'sub-b2-01',
-                studentId: 'std-b2-01',
-                studentName: 'Akash Sundaram',
-                studentRollNo: '2026-FR-B2-301',
-                studentAvatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Anna University Guindy',
-                submittedAt: 'Yesterday, 02:20 PM',
-                status: 'EVALUATED',
-                scoreAwarded: 97,
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 25,
-                  vocabularyRange: 24,
-                  phoneticsPronunciation: 24,
-                  coherenceContext: 24,
-                },
-                tutorFeedback: 'Exceptional neutral synthesis! Cohesive connectors (en revanche, d\'une part, néanmoins) applied rigorously.',
-                evaluatedAt: 'Today, 09:10 AM',
-                submissionAttachment: {
-                  type: 'PDF',
-                  fileName: 'akash_delf_b2_synthese.pdf',
-                  fileSize: '3.2 MB',
-                  fileUrl: 'https://isml.edu/pdf/akash_synthese.pdf',
-                },
-              },
-              {
-                id: 'sub-b2-02',
-                studentId: 'std-b2-02',
-                studentName: 'Meera Krishnan',
-                studentRollNo: '2026-FR-B2-302',
-                studentAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-                collegeName: 'Loyola College (Autonomous)',
-                submittedAt: 'Today, 07:30 AM',
-                status: 'PENDING_REVIEW',
-                maxScore: 100,
-                rubricScores: {
-                  grammarAccuracy: 23,
-                  vocabularyRange: 23,
-                  phoneticsPronunciation: 23,
-                  coherenceContext: 23,
-                },
-                submissionAttachment: {
-                  type: 'PDF',
-                  fileName: 'meera_synthese_b2.pdf',
-                  fileSize: '2.8 MB',
-                  fileUrl: 'https://isml.edu/pdf/meera_synthese.pdf',
-                },
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-];
+import { assignmentStore } from '@/services/assignmentStore';
 
 export default function TutorAssignmentsPage() {
   const { showSuccess } = useToast();
   const { currentFaculty } = useTutor();
+
+  // Dynamic live courses & batches built from created assignments
+  const [courseAssignmentsData, setCourseAssignmentsData] = useState<CourseAssignmentGroup[]>([]);
+
+  useEffect(() => {
+    const loadAssignments = async () => {
+      let allAsgs = assignmentStore.getAll();
+      try {
+        const res = await fetch('/api/portals/assignments');
+        const json = await res.json();
+        if (json?.data && Array.isArray(json.data)) {
+          const combined = [...allAsgs];
+          json.data.forEach((dbItem: any) => {
+            if (!combined.some(c => c.id === dbItem.id)) {
+              combined.unshift(dbItem);
+            }
+          });
+          allAsgs = combined;
+        }
+      } catch (e) {}
+
+      // Group assignments by course and batch
+      const courseMap = new Map<string, CourseAssignmentGroup>();
+
+      allAsgs.forEach((asg) => {
+        const cId = asg.courseId || 'crs-default';
+        const cName = asg.courseName || 'Foreign Language Track';
+        
+        if (!courseMap.has(cId)) {
+          courseMap.set(cId, {
+            id: cId,
+            code: asg.subjectCode || 'LANG',
+            levelBadge: 'A1',
+            name: cName,
+            cefrTrack: 'CEFR Immersion',
+            pastelBg: 'bg-blue-50/50',
+            pastelBorder: 'border-blue-200',
+            accentColor: 'text-[#0052CC]',
+            iconBg: 'bg-blue-100 text-[#0052CC]',
+            batches: []
+          });
+        }
+
+        const courseGroup = courseMap.get(cId)!;
+        const bId = asg.batchId || 'batch-all';
+        const bName = asg.batchName || 'General Batch';
+
+        let batchGroup = courseGroup.batches.find(b => b.batchId === bId);
+        if (!batchGroup) {
+          batchGroup = {
+            batchId: bId,
+            batchName: bName,
+            sectionCode: 'Section 1',
+            dutyRole: 'Primary Tutor',
+            dutyBadgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+            schedule: 'Mon - Fri',
+            assignments: []
+          };
+          courseGroup.batches.push(batchGroup);
+        }
+
+        // Map asg into CohortAssignmentItem
+        const cohortItem: CohortAssignmentItem = {
+          id: asg.id,
+          code: asg.moduleCode || `ASG-${asg.id.slice(-4)}`,
+          title: asg.title,
+          moduleName: asg.moduleName || 'Module Task',
+          lsrwSkill: (asg.lsrwSkill?.[0] as any) || 'W',
+          dueDate: asg.dueDate || 'Flexible',
+          totalSubmissionsCount: asg.submissions?.length || 0,
+          maxScore: asg.maxScore || 100,
+          description: asg.instructions || '',
+          submissions: (asg.submissions || []).map((s: any) => ({
+            id: s.id,
+            studentId: s.studentId,
+            studentName: s.studentName,
+            studentRollNo: s.studentRollNo,
+            studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            collegeName: 'Enrolled Institution',
+            submittedAt: s.submittedAt || 'Today',
+            status: s.status,
+            scoreAwarded: s.scoreAwarded,
+            maxScore: s.maxScore || 100,
+            rubricScores: s.rubricScores,
+            lsrwQuestions: s.lsrwQuestions,
+            tutorFeedback: s.tutorFeedback,
+            evaluatedAt: s.evaluatedAt,
+            submissionAttachment: s.fileName ? {
+              type: s.submissionType || 'PDF',
+              fileName: s.fileName,
+              fileSize: s.fileSize || '1 MB',
+              fileUrl: s.fileUrl || s.fileDataUrl || '#',
+            } : undefined,
+            studentNotes: s.studentNotes,
+            studentSubmittedContent: s.studentNotes ? { frenchText: s.studentNotes } : undefined,
+          }))
+        };
+
+        batchGroup.assignments.push(cohortItem);
+      });
+
+      const list = Array.from(courseMap.values());
+      setCourseAssignmentsData(list);
+      if (list.length > 0) {
+        setSelectedCourseId(prev => list.some(l => l.id === prev) ? prev : list[0].id);
+        if (list[0].batches.length > 0) {
+          setSelectedBatchId(prev => list[0].batches.some(b => b.batchId === prev) ? prev : list[0].batches[0].batchId);
+          if (list[0].batches[0].assignments.length > 0) {
+            setSelectedAssignmentId(prev => list[0].batches[0].assignments.some(a => a.id === prev) ? prev : list[0].batches[0].assignments[0].id);
+          }
+        }
+      }
+    };
+
+    loadAssignments();
+    const unsub = assignmentStore.subscribe(loadAssignments);
+    const handleSync = () => loadAssignments();
+    window.addEventListener('isml-realtime-event', handleSync);
+    return () => {
+      unsub();
+      window.removeEventListener('isml-realtime-event', handleSync);
+    };
+  }, []);
 
   // STEP 1: Selected Course ID
   const [selectedCourseId, setSelectedCourseId] = useState<string>('crs-fr-a1');
 
   // Active Course
   const activeCourse = useMemo(() => {
-    return COURSE_ASSIGNMENTS_DATA.find((c) => c.id === selectedCourseId) || COURSE_ASSIGNMENTS_DATA[0];
+    return courseAssignmentsData.find((c) => c.id === selectedCourseId) || courseAssignmentsData[0] || {
+      id: 'crs-none',
+      code: 'COURSE',
+      levelBadge: 'CEFR',
+      name: 'No Assigned Homework Courses',
+      cefrTrack: 'Curriculum Track',
+      pastelBg: 'bg-slate-50',
+      pastelBorder: 'border-slate-200',
+      accentColor: 'text-slate-600',
+      iconBg: 'bg-slate-100 text-slate-600',
+      batches: []
+    };
   }, [selectedCourseId]);
 
   // STEP 2: Selected Batch ID under this Course
-  const [selectedBatchId, setSelectedBatchId] = useState<string>(activeCourse.batches[0]?.batchId || '');
+  const [selectedBatchId, setSelectedBatchId] = useState<string>(activeCourse?.batches?.[0]?.batchId || '');
 
   // Active Batch
   const activeBatch = useMemo(() => {
-    return activeCourse.batches.find((b) => b.batchId === selectedBatchId) || activeCourse.batches[0];
+    return activeCourse?.batches?.find((b) => b.batchId === selectedBatchId) || activeCourse?.batches?.[0] || {
+      batchId: 'batch-none',
+      batchName: 'No Batches Assigned',
+      sectionCode: 'Section',
+      dutyRole: 'Tutor',
+      dutyBadgeColor: 'bg-slate-50 text-slate-600 border-slate-200',
+      schedule: '',
+      assignments: []
+    };
   }, [activeCourse, selectedBatchId]);
 
   // Active Assignments under Selected Batch
-  const currentAssignments = activeBatch.assignments;
+  const currentAssignments = activeBatch?.assignments || [];
 
   // Selected Assignment Tab
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>(
@@ -881,7 +436,7 @@ export default function TutorAssignmentsPage() {
   // Course Switch handler
   const handleSelectCourse = (courseId: string) => {
     setSelectedCourseId(courseId);
-    const crs = COURSE_ASSIGNMENTS_DATA.find((c) => c.id === courseId);
+    const crs = courseAssignmentsData.find((c) => c.id === courseId);
     if (crs && crs.batches.length > 0) {
       const firstBatch = crs.batches[0];
       setSelectedBatchId(firstBatch.batchId);
@@ -1088,7 +643,7 @@ export default function TutorAssignmentsPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           <span className="px-3 py-1.5 bg-blue-50 text-[#0052CC] border border-blue-200 rounded-xl text-xs font-bold">
-            {COURSE_ASSIGNMENTS_DATA.reduce((acc, c) => acc + c.batches.reduce((bAcc, b) => bAcc + b.assignments.length, 0), 0)} Assigned Tasks In Queue
+            {courseAssignmentsData.reduce((acc, c) => acc + c.batches.reduce((bAcc, b) => bAcc + b.assignments.length, 0), 0)} Assigned Tasks In Queue
           </span>
         </div>
       </div>
@@ -1111,7 +666,7 @@ export default function TutorAssignmentsPage() {
 
         {/* 4 Mild Pastel Course Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {COURSE_ASSIGNMENTS_DATA.map((crs) => {
+          {courseAssignmentsData.map((crs) => {
             const isSelected = selectedCourseId === crs.id;
             const courseTotalAssignments = crs.batches.reduce((acc, b) => acc + b.assignments.length, 0);
 
@@ -1178,13 +733,13 @@ export default function TutorAssignmentsPage() {
             </h2>
           </div>
           <span className="text-xs font-bold text-slate-500 shrink-0">
-            {activeCourse.batches.length} Assigned {activeCourse.batches.length === 1 ? 'Cohort' : 'Cohorts'}
+            {(activeCourse?.batches || []).length} Assigned {(activeCourse?.batches || []).length === 1 ? 'Cohort' : 'Cohorts'}
           </span>
         </div>
 
         {/* Batch Selection Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {activeCourse.batches.map((b) => {
+          {(activeCourse?.batches || []).map((b) => {
             const isSelected = selectedBatchId === b.batchId;
             const batchPendingCount = b.assignments.reduce(
               (acc, a) => acc + a.submissions.filter((s) => s.status === 'PENDING_REVIEW').length,

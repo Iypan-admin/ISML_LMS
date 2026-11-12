@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   AlertCircle,
 } from 'lucide-react';
-import { mockFeeComponents } from '@/mock/superAdminData';
 import { FeeComponent } from '@/types/rbac';
 import StatusBadge from '@/components/common/StatusBadge';
 import { Modal } from '@/components/common/Modal';
@@ -29,7 +28,7 @@ export default function FeeComponentsPage() {
   const { hasPermission } = useRBAC();
   const { showSuccess, showWarning, showError } = useToast();
 
-  const [components, setComponents] = useState<FeeComponent[]>(mockFeeComponents);
+  const [components, setComponents] = useState<FeeComponent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modal State
