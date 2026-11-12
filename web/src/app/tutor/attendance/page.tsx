@@ -40,7 +40,7 @@ import { useTutor } from '@/context/TutorContext';
 import { useToast } from '@/context/ToastContext';
 import { fastFetch } from '@/lib/fastCache';
 
-type AttendanceState = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+type AttendanceState = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'PENDING';
 
 interface RollCallStudent {
   id: string;
@@ -218,7 +218,8 @@ export default function TutorAttendancePage() {
               });
 
               let studentsForThisBatch: RollCallStudent[] = [];
-              if (liveSavedStudents && liveSavedStudents.length > 0 && (b.id === 'batch-4168' || b.name === 'MRNG BATCH')) {
+              const hasRecordedAttendance = liveSavedStudents && liveSavedStudents.length > 0 && (b.id === 'batch-4168' || b.name === 'MRNG BATCH');
+              if (hasRecordedAttendance) {
                 studentsForThisBatch = liveSavedStudents;
               } else {
                 studentsForThisBatch = collegeStudents.map((std: any, sIdx: number) => ({
@@ -229,9 +230,9 @@ export default function TutorAttendancePage() {
                   avatarUrl: `https://images.unsplash.com/photo-${1534528741775 + sIdx}?w=150`,
                   collegeName: std.tenantName || 'The American College',
                   overallAttendancePct: std.attendancePercentage || 95,
-                  status: (std.studentId === 'AMER-COL-STD-25' ? 'ABSENT' : 'PRESENT') as AttendanceState,
-                  checkInTime: std.studentId === 'AMER-COL-STD-25' ? '--:--' : '07:28 PM',
-                  remarks: std.studentId === 'AMER-COL-STD-25' ? 'Unexcused Absence' : 'Verified Cloudflare Connection',
+                  status: 'PENDING' as AttendanceState,
+                  checkInTime: '--:--',
+                  remarks: 'Attendance Pending Submission',
                 }));
               }
 
@@ -424,6 +425,8 @@ export default function TutorAttendancePage() {
   const absentCount = currentStudents.filter((s) => s.status === 'ABSENT').length;
   const lateCount = currentStudents.filter((s) => s.status === 'LATE').length;
   const excusedCount = currentStudents.filter((s) => s.status === 'EXCUSED').length;
+  const pendingCount = currentStudents.filter((s) => s.status === 'PENDING').length;
+  const isPendingAttendance = pendingCount > 0 && presentCount === 0 && absentCount === 0 && lateCount === 0;
   const attendanceRate = totalCount > 0 ? Math.round(((presentCount + lateCount) / totalCount) * 100) : 0;
 
   return (
@@ -552,6 +555,7 @@ export default function TutorAttendancePage() {
             const isSelected = selectedBatchId === b.batchId;
             const bStudents = rosters[b.batchId] || [];
             const pres = bStudents.filter((s) => s.status === 'PRESENT' || s.status === 'LATE').length;
+            const hasPending = bStudents.some((s) => s.status === 'PENDING') && pres === 0;
             const rate = bStudents.length > 0 ? Math.round((pres / bStudents.length) * 100) : 0;
 
             return (
@@ -586,9 +590,15 @@ export default function TutorAttendancePage() {
                   <div className="text-xs font-black text-slate-900">
                     {bStudents.length} Learners
                   </div>
-                  <div className={`text-[11px] font-black ${rate >= 80 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {rate}% Live Attended
-                  </div>
+                  {hasPending ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                      Pending
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Submitted • {pres} Present
+                    </span>
+                  )}
                 </div>
               </button>
             );
@@ -637,8 +647,12 @@ export default function TutorAttendancePage() {
             <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">PRESENT TODAY</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-xl font-black text-emerald-950">{presentCount}</span>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                {attendanceRate}%
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                isPendingAttendance
+                  ? 'text-amber-800 bg-amber-100'
+                  : 'text-emerald-700 bg-emerald-100'
+              }`}>
+                {isPendingAttendance ? 'Pending' : `${attendanceRate}%`}
               </span>
             </div>
           </div>
@@ -648,17 +662,21 @@ export default function TutorAttendancePage() {
             <div className="flex items-center justify-between mt-1">
               <span className="text-xl font-black text-rose-950">{absentCount}</span>
               <span className="text-xs font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-md">
-                Unexcused
+                {isPendingAttendance ? 'Not Taken' : 'Unexcused'}
               </span>
             </div>
           </div>
 
           <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
-            <span className="text-[10px] font-extrabold text-amber-900 uppercase tracking-wider block">LATE CHECK-IN</span>
+            <span className="text-[10px] font-extrabold text-amber-900 uppercase tracking-wider block">
+              {isPendingAttendance ? 'PENDING ROLL CALL' : 'LATE CHECK-IN'}
+            </span>
             <div className="flex items-center justify-between mt-1">
-              <span className="text-xl font-black text-amber-950">{lateCount}</span>
+              <span className="text-xl font-black text-amber-950">
+                {isPendingAttendance ? pendingCount : lateCount}
+              </span>
               <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
-                &gt;10 mins
+                {isPendingAttendance ? 'Pending' : '>10 mins'}
               </span>
             </div>
           </div>
@@ -712,6 +730,7 @@ export default function TutorAttendancePage() {
               className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none cursor-pointer"
             >
               <option value="ALL">All States ({totalCount})</option>
+              {pendingCount > 0 && <option value="PENDING">Pending ({pendingCount})</option>}
               <option value="PRESENT">Present ({presentCount})</option>
               <option value="ABSENT">Absent ({absentCount})</option>
               <option value="LATE">Late ({lateCount})</option>
@@ -791,6 +810,11 @@ export default function TutorAttendancePage() {
                     {/* Toggle Status Buttons */}
                     <td className="py-3 px-4 text-center">
                       <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200">
+                        {st.status === 'PENDING' && (
+                          <span className="px-2.5 py-1 text-[11px] font-extrabold bg-amber-100 text-amber-800 rounded-lg shadow-2xs mr-1">
+                            Pending
+                          </span>
+                        )}
                         <button
                           onClick={() => setStudentStatus(st.id, 'PRESENT')}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
