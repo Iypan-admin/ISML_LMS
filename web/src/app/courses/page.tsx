@@ -21,6 +21,7 @@ import {
   Building2,
   Filter,
   Compass,
+  CreditCard,
   Lock,
   AlertCircle
 } from 'lucide-react';
@@ -30,6 +31,8 @@ import {
   CollegeCurriculumItem, 
   SchoolCurriculumItem 
 } from '@/lib/curriculumCatalog';
+import { initiateRazorpayPayment } from '@/lib/razorpayClient';
+import realDbFeeStructures from '@/lib/realDbFeeStructures.json';
 
 export default function ExploreCoursesPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -43,6 +46,30 @@ export default function ExploreCoursesPage() {
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set(['col-french-a1', 'sch-french-a11']));
   const [enrollModalItem, setEnrollModalItem] = useState<any>(null);
   const [enrollSuccessToast, setEnrollSuccessToast] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [paymentMode, setPaymentMode] = useState<'FULL' | 'EMI_TRANCHE'>('FULL');
+
+  // Helper to determine fee amount and installment plan from real DB or catalog
+  const getCourseFeeStructure = (courseItem: any) => {
+    if (!courseItem) return { totalFee: 18500, installments: [] };
+    const match = (realDbFeeStructures as any[]).find((f: any) => 
+      f.courseName?.toLowerCase().includes(courseItem.courseTitle?.toLowerCase()) ||
+      courseItem.courseTitle?.toLowerCase().includes(f.courseName?.toLowerCase()) ||
+      f.code?.toLowerCase().includes(courseItem.levelCode?.toLowerCase())
+    );
+    const totalFee = match?.totalFeeAmount || 18500;
+    const installments = match?.installments?.length > 0 
+      ? match.installments 
+      : [
+          { title: 'Tranche 1 (Admission EMI)', amount: Math.floor(totalFee / 2), dueDate: 'Immediate' },
+          { title: 'Tranche 2 (Mid-Term Settlement)', amount: Math.ceil(totalFee / 2), dueDate: 'After 45 Days' },
+        ];
+    return { totalFee, installments };
+  };
+
+  const getCourseFeeAmount = (courseItem: any): number => {
+    return getCourseFeeStructure(courseItem).totalFee;
+  };
 
   useEffect(() => {
     try {
@@ -66,18 +93,52 @@ export default function ExploreCoursesPage() {
     } catch {}
   }, []);
 
-  const handleConfirmEnroll = (item: any, trackName: string) => {
-    const nextSet = new Set(enrolledCourseIds);
-    nextSet.add(item.id);
-    setEnrolledCourseIds(nextSet);
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('isml_enrolled_courses', JSON.stringify(Array.from(nextSet)));
-      }
-    } catch {}
-    setEnrollModalItem(null);
-    setEnrollSuccessToast(`Congratulations! Successfully enrolled in ${item.courseTitle} (${trackName}). Access granted in My Curriculum!`);
-    setTimeout(() => setEnrollSuccessToast(null), 4000);
+  const handleEnrollWithRazorpay = (item: any, trackName: string) => {
+    const feeInfo = getCourseFeeStructure(item);
+    const tranche1Amount = Number(feeInfo.installments[0]?.amount) || Math.floor(feeInfo.totalFee / 2);
+    const payableAmount = paymentMode === 'EMI_TRANCHE' ? tranche1Amount : feeInfo.totalFee;
+
+    setIsProcessingPayment(true);
+
+    const studentName = userProfile?.name || 'Aishwarya Raman';
+    const studentEmail = userProfile?.email || 'aishwarya.raman@americancollege.edu.in';
+    const studentId = userProfile?.id || 'std-amer-01';
+
+    initiateRazorpayPayment({
+      amount: payableAmount,
+      studentId,
+      studentName,
+      studentEmail,
+      studentPhone: '+91 97890 12345',
+      paymentFor: paymentMode === 'EMI_TRANCHE'
+        ? `Tranche 1 Admission EMI • ${item.courseTitle} (${trackName})`
+        : `Full Course Enrollment Fee • ${item.courseTitle} (${trackName})`,
+      onSuccess: (receipt) => {
+        setIsProcessingPayment(false);
+        const nextSet = new Set(enrolledCourseIds);
+        nextSet.add(item.id);
+        setEnrolledCourseIds(nextSet);
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('isml_enrolled_courses', JSON.stringify(Array.from(nextSet)));
+          }
+        } catch {}
+        setEnrollModalItem(null);
+        setEnrollSuccessToast(
+          paymentMode === 'EMI_TRANCHE'
+            ? `🎉 EMI Tranche 1 Paid (₹${payableAmount.toLocaleString()}, Receipt #${receipt.receiptNo})! Successfully enrolled. Access unlocked!`
+            : `🎉 Full Course Fee Paid (Receipt #${receipt.receiptNo})! Successfully enrolled in ${item.courseTitle}. Access unlocked!`
+        );
+        setTimeout(() => setEnrollSuccessToast(null), 6000);
+      },
+      onFailure: (err) => {
+        setIsProcessingPayment(false);
+        alert(`Payment Failed: ${err.description || 'Transaction cancelled'}. You can retry anytime.`);
+      },
+      onDismiss: () => {
+        setIsProcessingPayment(false);
+      },
+    });
   };
 
   // College languages vs School languages
@@ -375,14 +436,19 @@ export default function ExploreCoursesPage() {
                     <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/80 space-y-1 text-xs">
                       <div className="flex items-center justify-between font-bold text-[#0052CC]">
                         <span>{activeTrack.trackType} Pace</span>
-                        <span>{activeTrack.monthsToComplete} Months</span>
+                        <span className="font-mono text-emerald-700 font-extrabold">₹{getCourseFeeAmount(c).toLocaleString()}</span>
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-slate-600">
                         <span>{activeTrack.minsPerSession} Mins/Session</span>
-                        <span>{activeTrack.sessionsPerWeek} Sessions/Wk</span>
+                        <span>{activeTrack.monthsToComplete} Months Track</span>
                       </div>
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-semibold">Standard Term Fee:</span>
+                      <span className="font-mono text-emerald-700 font-extrabold">₹{getCourseFeeAmount(c).toLocaleString()}</span>
+                    </div>
+                  )}
 
                   {/* Action button: Disable if prerequisite not completed */}
                   <div className="pt-2">
@@ -410,7 +476,7 @@ export default function ExploreCoursesPage() {
                         onClick={() => setEnrollModalItem({ ...c, activeTrack })}
                         className="w-full py-2.5 bg-[#0052CC] hover:bg-blue-700 active:scale-98 text-white text-xs font-black rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer"
                       >
-                        <span>Enroll in {c.language} {c.levelCode}</span>
+                        <span>Enroll • ₹{getCourseFeeAmount(c).toLocaleString()}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -600,27 +666,115 @@ export default function ExploreCoursesPage() {
                 <span className="text-slate-500">Assessments Before Exam:</span>
                 <span className="font-bold text-slate-900">{enrollModalItem.assessmentsCount} Tests</span>
               </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                <span className="text-slate-700 font-bold">Prescribed Course Fee:</span>
+                <span className="text-base font-black text-emerald-700 font-mono">
+                  ₹{getCourseFeeAmount(enrollModalItem).toLocaleString()}
+                </span>
+              </div>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
-              By enrolling, <strong>{enrollModalItem.courseTitle}</strong> will be added to your active student records. You will gain access to live classes, timetable batches, and AI speaking drills.
-            </p>
+            {/* Payment Mode Selection: Full Settlement vs Term EMI Tranche */}
+            {(() => {
+              const feeStructure = getCourseFeeStructure(enrollModalItem);
+              const tranche1 = Number(feeStructure.installments[0]?.amount) || Math.floor(feeStructure.totalFee / 2);
+              const tranche2 = Number(feeStructure.installments[1]?.amount) || Math.ceil(feeStructure.totalFee / 2);
+
+              return (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                      Choose Payment Option:
+                    </span>
+                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                      0% Interest Campus EMI
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {/* Full Settlement Option */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode('FULL')}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer space-y-1 ${
+                        paymentMode === 'FULL'
+                          ? 'border-[#0052CC] bg-blue-50/70 ring-2 ring-blue-500/30'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900">One-Time Full</span>
+                        {paymentMode === 'FULL' && <CheckCircle2 className="w-4 h-4 text-[#0052CC]" />}
+                      </div>
+                      <div className="text-sm font-black text-emerald-700 font-mono">
+                        ₹{feeStructure.totalFee.toLocaleString()}
+                      </div>
+                      <p className="text-[10px] text-slate-500">Full term clearance</p>
+                    </button>
+
+                    {/* EMI Tranche Option */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode('EMI_TRANCHE')}
+                      className={`p-3 rounded-xl border text-left transition cursor-pointer space-y-1 ${
+                        paymentMode === 'EMI_TRANCHE'
+                          ? 'border-purple-600 bg-purple-50/70 ring-2 ring-purple-500/30'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-purple-950">Installment (EMI)</span>
+                        {paymentMode === 'EMI_TRANCHE' && <CheckCircle2 className="w-4 h-4 text-purple-600" />}
+                      </div>
+                      <div className="text-sm font-black text-purple-700 font-mono">
+                        ₹{tranche1.toLocaleString()} <span className="text-[10px] text-purple-500 font-normal">Now</span>
+                      </div>
+                      <p className="text-[10px] text-purple-600 font-medium">Tranche 2 (₹{tranche2.toLocaleString()}) later</p>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 text-[11px] space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                <span>Instant Seat Confirmation • Razorpay Test Mode</span>
+              </div>
+              <p className="text-amber-800 text-[10px] leading-relaxed">
+                {paymentMode === 'EMI_TRANCHE'
+                  ? 'Paying Tranche 1 confirms your course enrollment immediately. Remaining balance can be cleared anytime from the Fee Ledger before exams.'
+                  : 'Settling the full course fee clears your dues for the entire term and generates an official bursar receipt.'}
+              </p>
+            </div>
 
             <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setEnrollModalItem(null)}
+                disabled={isProcessingPayment}
                 className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={() => handleConfirmEnroll(enrollModalItem, enrollModalItem.activeTrack?.trackType || 'Standard')}
-                className="flex-1 py-2 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                disabled={isProcessingPayment}
+                onClick={() => handleEnrollWithRazorpay(enrollModalItem, enrollModalItem.activeTrack?.trackType || 'Standard')}
+                className={`flex-1 py-2.5 text-white text-xs font-black rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                  paymentMode === 'EMI_TRANCHE'
+                    ? 'bg-purple-600 hover:bg-purple-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Confirm & Enroll</span>
+                <CreditCard className="w-4 h-4" />
+                <span>
+                  {isProcessingPayment
+                    ? 'Connecting Gateway...'
+                    : paymentMode === 'EMI_TRANCHE'
+                    ? `Pay Tranche 1 (₹${(Number(getCourseFeeStructure(enrollModalItem).installments[0]?.amount) || Math.floor(getCourseFeeStructure(enrollModalItem).totalFee / 2)).toLocaleString()}) & Enroll`
+                    : `Pay Full ₹${getCourseFeeAmount(enrollModalItem).toLocaleString()} & Enroll`}
+                </span>
               </button>
             </div>
           </div>

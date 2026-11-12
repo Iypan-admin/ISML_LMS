@@ -18,7 +18,9 @@ import {
   Sparkles,
   X,
   FileAudio,
-  File
+  File,
+  Eye,
+  HelpCircle,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { assignmentStore, SharedAssignment, AssignmentLsrwSkill } from '@/services/assignmentStore';
@@ -31,6 +33,7 @@ export default function StudentAssignmentsPage() {
 
   // Submit Modal State
   const [submittingAssignment, setSubmittingAssignment] = useState<SharedAssignment | null>(null);
+  const [viewingAssignmentPrompt, setViewingAssignmentPrompt] = useState<SharedAssignment | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [studentNotes, setStudentNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,22 +41,26 @@ export default function StudentAssignmentsPage() {
 
   // Load student info from session/storage if available
   const [studentInfo, setStudentInfo] = useState({
-    id: 'std-current',
+    id: 'AMER-COL-STD-23',
     name: 'Muthu Pandian',
     rollNo: 'AMER-COL-STD-23',
-    college: 'The American College'
+    college: 'The American College',
+    courseName: 'testtt',
+    batchName: 'MRNG BATCH',
   });
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('isml_student_profile');
+      const stored = localStorage.getItem('isml_user') || localStorage.getItem('isml_student_profile');
       if (stored) {
         const parsed = JSON.parse(stored);
         setStudentInfo({
-          id: parsed.id || 'std-current',
+          id: parsed.id || parsed.studentId || 'AMER-COL-STD-23',
           name: parsed.name || 'Muthu Pandian',
-          rollNo: parsed.rollNo || parsed.registrationNumber || 'AMER-COL-STD-23',
-          college: parsed.collegeName || parsed.institutionName || 'The American College'
+          rollNo: parsed.rollNo || parsed.studentId || 'AMER-COL-STD-23',
+          college: parsed.collegeName || parsed.campusName || parsed.institutionName || 'The American College',
+          courseName: parsed.courseName || parsed.enrolledCourse || 'testtt',
+          batchName: parsed.batchName || 'MRNG BATCH',
         });
       }
     } catch {}
@@ -323,9 +330,27 @@ export default function StudentAssignmentsPage() {
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed bg-slate-50/60 p-3 rounded-xl border border-slate-100">
-                  {assignment.instructions}
-                </p>
+                {/* Questions & Instructions Box with dedicated View Button */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <HelpCircle className="w-3.5 h-3.5 text-[#0052CC]" />
+                      <span>Assignment Questions & Worksheet Rubric</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setViewingAssignmentPrompt(assignment)}
+                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-[#0052CC] border border-blue-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Full Questions & Rubric</span>
+                    </button>
+                  </div>
+
+                  <div className="text-xs text-slate-800 leading-relaxed bg-slate-50/80 p-3.5 rounded-xl border border-slate-200 whitespace-pre-line font-medium max-h-36 overflow-y-auto">
+                    {assignment.instructions}
+                  </div>
+                </div>
 
                 {assignment.attachedFile && (
                   <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-200/60 flex items-center justify-between">
@@ -524,6 +549,116 @@ export default function StudentAssignmentsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Dedicated Questions & Worksheet Detail Modal ─── */}
+      {viewingAssignmentPrompt && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase ${
+                    viewingAssignmentPrompt.lsrwSkill === 'SPEAKING' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                    viewingAssignmentPrompt.lsrwSkill === 'LISTENING' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                    viewingAssignmentPrompt.lsrwSkill === 'READING' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                    'bg-purple-50 text-purple-700 border border-purple-200'
+                  }`}>
+                    {viewingAssignmentPrompt.lsrwSkill} TASK
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    Max: <strong>{viewingAssignmentPrompt.maxScore} Marks</strong>
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 mt-1">{viewingAssignmentPrompt.title}</h3>
+                <p className="text-xs text-slate-500">
+                  {viewingAssignmentPrompt.courseName} • Due: {viewingAssignmentPrompt.dueDate}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingAssignmentPrompt(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+              {/* Question Brief & Instructions */}
+              <div>
+                <h4 className="text-xs font-black text-[#0052CC] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <HelpCircle className="w-4 h-4 text-[#0052CC]" />
+                  <span>Worksheet Prompt & Question Instructions</span>
+                </h4>
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-wrap">
+                  {viewingAssignmentPrompt.instructions || 'No specific prompt recorded for this worksheet.'}
+                </div>
+              </div>
+
+              {/* Tutor Materials / Audio / Files */}
+              {viewingAssignmentPrompt.attachments && viewingAssignmentPrompt.attachments.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-slate-500" />
+                    <span>Faculty Reference Materials ({viewingAssignmentPrompt.attachments.length})</span>
+                  </h4>
+                  <div className="space-y-1.5">
+                    {viewingAssignmentPrompt.attachments.map((att, i) => (
+                      <div key={i} className="flex items-center justify-between p-2.5 bg-blue-50/50 border border-blue-100 rounded-lg text-xs">
+                        <div className="flex items-center gap-2 truncate">
+                          {att.fileType.includes('audio') ? (
+                            <FileAudio className="w-4 h-4 text-[#0052CC] shrink-0" />
+                          ) : (
+                            <File className="w-4 h-4 text-[#0052CC] shrink-0" />
+                          )}
+                          <span className="font-bold text-slate-800 truncate">{att.fileName}</span>
+                          <span className="text-[10px] text-slate-400">({(att.fileSize / 1024).toFixed(0)} KB)</span>
+                        </div>
+                        <a
+                          href={att.fileUrl}
+                          download={att.fileName}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 bg-white hover:bg-blue-50 text-[#0052CC] border border-blue-200 rounded text-[11px] font-bold flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Download</span>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0">
+              <span className="text-xs text-slate-500">
+                Format required: <strong>{getFormatLabel(viewingAssignmentPrompt.lsrwSkill)}</strong>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewingAssignmentPrompt(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = viewingAssignmentPrompt;
+                    setViewingAssignmentPrompt(null);
+                    setSubmittingAssignment(target);
+                  }}
+                  className="px-5 py-2.5 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Submit Solution</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

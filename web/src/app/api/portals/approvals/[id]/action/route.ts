@@ -144,33 +144,77 @@ export async function POST(
         }
       }
 
-      // If approved and entityType is BATCH, activate the batch in realDbBatches.json
-      if (body.action === 'APPROVED' && (approvals[idx].entityType === 'BATCH' || approvals[idx].requestType === 'BATCH_CREATION')) {
+      // If approved and entityType is FeeStructure, activate fee structure and update course fee in DB
+      if (body.action === 'APPROVED' && (approvals[idx].entityType === 'FeeStructure' || approvals[idx].requestType === 'FEE_SCHEDULE_CREATION' || approvals[idx].requestType === 'Fee Schedule Revision')) {
         try {
-          const batchPaths = [
-            path.join(process.cwd(), 'src', 'lib', 'realDbBatches.json'),
-            path.join(process.cwd(), 'web', 'src', 'lib', 'realDbBatches.json'),
+          const feePaths = [
+            path.join(process.cwd(), 'src', 'lib', 'realDbFeeStructures.json'),
+            path.join(process.cwd(), 'web', 'src', 'lib', 'realDbFeeStructures.json'),
           ];
-          for (const bp of batchPaths) {
-            if (fs.existsSync(bp)) {
-              const batches = JSON.parse(fs.readFileSync(bp, 'utf8'));
-              const targetBatchId = approvals[idx].entityId || approvals[idx].submittedPayload?.batchId;
-              const targetName = approvals[idx].submittedPayload?.batchName || approvals[idx].title?.replace(/^Batch Authorization:\s*/, '').trim();
-              
-              let changed = false;
-              for (let b of batches) {
-                if (b.id === targetBatchId || (targetName && b.name === targetName)) {
-                  b.status = 'ACTIVE';
-                  changed = true;
+          const coursePaths = [
+            path.join(process.cwd(), 'src', 'lib', 'realDbCourses.json'),
+            path.join(process.cwd(), 'web', 'src', 'lib', 'realDbCourses.json'),
+          ];
+
+          const feePayload = approvals[idx].submittedPayload;
+          const targetCourseId = feePayload?.courseId || approvals[idx].entityId;
+          const totalAmount = feePayload?.totalAmount || feePayload?.totalFeeAmount;
+
+          for (const fp of feePaths) {
+            if (fs.existsSync(fp)) {
+              try {
+                const feeList = JSON.parse(fs.readFileSync(fp, 'utf8'));
+                let found = false;
+                for (let f of feeList) {
+                  if (f.id === approvals[idx].entityId || f.courseId === targetCourseId) {
+                    f.approvalStatus = 'APPROVED';
+                    f.status = 'APPROVED';
+                    f.reviewedAt = new Date().toISOString();
+                    if (totalAmount) f.totalFeeAmount = totalAmount;
+                    found = true;
+                  }
                 }
-              }
-              if (changed) {
-                fs.writeFileSync(bp, JSON.stringify(batches, null, 2), 'utf8');
+                if (!found && feePayload) {
+                  feeList.unshift({
+                    id: approvals[idx].entityId || `fee-${Date.now()}`,
+                    code: `FEESTR-${Date.now().toString().slice(-6)}`,
+                    structureName: approvals[idx].entityName || 'Course Fee Package',
+                    courseId: targetCourseId,
+                    totalFeeAmount: totalAmount || 18500,
+                    approvalStatus: 'APPROVED',
+                    status: 'APPROVED',
+                    createdAt: new Date().toISOString(),
+                    components: feePayload.components || [],
+                    installments: feePayload.installments || [],
+                  });
+                }
+                fs.writeFileSync(fp, JSON.stringify(feeList, null, 2), 'utf8');
+              } catch {}
+            }
+          }
+
+          // Also reflect the active fee in Courses database
+          if (targetCourseId && totalAmount) {
+            for (const cp of coursePaths) {
+              if (fs.existsSync(cp)) {
+                try {
+                  const courses = JSON.parse(fs.readFileSync(cp, 'utf8'));
+                  let courseChanged = false;
+                  for (let c of courses) {
+                    if (c.id === targetCourseId || (approvals[idx].entityName && approvals[idx].entityName.includes(c.name))) {
+                      c.courseFee = totalAmount;
+                      courseChanged = true;
+                    }
+                  }
+                  if (courseChanged) {
+                    fs.writeFileSync(cp, JSON.stringify(courses, null, 2), 'utf8');
+                  }
+                } catch {}
               }
             }
           }
         } catch (err) {
-          console.warn('Error activating batch in DB:', err);
+          console.warn('Error activating fee structure in DB:', err);
         }
       }
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -45,11 +45,11 @@ export default function DashboardPage() {
       const stored = localStorage.getItem('isml_user');
       if (stored) {
         currentUser = JSON.parse(stored);
-        if (currentUser.name) {
+        if (currentUser.role === 'STUDENT' || (!currentUser.role && currentUser.rollNo)) {
           setStudentInfo((prev) => ({
             ...prev,
-            name: currentUser.name,
-            collegeName: currentUser.campusName || currentUser.tenantName || prev.collegeName,
+            name: currentUser.name || 'Muthu Pandian',
+            collegeName: currentUser.campusName || currentUser.tenantName || 'The American College',
             courseName: currentUser.courseName || currentUser.enrolledCourse || prev.courseName,
             batchName: currentUser.batchName || prev.batchName,
             avatarUrl: currentUser.avatarUrl || prev.avatarUrl,
@@ -57,7 +57,20 @@ export default function DashboardPage() {
             overallProgress: currentUser.attendancePercentage ? Math.round(currentUser.attendancePercentage * 0.75) : 0,
             averageScore: currentUser.attendancePercentage ? 88 : 0,
           }));
+        } else {
+          // If staff logged in in same browser, show clean student profile
+          setStudentInfo((prev) => ({
+            ...prev,
+            name: 'Muthu Pandian',
+            collegeName: 'The American College',
+          }));
         }
+      } else {
+        setStudentInfo((prev) => ({
+          ...prev,
+          name: 'Muthu Pandian',
+          collegeName: 'The American College',
+        }));
       }
     } catch {}
 
@@ -109,13 +122,21 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <Link
-          href="/courses"
-          className="hidden sm:flex px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs items-center gap-1.5 shrink-0 transition-all cursor-pointer"
-        >
-          <BookOpen className="w-3.5 h-3.5" />
-          <span>Explore Courses</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/parent/fees"
+            className="hidden sm:flex px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-xl shadow-2xs items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+          >
+            <span>💳 Fee Ledger</span>
+          </Link>
+          <Link
+            href="/courses"
+            className="flex px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Explore Courses & Enroll</span>
+          </Link>
+        </div>
       </div>
 
       {/* ─── 2. LIVE NOW BANNER (Dark Navy Gradient with Red LIVE NOW pill) ─── */}

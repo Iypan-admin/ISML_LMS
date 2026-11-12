@@ -382,39 +382,82 @@ export default function ProposeFeeStructureDrawer({
     const courseDisplayName = selectedCourse?.name || 'Foreign Language Course';
     const courseDisplayCode = selectedCourse?.code || 'CRS';
 
+    const diffPayload = [
+      { fieldName: 'Target Campus', oldValue: 'Global', newValue: `${targetCollege?.name}` },
+      { fieldName: 'Target Course Curriculum', oldValue: 'Standard', newValue: `${courseDisplayName} (${courseDisplayCode})` },
+      ...components.map((c) => ({
+        fieldName: c.name,
+        oldValue: '₹0',
+        newValue: `₹${c.amount.toLocaleString()}`,
+      })),
+      {
+        fieldName: 'Manual Installment Plan',
+        oldValue: 'Default Split',
+        newValue: emiSummaryText,
+      },
+      {
+        fieldName: 'Total Term Package Fee',
+        oldValue: '₹0',
+        newValue: `₹${totalAmount.toLocaleString()}`,
+      },
+    ];
+
+    const impactText = `Total proposed fee is ₹${totalAmount.toLocaleString()} per student for ${courseDisplayName} (${selectedCourse?.duration || '90 Days'}) at ${targetCollege?.name}. Installment Schedule: ${emiSummaryText}. Requires Super Admin executive authorization before student ledgers are activated.`;
+
     const created = financeProposalStore.submitProposal({
       requestType: 'Fee Schedule Revision',
       entityType: 'FeeStructure',
-      entityName: `${courseDisplayName} (${courseDisplayCode}) — ${selectedBatch?.name} [${targetCollege?.name}]`,
+      entityName: `${courseDisplayName} (${courseDisplayCode}) — [${targetCollege?.name}]`,
       submittedBy: {
         name: 'Finance Controller',
         email: 'finance@isml.edu',
         role: 'Finance Manager',
       },
-      impactAnalysis: `Total proposed fee is ₹${totalAmount.toLocaleString()} per student for ${courseDisplayName} (${selectedCourse?.duration || '90 Days'}) across ${selectedBatch?.name} at ${targetCollege?.name}. Installment Schedule: ${emiSummaryText}. Requires Super Admin executive authorization.`,
-      diff: [
-        { fieldName: 'Target Campus', oldValue: 'Global', newValue: `${targetCollege?.name}` },
-        { fieldName: 'Target Course Curriculum', oldValue: 'Standard', newValue: `${courseDisplayName} (${courseDisplayCode})` },
-        { fieldName: 'Cohort / Batch', oldValue: 'Unassigned', newValue: selectedBatch?.name || 'Morning Batch' },
-        ...components.map((c) => ({
-          fieldName: c.name,
-          oldValue: '₹0',
-          newValue: `₹${c.amount.toLocaleString()}`,
-        })),
-        {
-          fieldName: 'Manual Installment Plan',
-          oldValue: 'Default Split',
-          newValue: emiSummaryText,
-        },
-        {
-          fieldName: 'Total Term Package',
-          oldValue: 'Previous Schedule',
-          newValue: `₹${totalAmount.toLocaleString()}`,
-        },
-      ],
+      impactAnalysis: impactText,
+      diff: diffPayload,
+      payload: {
+        courseId: selectedCourse?.id,
+        courseName: courseDisplayName,
+        courseCode: courseDisplayCode,
+        collegeId: targetCollege?.id,
+        collegeName: targetCollege?.name,
+        totalAmount: totalAmount,
+        components: components,
+        installments: installments,
+        isEmiEnabled: isEmiEnabled,
+        gracePeriodDays: gracePeriodDays,
+        proposalNotes: proposalNotes,
+        diff: diffPayload,
+        impactAnalysis: impactText,
+      },
     });
 
-    showSuccess(`Proposal ${created.id} successfully dispatched to Super Admin Approval Center!`);
+    // Also persist directly into backend /api/portals/approvals database so Super Admin sees it live immediately
+    fetch('/api/portals/approvals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: created.id,
+        requestType: 'FEE_SCHEDULE_CREATION',
+        module: 'Finance',
+        title: `Fee Schedule: ${courseDisplayName} (${courseDisplayCode})`,
+        description: `Proposed tuition fee ₹${totalAmount.toLocaleString()} for ${courseDisplayName} at ${targetCollege?.name}.`,
+        entityType: 'FeeStructure',
+        entityId: selectedCourse?.id || `fee-${Date.now()}`,
+        requestedByUserId: 'Campus Finance Controller',
+        priority: 'HIGH',
+        institutionId: targetCollege?.id || 'inst-01',
+        courseId: selectedCourse?.id,
+        totalAmount: totalAmount,
+        components: components,
+        installments: installments,
+        diff: diffPayload,
+        impactAnalysis: impactText,
+        proposalNotes: proposalNotes,
+      }),
+    }).catch(() => null);
+
+    showSuccess(`Proposal ${created.id} successfully dispatched to Super Admin Approval Center! Status: Pending Approval.`);
     if (onSubmitted) onSubmitted();
     onClose();
   };
@@ -438,10 +481,10 @@ export default function ProposeFeeStructureDrawer({
               </div>
               <div className="min-w-0">
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-400/20 text-emerald-300 uppercase tracking-wider border border-emerald-400/30 inline-block">
-                  Campus Finance Proposal
+                  Fee Schedule Configuration
                 </span>
                 <h2 className="text-sm sm:text-lg font-black text-white tracking-tight truncate mt-0.5">
-                  Fee Schedule, Course-Batch & Installments
+                  {selectedCourse?.name || 'Course Fee Package'}
                 </h2>
               </div>
             </div>
@@ -457,116 +500,38 @@ export default function ProposeFeeStructureDrawer({
 
           {/* ─── Form Body: strictly constrained x-axis to prevent mobile horizontal scrolling ─── */}
           <form onSubmit={handleSubmitForApproval} className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 space-y-4 sm:space-y-5 pb-24 sm:pb-6 w-full max-w-full">
-            {/* ─── 1. College Selection Bar (Dropdown) ─── */}
-            <div className="p-4 bg-emerald-50/70 border border-emerald-200/90 rounded-2xl space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-emerald-600" />
-                  <span>1. Select College / Institutional Campus</span>
-                </label>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Campus Scoped
-                </span>
-              </div>
-
-              <select
-                value={drawerCollegeId}
-                onChange={(e) => setDrawerCollegeId(e.target.value)}
-                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-emerald-300 rounded-xl font-bold text-slate-900 outline-none shadow-2xs focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-              >
-                {institutions.map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    🎓 {inst.name} ({inst.code}) — {inst.address}
-                  </option>
-                ))}
-              </select>
-              <p className="text-[11px] text-emerald-800">
-                Fee schedules and customized installment tranches will be assigned exclusively to this campus.
-              </p>
-            </div>
-
-            {/* ─── 2. Direct Target Course Selection (No Confusing Duration Pickers) ─── */}
-            <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3.5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-600" />
-                  <span>2. Select Target Course & Curriculum Track *</span>
-                </h3>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Direct Course Mapping
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
-                  Assigned Foreign Language Course *
-                </label>
-                <select
-                  value={selectedCourseId}
-                  onChange={(e) => setSelectedCourseId(e.target.value)}
-                  className="w-full px-3 py-2.5 text-xs sm:text-sm bg-white border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
-                >
-                  {scopedCourses.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      [{c.code}] {c.name} — {c.duration || 'Standard Curriculum'}
-                    </option>
-                  ))}
-                </select>
-                {selectedCourse && (
-                  <div className="mt-2 p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-200/80 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-bold text-emerald-950 block">{selectedCourse.name}</span>
-                      <span className="text-[11px] text-emerald-700 font-medium">
-                        Curriculum Code: <strong>{selectedCourse.code}</strong> • Term Duration: {selectedCourse.duration || '90 Days'}
-                      </span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-black text-[10px]">
-                      Active Curriculum
+            {/* ─── Target Course & Campus Card Context ─── */}
+            <div className="p-4 bg-gradient-to-br from-emerald-50/80 via-white to-blue-50/50 border border-emerald-200/80 rounded-2xl shadow-xs">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-black text-[10px] tracking-wide uppercase">
+                      Target Course
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px] border border-blue-200">
+                      Code: {selectedCourse?.code || 'CRS-01'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px] border border-slate-200">
+                      Duration: {selectedCourse?.duration || '90 Days'}
                     </span>
                   </div>
-                )}
-              </div>
-
-              {/* Target Language Cohort / Batch */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Target Student Batch / Cohort *
-                  </label>
-                  <select
-                    value={batchId}
-                    onChange={(e) => setBatchId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    {availableBatches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Academic Cycle Year
-                  </label>
-                  <input
-                    type="text"
-                    value={academicYear}
-                    onChange={(e) => setAcademicYear(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="e.g. 2026–2027"
-                  />
+                  <h3 className="text-base font-black text-slate-900 tracking-tight leading-snug">
+                    {selectedCourse?.name || 'Selected Foreign Language Course'}
+                  </h3>
+                  <p className="text-xs text-slate-600 flex items-center gap-1.5 font-medium">
+                    <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <span>Campus: <strong>{targetCollege?.name || 'The American College'}</strong></span>
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* ─── 4. Dynamic Fee Components & Calculation Engine ─── */}
+            {/* ─── 1. Fee Component Line Items ─── */}
             <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                   <Coins className="w-4 h-4 text-emerald-600" />
-                  <span>4. Fee Component Line Items</span>
+                  <span>1. Fee Component Line Items</span>
                 </h3>
 
                 <button
@@ -710,7 +675,7 @@ export default function ProposeFeeStructureDrawer({
                   </div>
                   <div>
                     <h3 className="text-xs font-extrabold text-purple-950 uppercase tracking-wider">
-                      5. Scheduled Installments & Manual Tranches
+                      2. Scheduled Installments & Manual Tranches
                     </h3>
                     <p className="text-[11px] text-purple-800">
                       Configure custom installment breakdown, due dates, or use quick auto-splits.

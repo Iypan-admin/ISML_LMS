@@ -63,6 +63,7 @@ export const financeProposalStore = {
     submittedBy: { name: string; email: string; role: string };
     impactAnalysis: string;
     diff?: ApprovalRequest['diff'];
+    payload?: any;
   }): ApprovalRequest => {
     const newId = `REQ-FIN-${Math.floor(100000 + Math.random() * 900000)}`;
     const newReq: ApprovalRequest = {
@@ -70,13 +71,14 @@ export const financeProposalStore = {
       requestType: proposal.requestType,
       module: 'Finance',
       entityType: proposal.entityType,
-      entityId: `entity-${Date.now()}`,
+      entityId: proposal.payload?.courseId || `entity-${Date.now()}`,
       entityName: proposal.entityName,
       submittedBy: proposal.submittedBy,
       submittedDate: new Date().toISOString(),
       status: 'SUBMITTED',
       impactAnalysis: proposal.impactAnalysis,
       diff: proposal.diff || [],
+      payload: proposal.payload,
       history: [
         {
           step: 'Submitted by Finance Manager',

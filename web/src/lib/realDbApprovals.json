@@ -1,1 +1,77 @@
-[]
+[
+  {
+    "id": "REQ-FIN-312065",
+    "requestType": "FEE_SCHEDULE_CREATION",
+    "module": "Finance",
+    "title": "Fee Schedule: French B1 / L3 Higher Education Program (COL-FR-B1L3)",
+    "description": "Proposed tuition fee ₹22,000 for French B1 / L3 Higher Education Program at The American College.",
+    "entityType": "FeeStructure",
+    "entityId": "bc37b0d7-d3b1-4cd8-a896-1768b912ee6e",
+    "requestedByUserId": "Campus Finance Controller",
+    "priority": "HIGH",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "currentStatus": "PENDING",
+    "createdAt": "2026-11-12T09:07:43.402Z",
+    "submittedPayload": {
+      "id": "REQ-FIN-312065",
+      "requestType": "FEE_SCHEDULE_CREATION",
+      "module": "Finance",
+      "title": "Fee Schedule: French B1 / L3 Higher Education Program (COL-FR-B1L3)",
+      "description": "Proposed tuition fee ₹22,000 for French B1 / L3 Higher Education Program at The American College.",
+      "entityType": "FeeStructure",
+      "entityId": "bc37b0d7-d3b1-4cd8-a896-1768b912ee6e",
+      "requestedByUserId": "Campus Finance Controller",
+      "priority": "HIGH",
+      "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+      "courseId": "bc37b0d7-d3b1-4cd8-a896-1768b912ee6e",
+      "totalAmount": 22000,
+      "components": [
+        {
+          "id": "item-1",
+          "name": "Tuition Fee (French B1 / L3 Higher Education Program)",
+          "category": "TUITION",
+          "amount": 14500,
+          "isMandatory": true
+        },
+        {
+          "id": "item-2",
+          "name": "Lab Studio & Phonetics Facility",
+          "category": "LAB",
+          "amount": 3500,
+          "isMandatory": true
+        },
+        {
+          "id": "item-3",
+          "name": "Assessment & Certification Exam Fee",
+          "category": "EXAM",
+          "amount": 2500,
+          "isMandatory": true
+        },
+        {
+          "id": "item-4",
+          "name": "AI LSRW Speaking Platform License",
+          "category": "FACILITY",
+          "amount": 1500,
+          "isMandatory": false
+        }
+      ],
+      "installments": [
+        {
+          "id": "inst-1",
+          "title": "Tranche 1 — Initial Admission Tranche",
+          "amount": 11000,
+          "dueDate": "2026-08-15",
+          "duePeriodDescription": "Installment tranche 1 of 2 (50% of total fee)"
+        },
+        {
+          "id": "inst-2",
+          "title": "Tranche 2 — Final Term Clearance",
+          "amount": 11000,
+          "dueDate": "2026-10-15",
+          "duePeriodDescription": "Installment tranche 2 of 2 (50% of total fee)"
+        }
+      ],
+      "proposalNotes": "Configured semester schedule mapped to cohort courses, studio labs, and custom installment milestones."
+    }
+  }
+]

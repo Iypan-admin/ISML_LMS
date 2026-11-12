@@ -128,6 +128,8 @@ export default function ApprovalCenterPage() {
             comment: h.comments,
           })),
           payload: item.submittedPayload,
+          diff: item.submittedPayload?.diff || item.diff || [],
+          impactAnalysis: item.submittedPayload?.impactAnalysis || item.impactAnalysis || item.description || '',
           institutionId: item.institutionId || item.submittedPayload?.institutionId,
         };
       });

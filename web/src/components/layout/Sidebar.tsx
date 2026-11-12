@@ -78,19 +78,38 @@ export default function Sidebar() {
       const stored = localStorage.getItem('isml_user');
       if (stored) {
         const u = JSON.parse(stored);
-        if (u.name) {
+        // Only treat as student if role is STUDENT or rollNo/studentId exists, NOT an admin or finance manager role!
+        if (u.role === 'STUDENT' || (!u.role && u.rollNo)) {
           hasLocalUser = true;
           const isSchoolStudent = /school|siva|lion|matric/i.test(u.campusName || u.tenantName || '');
           setStudent((prev) => ({
             ...prev,
-            name: u.name,
-            rollNo: u.rollNo || u.studentId || prev.rollNo,
-            collegeName: u.campusName || u.tenantName || prev.collegeName,
+            name: u.name || 'Muthu Pandian',
+            rollNo: u.rollNo || u.studentId || 'AMER-COL-STD-23',
+            collegeName: u.campusName || u.tenantName || 'The American College',
             isSchool: isSchoolStudent,
             courseName: u.courseName || prev.courseName,
             batchName: u.batchName || prev.batchName,
           }));
+        } else if (u.role && u.role !== 'STUDENT') {
+          // If another staff/admin logged in earlier, default to enrolled student
+          setStudent((prev) => ({
+            ...prev,
+            name: 'Muthu Pandian',
+            rollNo: 'AMER-COL-STD-23',
+            collegeName: 'The American College',
+            isSchool: false,
+          }));
+          hasLocalUser = true;
         }
+      } else {
+        setStudent((prev) => ({
+          ...prev,
+          name: 'Muthu Pandian',
+          rollNo: 'AMER-COL-STD-23',
+          collegeName: 'The American College',
+          isSchool: false,
+        }));
       }
     } catch { }
 
@@ -101,10 +120,10 @@ export default function Sidebar() {
           const isSchoolStudent = /school|siva|lion|matric/i.test(json.data.collegeName || '');
           setStudent((prev) => ({
             ...prev,
-            name: json.data.name || prev.name,
-            rollNo: json.data.rollNo || prev.rollNo,
+            name: json.data.name || 'Muthu Pandian',
+            rollNo: json.data.rollNo || 'AMER-COL-STD-23',
             avatarUrl: json.data.avatarUrl || prev.avatarUrl,
-            collegeName: json.data.collegeName || prev.collegeName,
+            collegeName: json.data.collegeName || 'The American College',
             isSchool: isSchoolStudent,
             courseName: json.data.courseName || prev.courseName,
             batchName: json.data.batchName || prev.batchName,

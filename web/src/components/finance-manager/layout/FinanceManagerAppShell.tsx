@@ -294,15 +294,8 @@ export function FinanceManagerHeader() {
                       </div>
                     </div>
                     <Link
-                      href="/super-admin/dashboard"
-                      className="block px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100 font-medium"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      Switch to Super Admin
-                    </Link>
-                    <Link
                       href="/login"
-                      className="block px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold"
+                      className="block px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold transition-colors"
                       onClick={() => setShowProfileMenu(false)}
                     >
                       Sign Out

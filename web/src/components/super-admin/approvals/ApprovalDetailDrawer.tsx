@@ -153,6 +153,68 @@ export default function ApprovalDetailDrawer({
             </div>
           </div>
 
+          {/* Finance Fee Schedule Proposal Custom Card */}
+          {(request.module === 'Finance' || request.entityType === 'FeeStructure' || request.requestType === 'FEE_SCHEDULE_CREATION' || request.requestType === 'Fee Schedule Revision') && (
+            <div className="p-4 bg-gradient-to-br from-emerald-50/80 via-white to-blue-50/60 border border-emerald-300 rounded-2xl shadow-xs space-y-3.5">
+              <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                    ₹
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-xs text-emerald-950 uppercase tracking-wider">
+                      Proposed Course Fee & Component Package
+                    </h4>
+                    <p className="text-[10px] text-emerald-700">
+                      Campus Bursar Proposal awaiting Executive Sanction
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-slate-500 block uppercase">Total Term Package</span>
+                  <span className="text-lg font-black text-emerald-700 font-mono">
+                    ₹{(request.payload?.totalAmount || request.payload?.totalFeeAmount || 18500).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Course & Breakdown Summary */}
+              {Array.isArray(request.payload?.components) && request.payload.components.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                    Itemized Component Line Items ({request.payload.components.length})
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {request.payload.components.map((c: any, i: number) => (
+                      <div key={i} className="p-2 bg-white rounded-lg border border-emerald-100 flex items-center justify-between">
+                        <span className="font-semibold text-slate-800 text-[11px] truncate pr-2">{c.name}</span>
+                        <span className="font-bold text-emerald-800 font-mono text-xs shrink-0">₹{Number(c.amount || 0).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Installments & Tranches */}
+              {Array.isArray(request.payload?.installments) && request.payload.installments.length > 0 && (
+                <div className="space-y-1.5 pt-2 border-t border-emerald-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                    Configured EMI Installment Tranches ({request.payload.installments.length} Parts)
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {request.payload.installments.map((inst: any, idx: number) => (
+                      <div key={idx} className="px-2.5 py-1.5 bg-purple-50 text-purple-900 border border-purple-200 rounded-lg text-xs flex items-center gap-2">
+                        <span className="font-bold text-[11px]">{inst.title}:</span>
+                        <span className="font-mono font-black text-purple-700">₹{Number(inst.amount || 0).toLocaleString()}</span>
+                        <span className="text-[10px] text-purple-500">({inst.dueDate})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Timetable Schedule Specs Banner */}
           {(request.requestType === 'TIMETABLE_SLOT' || request.entityType === 'TIMETABLE') && request.payload && (
             <div className="p-4 bg-cyan-50/70 border border-cyan-200 rounded-2xl space-y-3">

@@ -45,8 +45,8 @@ export default function AcademicManagerAssignmentsPage() {
   }, []);
 
   const handleAssignmentCreated = (newAsg: any) => {
-    // Stored in assignmentStore as PENDING (or waiting for super admin approval)
-    assignmentStore.create({
+    // 1. Store in client-side assignmentStore
+    const created = assignmentStore.create({
       title: newAsg.title,
       courseId: newAsg.courseId,
       courseName: newAsg.courseName,
@@ -65,6 +65,25 @@ export default function AcademicManagerAssignmentsPage() {
       assignedTutorName: newAsg.assignedTutorName || 'Assigned Course Tutor',
       attachedFile: newAsg.attachedFile,
     });
+
+    // 2. Persist directly to backend database so other tabs, students, and tutors receive it
+    fetch('/api/portals/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(created),
+    }).catch(() => null);
+
+    // 3. Broadcast realtime sync event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('isml-realtime-event', {
+          detail: {
+            type: 'ASSIGNMENT_CREATED',
+            assignment: created,
+          },
+        })
+      );
+    }
   };
 
   const handleDelete = (id: string, title: string) => {
