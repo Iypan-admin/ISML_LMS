@@ -100,82 +100,68 @@ export default function ProposeFeeStructureDrawer({
     return institutions.find((inst) => inst.id === drawerCollegeId) || institutions[0];
   }, [drawerCollegeId, institutions]);
 
-  // 2. Program Selection
-  const [programId, setProgramId] = useState(mockPrograms[0]?.id || 'prog-bsc-cs');
-
-  // Filter batches matching target college & program
-  const availableBatches = useMemo(() => {
-    const list = mockBatches.filter((b) => {
-      const matchesProgram = b.programId === programId;
-      const matchesCollege = b.institutionId === drawerCollegeId;
-      return matchesProgram && matchesCollege;
+  // 2. Target Course Track Selection (Real DB Courses)
+  const realCoursesList = (realDbCourses as any[]);
+  const scopedCourses = useMemo(() => {
+    return realCoursesList.filter((c: any) => {
+      if (!drawerCollegeId) return true;
+      return (
+        c.collegeId === drawerCollegeId ||
+        c.collegeName?.toLowerCase().includes(targetCollege?.name?.toLowerCase() || '')
+      );
     });
-    if (list.length > 0) return list;
-    return mockBatches.filter((b) => b.programId === programId);
-  }, [programId, drawerCollegeId]);
+  }, [realCoursesList, drawerCollegeId, targetCollege]);
 
-  const [batchId, setBatchId] = useState(availableBatches[0]?.id || mockBatches[0]?.id || 'batch-01');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(
+    initialCourseId || scopedCourses[0]?.id || realCoursesList[0]?.id || ''
+  );
 
   useEffect(() => {
-    if (availableBatches.length > 0) {
-      setBatchId(availableBatches[0].id);
+    if (initialCourseId) {
+      setSelectedCourseId(initialCourseId);
+    } else if (scopedCourses.length > 0 && !scopedCourses.some((c) => c.id === selectedCourseId)) {
+      setSelectedCourseId(scopedCourses[0].id);
     }
-  }, [programId, drawerCollegeId, availableBatches]);
+  }, [scopedCourses, initialCourseId]);
+
+  const selectedCourse = useMemo(() => {
+    return realCoursesList.find((c: any) => c.id === selectedCourseId) || scopedCourses[0] || realCoursesList[0];
+  }, [selectedCourseId, scopedCourses, realCoursesList]);
+
+  // Target Batch Cohort
+  const availableBatches = useMemo(() => {
+    return [
+      { id: 'batch-amer-01', name: 'MRNG BATCH (The American College)', admissionYear: 2026, graduationYear: 2029 },
+      { id: 'batch-siva-01', name: 'Sivakasi Lions French Cohort A', admissionYear: 2026, graduationYear: 2027 },
+      { id: 'batch-gen-01', name: 'General Executive Morning Cohort', admissionYear: 2026, graduationYear: 2029 },
+    ];
+  }, []);
+
+  const [batchId, setBatchId] = useState(availableBatches[0].id);
 
   const selectedBatch = useMemo(() => {
-    return mockBatches.find((b) => b.id === batchId) || availableBatches[0] || mockBatches[0];
+    return availableBatches.find((b) => b.id === batchId) || availableBatches[0];
   }, [batchId, availableBatches]);
 
-  // 3. Mapped Courses for this Batch
-  const mappedCourses = useMemo(() => {
-    if (!selectedBatch) return [];
-    if (selectedBatch.courseIds && selectedBatch.courseIds.length > 0) {
-      const bCourseIds = selectedBatch.courseIds;
-      return mockCourses.filter((c) => bCourseIds.includes(c.id));
-    }
-    return mockCourses.filter(
-      (c) => c.program === selectedBatch?.programName || c.semester === selectedBatch?.currentSemesterNumber
-    );
-  }, [selectedBatch]);
-
-  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
-
+  // Pre-fill fees when course changes
   useEffect(() => {
-    if (targetCourseFromProp) {
-      setSelectedCourseIds([targetCourseFromProp.id]);
-      if (targetCourseFromProp.courseFee) {
-        setComponents([
-          { id: 'item-1', name: `Tuition Fee (${targetCourseFromProp.name})`, category: 'TUITION', amount: targetCourseFromProp.courseFee, isMandatory: true },
-          { id: 'item-2', name: 'Lab & Learning Resource Material', category: 'LAB', amount: 3500, isMandatory: true },
-          { id: 'item-3', name: 'Assessment & Certification Fee', category: 'EXAM', amount: 2500, isMandatory: true },
-        ]);
-      }
-    } else if (mappedCourses.length > 0) {
-      setSelectedCourseIds(mappedCourses.map((c) => c.id));
-    } else {
-      setSelectedCourseIds([]);
+    if (selectedCourse) {
+      const defaultTuition = selectedCourse.courseFee && selectedCourse.courseFee > 0 ? selectedCourse.courseFee : 14500;
+      setComponents([
+        { id: 'item-1', name: `Tuition Fee (${selectedCourse.name})`, category: 'TUITION', amount: defaultTuition, isMandatory: true },
+        { id: 'item-2', name: 'Lab Studio & Phonetics Facility', category: 'LAB', amount: 3500, isMandatory: true },
+        { id: 'item-3', name: 'Assessment & Certification Exam Fee', category: 'EXAM', amount: 2500, isMandatory: true },
+        { id: 'item-4', name: 'AI LSRW Speaking Platform License', category: 'FACILITY', amount: 1500, isMandatory: false },
+      ]);
     }
-  }, [mappedCourses, targetCourseFromProp]);
+  }, [selectedCourseId]);
 
-  const toggleCourseSelection = (courseId: string) => {
-    setSelectedCourseIds((prev) =>
-      prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
-    );
-  };
-
-  // 4. Dynamic Fee Components
+  // Dynamic Fee Components
   const [components, setComponents] = useState<DynamicFeeLineItem[]>(DEFAULT_LINE_ITEMS);
   const [newComponentName, setNewComponentName] = useState('');
   const [newComponentAmount, setNewComponentAmount] = useState<number | ''>('');
   const [newComponentCategory, setNewComponentCategory] = useState<DynamicFeeLineItem['category']>('OTHER');
   const [showAddForm, setShowAddForm] = useState(false);
-
-  // Term, Course Model & Duration Metadata (Support for 3-Month, 6-Month, 1-Year Language Programs)
-  const [courseStructureType, setCourseStructureType] = useState<'DURATION_BASED' | 'SEMESTER_BASED'>('DURATION_BASED');
-  const [durationType, setDurationType] = useState<'3_MONTHS' | '6_MONTHS' | '1_YEAR' | 'CUSTOM'>('3_MONTHS');
-  const [customDurationMonths, setCustomDurationMonths] = useState<number>(3);
-  const [targetLanguage, setTargetLanguage] = useState<string>('French (DELF A1/A2)');
-  const [semesterNumber, setSemesterNumber] = useState(selectedBatch?.currentSemesterNumber || 1);
   const [academicYear, setAcademicYear] = useState('2026–2027');
 
   // Dynamic Total Calculation
@@ -410,21 +396,23 @@ export default function ProposeFeeStructureDrawer({
       ? `Custom ${installments.length} Installments: [${installments.map((i) => `${i.title}: ₹${i.amount.toLocaleString()}`).join(', ')}]. Grace: ${gracePeriodDays} days.`
       : 'One-Time payment only (No EMI).';
 
+    const courseDisplayName = selectedCourse?.name || 'Foreign Language Course';
+    const courseDisplayCode = selectedCourse?.code || 'CRS';
+
     const created = financeProposalStore.submitProposal({
       requestType: 'Fee Schedule Revision',
       entityType: 'FeeStructure',
-      entityName: `${selectedProgram?.name} — ${selectedBatch?.name} (${durationLabel}) [${targetCollege?.name}]`,
+      entityName: `${courseDisplayName} (${courseDisplayCode}) — ${selectedBatch?.name} [${targetCollege?.name}]`,
       submittedBy: {
         name: 'Finance Controller',
         email: 'finance@isml.edu',
         role: 'Finance Manager',
       },
-      impactAnalysis: `Total proposed fee is ₹${totalAmount.toLocaleString()} per student for ${selectedProgram?.name} (${durationLabel} - ${targetLanguage}) across ${selectedBatch?.name} at ${targetCollege?.name}. Mapped to ${selectedCourseIds.length} course curricula. Installment Schedule: ${emiSummaryText}. Requires Super Admin executive authorization.`,
+      impactAnalysis: `Total proposed fee is ₹${totalAmount.toLocaleString()} per student for ${courseDisplayName} (${selectedCourse?.duration || '90 Days'}) across ${selectedBatch?.name} at ${targetCollege?.name}. Installment Schedule: ${emiSummaryText}. Requires Super Admin executive authorization.`,
       diff: [
-        { fieldName: 'Campus', oldValue: 'Global', newValue: `${targetCollege?.name}` },
-        { fieldName: 'Course Curriculum Track', oldValue: 'Standard', newValue: targetLanguage },
-        { fieldName: 'Program Model', oldValue: 'Semester-Based', newValue: courseStructureType === 'DURATION_BASED' ? 'Duration / Term Based' : 'Semester-Based' },
-        { fieldName: 'Duration / Term Cycle', oldValue: 'Semester', newValue: durationLabel },
+        { fieldName: 'Target Campus', oldValue: 'Global', newValue: `${targetCollege?.name}` },
+        { fieldName: 'Target Course Curriculum', oldValue: 'Standard', newValue: `${courseDisplayName} (${courseDisplayCode})` },
+        { fieldName: 'Cohort / Batch', oldValue: 'Unassigned', newValue: selectedBatch?.name || 'Morning Batch' },
         ...components.map((c) => ({
           fieldName: c.name,
           oldValue: '₹0',
@@ -514,145 +502,53 @@ export default function ProposeFeeStructureDrawer({
               </p>
             </div>
 
-            {/* ─── 2. Academic Scope: Course Track, Duration Model & Cohort Identification ─── */}
+            {/* ─── 2. Direct Target Course Selection (No Confusing Duration Pickers) ─── */}
             <div className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-3.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <Languages className="w-4 h-4 text-emerald-600" />
-                  <span>2. Course Model, Language Track & Duration Cycle</span>
+                  <BookOpen className="w-4 h-4 text-emerald-600" />
+                  <span>2. Select Target Course & Curriculum Track *</span>
                 </h3>
                 <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  {courseStructureType === 'DURATION_BASED' ? 'Duration-Based (Non-Semester)' : 'Semester-Based'}
+                  Direct Course Mapping
                 </span>
               </div>
 
-              {/* Course Model Selector (Foreign Language Duration-Based vs Semester) */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
-                  Course Delivery Architecture
+                  Assigned Foreign Language Course *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCourseStructureType('DURATION_BASED')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      courseStructureType === 'DURATION_BASED'
-                        ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 text-emerald-950 font-bold'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-emerald-600" />
-                      <span className="text-xs">Duration-Based (Language Course)</span>
+                <select
+                  value={selectedCourseId}
+                  onChange={(e) => setSelectedCourseId(e.target.value)}
+                  className="w-full px-3 py-2.5 text-xs sm:text-sm bg-white border border-slate-300 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+                >
+                  {scopedCourses.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      [{c.code}] {c.name} — {c.duration || 'Standard Curriculum'}
+                    </option>
+                  ))}
+                </select>
+                {selectedCourse && (
+                  <div className="mt-2 p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-200/80 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-emerald-950 block">{selectedCourse.name}</span>
+                      <span className="text-[11px] text-emerald-700 font-medium">
+                        Curriculum Code: <strong>{selectedCourse.code}</strong> • Term Duration: {selectedCourse.duration || '90 Days'}
+                      </span>
                     </div>
-                    <p className="text-[10px] text-slate-500 mt-1 font-normal">
-                      Configured in 3-Month, 6-Month, or 1-Year certification tracks
-                    </p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCourseStructureType('SEMESTER_BASED')}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      courseStructureType === 'SEMESTER_BASED'
-                        ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-500/20 text-blue-950 font-bold'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs">Regular Semester-Based</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 mt-1 font-normal">
-                      Traditional 6-month university term (Sem 1 to Sem 8)
-                    </p>
-                  </button>
-                </div>
-              </div>
-
-              {/* Duration-Based Specific Configuration (3M, 6M, 1Y) */}
-              {courseStructureType === 'DURATION_BASED' && (
-                <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-black text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Select Course Duration Window</span>
-                    </label>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      Language Cycle
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-black text-[10px]">
+                      Active Curriculum
                     </span>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { type: '3_MONTHS', label: '3 Months', sub: 'Crash / A1 Foundation' },
-                      { type: '6_MONTHS', label: '6 Months', sub: 'Diploma / A2-B1 Track' },
-                      { type: '1_YEAR', label: '1 Year', sub: 'Mastery / Advanced B2-C1' },
-                    ].map((pill) => {
-                      const isSelected = durationType === pill.type;
-                      return (
-                        <button
-                          key={pill.type}
-                          type="button"
-                          onClick={() => setDurationType(pill.type as any)}
-                          className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <div className="text-xs font-black">{pill.label}</div>
-                          <div className={`text-[9px] mt-0.5 ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>
-                            {pill.sub}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Foreign Language Target & Track */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Foreign Language Program Track
-                      </label>
-                      <select
-                        value={targetLanguage}
-                        onChange={(e) => setTargetLanguage(e.target.value)}
-                        className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500"
-                      >
-                        <option value="French (DELF A1/A2/B1/B2)">🇫🇷 French (DELF Certification)</option>
-                        <option value="German (Goethe-Zertifikat A1/A2/B1)">🇩🇪 German (Goethe-Institut)</option>
-                        <option value="Japanese (JLPT N5/N4/N3)">🇯🇵 Japanese (JLPT Official Track)</option>
-                        <option value="Spanish (DELE A1/A2/B1)">🇪🇸 Spanish (DELE Instituto Cervantes)</option>
-                        <option value="Mandarin Chinese (HSK 1/2/3)">🇨🇳 Mandarin Chinese (HSK)</option>
-                        <option value="Korean (TOPIK I/II)">🇰🇷 Korean (TOPIK Track)</option>
-                        <option value="Arabic & Middle East Studies">🇦🇪 Arabic (Professional CEFR)</option>
-                        <option value="Italian Language & Culture">🇮🇹 Italian (CILS Certification)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                        Academic Cycle Year
-                      </label>
-                      <input
-                        type="text"
-                        value={academicYear}
-                        onChange={(e) => setAcademicYear(e.target.value)}
-                        className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="e.g. 2026–2027"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Target Language Cohort / Batch */}
-              <div className="pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    Target Language Cohort / Student Batch *
+                    Target Student Batch / Cohort *
                   </label>
                   <select
                     value={batchId}
@@ -661,103 +557,25 @@ export default function ProposeFeeStructureDrawer({
                   >
                     {availableBatches.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name} ({b.admissionYear}–{b.graduationYear})
+                        {b.name}
                       </option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-slate-500 mt-1">
-                    Fee structure and installment schedules apply directly to students enrolled in this language cohort.
-                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Academic Cycle Year
+                  </label>
+                  <input
+                    type="text"
+                    value={academicYear}
+                    onChange={(e) => setAcademicYear(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g. 2026–2027"
+                  />
                 </div>
               </div>
-
-              {/* Semester Fallback for Semester-Based Mode */}
-              {courseStructureType === 'SEMESTER_BASED' && (
-                <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Semester Number</label>
-                    <select
-                      value={semesterNumber}
-                      onChange={(e) => setSemesterNumber(Number(e.target.value))}
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                        <option key={s} value={s}>
-                          Semester {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Academic Year</label>
-                    <input
-                      type="text"
-                      value={academicYear}
-                      onChange={(e) => setAcademicYear(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ─── 3. Course Mapping for this Batch ─── */}
-            <div className="p-4 bg-blue-50/40 border border-blue-200/80 rounded-2xl space-y-2.5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-extrabold text-blue-950 uppercase tracking-wider flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#0052CC]" />
-                  <span>3. Mapped Courses for this Term</span>
-                </h3>
-                <span className="text-[11px] font-bold text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded">
-                  {selectedCourseIds.length} of {mappedCourses.length} Courses Linked
-                </span>
-              </div>
-              <p className="text-[11px] text-blue-800 leading-relaxed">
-                Fees configured below will apply to students enrolled in these batch-specific course curricula.
-              </p>
-
-              {mappedCourses.length === 0 ? (
-                <div className="p-3 bg-white rounded-xl border border-blue-200 text-xs text-slate-500 text-center">
-                  No courses currently assigned to this batch. Select another cohort or add courses in Academic Master.
-                </div>
-              ) : (
-                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                  {mappedCourses.map((crs) => {
-                    const isSelected = selectedCourseIds.includes(crs.id);
-                    return (
-                      <div
-                        key={crs.id}
-                        onClick={() => toggleCourseSelection(crs.id)}
-                        className={`p-2.5 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition-all ${
-                          isSelected
-                            ? 'bg-white border-[#0052CC] shadow-2xs font-bold text-slate-900'
-                            : 'bg-white/60 border-slate-200 text-slate-500 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}}
-                            className="rounded text-[#0052CC] focus:ring-0 cursor-pointer"
-                          />
-                          <span className="font-mono text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
-                            {crs.code}
-                          </span>
-                          <span className="truncate">{crs.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 text-[11px]">
-                          <span className="text-slate-400">{crs.credits || 4} Credits</span>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">
-                            Sem {crs.semester}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
 
             {/* ─── 4. Dynamic Fee Components & Calculation Engine ─── */}
