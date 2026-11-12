@@ -1,5 +1,27 @@
 [
   {
+    "id": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "code": "SAMPLE-CRS-101",
+    "name": "Sample Course",
+    "displayName": "Sample Course",
+    "collegeId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "collegeName": "Sri Krishna College of Technology",
+    "department": "Department of Foreign Languages",
+    "program": "Sample Course Program Track",
+    "semester": 1,
+    "academicYear": "2026–2027",
+    "duration": "80 Hours",
+    "durationDays": 120,
+    "durationType": "4_MONTHS",
+    "facultyName": "Lead Academic Faculty",
+    "substituteTutors": [],
+    "enrolledStudents": 12,
+    "completionRate": 0,
+    "courseFee": 18500,
+    "status": "PUBLISHED",
+    "createdAt": "2026-11-12T12:43:30.753Z"
+  },
+  {
     "id": "d53e880d-12e1-4bc5-8f46-f2ccfad26def",
     "code": "SCH-KO-A12",
     "name": "Korean A1.2 School Foundation Course",

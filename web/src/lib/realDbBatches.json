@@ -1,1 +1,74 @@
-[]
+[
+  {
+    "id": "9c4ab99e-3fd9-4212-ba60-0e3dfab3efc5",
+    "name": "Evening Batch",
+    "code": "BAT-SAMPLE-EVNG",
+    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "institutionName": "Sri Krishna College of Technology",
+    "programId": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "programName": "Sample Course",
+    "departmentName": "Department of Foreign Languages",
+    "academicYear": "2026–2027",
+    "admissionYear": 2026,
+    "graduationYear": 2027,
+    "currentSemesterNumber": 1,
+    "sectionsCount": 1,
+    "studentsCount": 25,
+    "courseIds": [
+      "905803ab-58d8-447b-8e07-94226eaab99a"
+    ],
+    "courseNames": [
+      "Sample Course"
+    ],
+    "batchTiming": "06:00 PM – 07:30 PM",
+    "scheduleDays": [
+      "TUE",
+      "THU",
+      "SAT"
+    ],
+    "assignedFacultyName": "Joy JK",
+    "assignedStaffNames": [
+      "Joy JK"
+    ],
+    "leadFacultyId": "fac-201834",
+    "leadFacultyName": "Joy JK",
+    "status": "ACTIVE",
+    "createdAt": "2026-11-12T12:43:30.758Z"
+  },
+  {
+    "id": "7d94450c-cf1c-4ebe-bd27-9ac0afb45915",
+    "name": "Morning Batch",
+    "code": "BAT-SAMPLE-MRNG",
+    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "institutionName": "Sri Krishna College of Technology",
+    "programId": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "programName": "Sample Course",
+    "departmentName": "Department of Foreign Languages",
+    "academicYear": "2026–2027",
+    "admissionYear": 2026,
+    "graduationYear": 2027,
+    "currentSemesterNumber": 1,
+    "sectionsCount": 1,
+    "studentsCount": 25,
+    "courseIds": [
+      "905803ab-58d8-447b-8e07-94226eaab99a"
+    ],
+    "courseNames": [
+      "Sample Course"
+    ],
+    "batchTiming": "09:00 AM – 10:30 AM",
+    "scheduleDays": [
+      "MON",
+      "WED",
+      "FRI"
+    ],
+    "assignedFacultyName": "Joy JK",
+    "assignedStaffNames": [
+      "Joy JK"
+    ],
+    "leadFacultyId": "fac-201834",
+    "leadFacultyName": "Joy JK",
+    "status": "ACTIVE",
+    "createdAt": "2026-11-12T12:43:30.758Z"
+  }
+]
