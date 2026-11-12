@@ -2133,7 +2133,45 @@ export class PortalsDataController {
         }).catch(() => null);
       }
 
-      return { status: 'success', message: 'User created in Supabase', data: createdUser };
+      // Automatically dispatch credentials email to the user
+      if (payload.email) {
+        const passwordToEmail = payload.password || payload.plainPassword || 'Isml@2026!';
+        const roleNameToEmail = payload.roleName || (payload.roleCode === 'SUPER_ADMIN' ? 'Super Administrator' : 'Staff Member');
+        const loginUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://isml-lms.vercel.app/login';
+        const fullNameToEmail = `${firstName} ${lastName}`.trim();
+
+        EmailNotificationService.sendEmail({
+          to: payload.email,
+          subject: `Your ${roleNameToEmail} Login Credentials: ISML Education Portal`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+              <div style="background: #0B2447; padding: 20px; border-radius: 8px; color: #ffffff; text-align: center;">
+                <h2 style="margin: 0; font-size: 20px;">ISML Staff Portal Provisioned</h2>
+                <p style="margin: 4px 0 0 0; color: #38bdf8; font-size: 13px;">Official Credentials & SSO Access Pass</p>
+              </div>
+              <div style="padding: 20px 0;">
+                <p>Dear <strong>${fullNameToEmail}</strong>,</p>
+                <p>Your official management account has been created on the <strong>ISML Higher Education & Language Systems Platform</strong> with role: <strong>${roleNameToEmail}</strong>.</p>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                  <table style="width: 100%; font-size: 14px;">
+                    <tr><td style="padding: 6px 0; color: #64748b;">Portal URL:</td><td><a href="${loginUrl}" style="color: #0052cc; font-weight: 600;">${loginUrl}</a></td></tr>
+                    <tr><td style="padding: 6px 0; color: #64748b;">Login Email:</td><td style="font-weight: 700;">${payload.email}</td></tr>
+                    <tr><td style="padding: 6px 0; color: #64748b;">Auto Password:</td><td><code style="background: #eff6ff; color: #0052cc; padding: 3px 6px; border-radius: 4px; font-weight: bold;">${passwordToEmail}</code></td></tr>
+                  </table>
+                </div>
+                <div style="text-align: center; margin: 24px 0;">
+                  <a href="${loginUrl}" style="background: #0052cc; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Sign In to Portal &rarr;</a>
+                </div>
+              </div>
+            </div>
+          `,
+          text: `Dear ${fullNameToEmail},\n\nYour ${roleNameToEmail} account has been created.\nLogin Email: ${payload.email}\nPassword: ${passwordToEmail}\nPortal: ${loginUrl}\n\nISML Governance Board`,
+        }).catch((err) => {
+          console.warn('Backend failed to send credentials email:', err);
+        });
+      }
+
+      return { status: 'success', message: 'User created and credentials dispatched', data: createdUser };
     } catch (e: any) {
       return { status: 'error', message: e.message };
     }
