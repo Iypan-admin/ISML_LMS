@@ -86,8 +86,44 @@ export async function POST(request: Request) {
     const collegeId = body.collegeId || '521323cd-00da-49a6-98ed-6b7918d181b4';
     const collegeName = body.collegeName || 'The American College';
 
+    // 1. Validation: check if email is provided
     if (!email || !email.includes('@')) {
       return NextResponse.json({ status: 'error', message: 'Valid email address is required.' }, { status: 400 });
+    }
+
+    // 2. Strict Duplicate Email Validation: Check across Staff, Faculty, and Student databases
+    const currentUsers = getStaffUsersDb();
+    const isStaffEmailDuplicate = currentUsers.some(
+      (u) => u.email?.toLowerCase().trim() === email && u.id !== body.id
+    );
+
+    let isDbUserDuplicate = false;
+    try {
+      const dbPaths = [
+        path.join(process.cwd(), 'src', 'lib', 'realDbFaculty.json'),
+        path.join(process.cwd(), 'web', 'src', 'lib', 'realDbFaculty.json'),
+        path.join(process.cwd(), 'src', 'lib', 'realDbStudents.json'),
+        path.join(process.cwd(), 'web', 'src', 'lib', 'realDbStudents.json'),
+      ];
+      for (const dp of dbPaths) {
+        if (fs.existsSync(dp)) {
+          const list = JSON.parse(fs.readFileSync(dp, 'utf8'));
+          if (Array.isArray(list) && list.some((item: any) => item.email?.toLowerCase().trim() === email)) {
+            isDbUserDuplicate = true;
+            break;
+          }
+        }
+      }
+    } catch {}
+
+    if (isStaffEmailDuplicate || isDbUserDuplicate) {
+      return NextResponse.json(
+        {
+          status: 'error',
+          message: `The email address "${email}" is already registered with an existing user. Please use a unique email.`,
+        },
+        { status: 409 }
+      );
     }
 
     // Auto-generate password
@@ -148,7 +184,32 @@ export async function POST(request: Request) {
     // Dispatch Official Credentials Email via Resend API
     let emailSent = false;
     let emailError = '';
-    const resendApiKey = process.env.RESEND_API_KEY || '';
+
+    // Robust Resend API Key resolution (fallback to backend/.env if not in process.env)
+    let resendApiKey = process.env.RESEND_API_KEY || '';
+    if (!resendApiKey) {
+      const envCandidates = [
+        path.join(process.cwd(), 'backend', '.env'),
+        path.join(process.cwd(), '..', 'backend', '.env'),
+        path.join(process.cwd(), 'web', '.env.local'),
+        path.join(process.cwd(), '.env.local'),
+      ];
+      for (const ep of envCandidates) {
+        if (fs.existsSync(ep)) {
+          try {
+            const lines = fs.readFileSync(ep, 'utf8').split('\n');
+            for (const l of lines) {
+              if (l.trim().startsWith('RESEND_API_KEY')) {
+                resendApiKey = l.split('=')[1].replace(/["'\r\n]/g, '').trim();
+                break;
+              }
+            }
+          } catch {}
+        }
+        if (resendApiKey) break;
+      }
+    }
+
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'ISML LMS <onboarding@joyautomations.in>';
     const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`;
 

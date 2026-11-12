@@ -490,24 +490,28 @@ export default function AddUserDrawer({
       };
 
       // Call API to persist user and dispatch real transactional credentials email via Resend
-      try {
-        const apiRes = await fetch('/api/portals/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...newUser,
-            password: autoPwd,
-          }),
-        });
-        const resJson = await apiRes.json();
-        if (resJson?.data?.emailSent) {
-          setEmailDeliveryNotice(`Official credentials email successfully dispatched to ${email}`);
-        } else {
-          setEmailDeliveryNotice(`Account active. Email delivery status: ${resJson?.data?.emailError || 'dispatched'}`);
-        }
-      } catch (err: any) {
-        console.warn('API sync notice:', err?.message);
-        setEmailDeliveryNotice(`Account activated locally. Credentials dispatched to ${email}`);
+      const apiRes = await fetch('/api/portals/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newUser,
+          password: autoPwd,
+        }),
+      });
+
+      const resJson = await apiRes.json();
+
+      if (!apiRes.ok || resJson.status === 'error') {
+        const errorMsg = resJson.message || 'Failed to create user account';
+        alert(`Creation Error: ${errorMsg}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (resJson?.data?.emailSent) {
+        setEmailDeliveryNotice(`Official credentials email successfully dispatched to ${email}`);
+      } else {
+        setEmailDeliveryNotice(`Account active. Email delivery status: ${resJson?.data?.emailError || 'dispatched'}`);
       }
 
       // If Student role and auto-create parent is active
