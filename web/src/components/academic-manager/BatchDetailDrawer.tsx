@@ -51,14 +51,24 @@ export default function BatchDetailDrawer({
 
     const collegeParam = batch.institutionId || '';
     const batchNameParam = encodeURIComponent(batch.name || '');
+    const batchIdParam = batch.id || '';
 
-    fastFetch(`/api/portals/students?collegeId=${collegeParam}&batchName=${batchNameParam}`, (json) => {
+    fastFetch(`/api/portals/students?collegeId=${collegeParam}&batchName=${batchNameParam}&batchId=${batchIdParam}`, (json) => {
       let list = json?.data || [];
       if (!Array.isArray(list) || list.length === 0) {
-        // Fallback to fetch all students for this institution
-        fastFetch(`/api/portals/students?collegeId=${collegeParam}`, (instJson) => {
-          setStudents(instJson?.data || []);
-          setIsLoadingStudents(false);
+        // Fallback 1: try without collegeId filter
+        fastFetch(`/api/portals/students?batchName=${batchNameParam}`, (bJson) => {
+          let bList = bJson?.data || [];
+          if (!Array.isArray(bList) || bList.length === 0) {
+            // Fallback 2: fetch all college students
+            fastFetch(`/api/portals/students?collegeId=${collegeParam}`, (instJson) => {
+              setStudents(instJson?.data || []);
+              setIsLoadingStudents(false);
+            });
+          } else {
+            setStudents(bList);
+            setIsLoadingStudents(false);
+          }
         });
       } else {
         setStudents(list);

@@ -132,3 +132,4 @@ assignStudentsToBatches()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

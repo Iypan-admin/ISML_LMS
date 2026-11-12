@@ -3,8 +3,8 @@
     "id": "9c4ab99e-3fd9-4212-ba60-0e3dfab3efc5",
     "name": "Evening Batch",
     "code": "BAT-SAMPLE-EVNG",
-    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
-    "institutionName": "Sri Krishna College of Technology",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "institutionName": "The American College",
     "programId": "905803ab-58d8-447b-8e07-94226eaab99a",
     "programName": "Sample Course",
     "departmentName": "Department of Foreign Languages",
@@ -13,7 +13,7 @@
     "graduationYear": 2027,
     "currentSemesterNumber": 1,
     "sectionsCount": 1,
-    "studentsCount": 3,
+    "studentsCount": 10,
     "courseIds": [
       "905803ab-58d8-447b-8e07-94226eaab99a"
     ],
@@ -35,17 +35,24 @@
     "status": "ACTIVE",
     "createdAt": "2026-11-12T12:43:30.758Z",
     "studentIds": [
-      "AMER-2026-004",
-      "AMER-2026-005",
-      "AMER-2026-006"
+      "AMER-2026-011",
+      "AMER-2026-012",
+      "AMER-2026-013",
+      "AMER-2026-014",
+      "AMER-2026-015",
+      "AMER-2026-016",
+      "AMER-2026-017",
+      "AMER-2026-018",
+      "AMER-2026-019",
+      "AMER-2026-020"
     ]
   },
   {
     "id": "7d94450c-cf1c-4ebe-bd27-9ac0afb45915",
     "name": "Morning Batch",
     "code": "BAT-SAMPLE-MRNG",
-    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
-    "institutionName": "Sri Krishna College of Technology",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "institutionName": "The American College",
     "programId": "905803ab-58d8-447b-8e07-94226eaab99a",
     "programName": "Sample Course",
     "departmentName": "Department of Foreign Languages",
@@ -54,7 +61,7 @@
     "graduationYear": 2027,
     "currentSemesterNumber": 1,
     "sectionsCount": 1,
-    "studentsCount": 3,
+    "studentsCount": 10,
     "courseIds": [
       "905803ab-58d8-447b-8e07-94226eaab99a"
     ],
@@ -78,7 +85,14 @@
     "studentIds": [
       "AMER-2026-001",
       "AMER-2026-002",
-      "AMER-2026-003"
+      "AMER-2026-003",
+      "AMER-2026-004",
+      "AMER-2026-005",
+      "AMER-2026-006",
+      "AMER-2026-007",
+      "AMER-2026-008",
+      "AMER-2026-009",
+      "AMER-2026-010"
     ]
   }
 ]
