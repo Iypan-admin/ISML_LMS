@@ -520,36 +520,6 @@ export default function SuperAdminDashboardPage() {
               })}
             </div>
           </div>
-
-          {/* System Health / Status */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <h2 className="text-sm font-bold text-[#0B2447]">Service Status</h2>
-              </div>
-              <Link
-                href="/super-admin/system-monitoring"
-                className="text-[11px] font-bold text-[#0052CC] hover:underline"
-              >
-                All Services
-              </Link>
-            </div>
-
-            <div className="space-y-2">
-              {mockSystemHealth.slice(0, 3).map((srv, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50">
-                  <div className="min-w-0 pr-2">
-                    <p className="font-bold text-[#0B2447] truncate">{srv.serviceName}</p>
-                    <p className="text-[10px] text-slate-400">{srv.latencyMs}ms latency • 99.98% uptime</p>
-                  </div>
-                  <StatusBadge status={srv.status} />
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
