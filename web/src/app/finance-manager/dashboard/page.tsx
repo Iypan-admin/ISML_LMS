@@ -95,13 +95,6 @@ export default function FinanceManagerDashboardPage() {
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
           <Link
-            href="/finance-manager/approvals"
-            className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm"
-          >
-            <FileCheck className="w-4 h-4 text-slate-950" />
-            <span>Super Admin Approvals ({pendingApprovalsCount})</span>
-          </Link>
-          <Link
             href="/finance-manager/transactions"
             className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-2 border border-white/20"
           >

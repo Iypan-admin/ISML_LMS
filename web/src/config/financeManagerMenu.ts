@@ -58,19 +58,6 @@ export const FINANCE_MANAGER_NAV_SECTIONS: FinanceMenuSection[] = [
     ],
   },
   {
-    title: 'Governance & Authorizations',
-    items: [
-      {
-        id: 'FM_APPROVALS_REQUESTS',
-        label: 'Approvals & Requests',
-        route: '/finance-manager/approvals',
-        iconName: 'FileCheck',
-        badge: 'Super Admin',
-        description: 'Submit fee changes & track Super Admin authorization',
-      },
-    ],
-  },
-  {
     title: 'Analytics & Audit',
     items: [
       {
