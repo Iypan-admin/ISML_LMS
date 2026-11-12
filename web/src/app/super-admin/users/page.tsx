@@ -106,21 +106,57 @@ export default function UsersPage() {
           return !isStudent && !isParent;
         });
 
-        const mapped: SuperAdminUser[] = staffOnly.map((u: any) => ({
-          id: u.id,
-          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Admin User',
-          email: u.email,
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-          roleId: u.userRoles?.[0]?.roleId || 'role-super-admin',
-          roleName: u.userRoles?.[0]?.role?.name || (u.isSuperAdmin ? 'Super Administrator' : u.userType === 'TUTOR' ? 'Senior Faculty / Teacher' : 'Campus Operations Manager'),
-          roleCode: u.userRoles?.[0]?.role?.code || (u.isSuperAdmin ? 'SUPER_ADMIN' : u.userType === 'TUTOR' ? 'FACULTY' : 'STAFF'),
-          collegeId: u.tenantId || '521323cd-00da-49a6-98ed-6b7918d181b4',
-          collegeName: u.tenant?.displayName || u.tenant?.name || 'The American College',
-          status: u.status || 'ACTIVE',
-          permissions: [],
-          lastLoginAt: u.lastLoginAt || new Date().toISOString(),
-          createdAt: u.createdAt || new Date().toISOString(),
-        }));
+        const mapped: SuperAdminUser[] = staffOnly.map((u: any) => {
+          let roleName = u.userRoles?.[0]?.role?.name;
+          let roleCode = u.userRoles?.[0]?.role?.code;
+          let roleId = u.userRoles?.[0]?.roleId;
+
+          if (!roleName) {
+            const emailLower = (u.email || '').toLowerCase();
+            const nameLower = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+            if (u.isSuperAdmin) {
+              roleName = 'Super Administrator';
+              roleCode = 'SUPER_ADMIN';
+              roleId = 'role-super-admin';
+            } else if (emailLower.includes('acad') || nameLower.includes('acad')) {
+              roleName = 'Academic Manager';
+              roleCode = 'ACADEMIC_MANAGER';
+              roleId = 'role-acad-coord';
+            } else if (emailLower.includes('fin') || nameLower.includes('fin')) {
+              roleName = 'Finance Manager';
+              roleCode = 'FINANCE_MANAGER';
+              roleId = 'role-fin-mgr';
+            } else if (emailLower.includes('sales') || nameLower.includes('sales')) {
+              roleName = 'Sales Manager';
+              roleCode = 'SALES_MANAGER';
+              roleId = 'role-sales-manager';
+            } else if (u.userType === 'TUTOR' || emailLower.includes('tutor') || emailLower.includes('joyjk')) {
+              roleName = 'Faculty / Tutor';
+              roleCode = 'TUTOR';
+              roleId = 'role-tutor';
+            } else {
+              roleName = 'Campus Operations Manager';
+              roleCode = 'STAFF';
+              roleId = 'role-manager';
+            }
+          }
+
+          return {
+            id: u.id,
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Admin User',
+            email: u.email,
+            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+            roleId: roleId || 'role-super-admin',
+            roleName: roleName,
+            roleCode: roleCode || 'STAFF',
+            collegeId: u.tenantId || '521323cd-00da-49a6-98ed-6b7918d181b4',
+            collegeName: u.tenant?.displayName || u.tenant?.name || 'All Institutions (Global Access)',
+            status: u.status || 'ACTIVE',
+            permissions: [],
+            lastLoginAt: u.lastLoginAt || new Date().toISOString(),
+            createdAt: u.createdAt || new Date().toISOString(),
+          };
+        });
         setUsers((prev) => {
           const merged = [...prev];
           mapped.forEach((m) => {
