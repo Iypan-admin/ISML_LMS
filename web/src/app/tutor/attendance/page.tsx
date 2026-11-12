@@ -218,8 +218,21 @@ export default function TutorAttendancePage() {
               });
 
               let studentsForThisBatch: RollCallStudent[] = [];
-              const hasRecordedAttendance = liveSavedStudents && liveSavedStudents.length > 0 && (b.id === 'batch-4168' || b.name === 'MRNG BATCH');
-              if (hasRecordedAttendance) {
+              let savedBatchList: any[] | null = null;
+              try {
+                if (typeof window !== 'undefined') {
+                  const bRaw = localStorage.getItem(`isml_batch_attendance_${b.id}`);
+                  if (bRaw) savedBatchList = JSON.parse(bRaw);
+                }
+              } catch {}
+
+              const hasRecordedAttendance =
+                (savedBatchList && savedBatchList.length > 0) ||
+                (liveSavedStudents && liveSavedStudents.length > 0 && (b.id === 'batch-4168' || b.name === 'MRNG BATCH'));
+
+              if (savedBatchList && savedBatchList.length > 0) {
+                studentsForThisBatch = savedBatchList;
+              } else if (hasRecordedAttendance && liveSavedStudents) {
                 studentsForThisBatch = liveSavedStudents;
               } else {
                 studentsForThisBatch = collegeStudents.map((std: any, sIdx: number) => ({
@@ -381,7 +394,21 @@ export default function TutorAttendancePage() {
 
   const handleSaveAttendance = async () => {
     try {
-      const recordsToSync = currentStudents.map((s) => ({
+      // If any students are still PENDING when tutor clicks Save & Finalize, default them to PRESENT
+      const updatedStudents = currentStudents.map((s) => ({
+        ...s,
+        status: (s.status === 'PENDING' ? 'PRESENT' : s.status) as AttendanceState,
+        checkInTime: s.status === 'PENDING' || s.checkInTime === '--:--' ? '07:30 PM' : s.checkInTime,
+        remarks: s.status === 'PENDING' ? 'Verified by Faculty Roll Call' : s.remarks,
+      }));
+
+      // Update in-memory state immediately so UI changes from Pending to Submitted
+      setRosters((prev) => ({
+        ...prev,
+        [activeBatch.batchId]: updatedStudents,
+      }));
+
+      const recordsToSync = updatedStudents.map((s) => ({
         id: `att-${s.rollNo}-${sessionDate}`,
         studentId: s.rollNo,
         studentName: s.name,
@@ -412,12 +439,12 @@ export default function TutorAttendancePage() {
       // 2. Persist to localStorage for client portals (Students, Parents, Academic Manager)
       if (typeof window !== 'undefined') {
         localStorage.setItem('isml_live_roll_call', JSON.stringify(recordsToSync));
-        localStorage.setItem(`isml_batch_attendance_${activeBatch.batchId}`, JSON.stringify(currentStudents));
+        localStorage.setItem(`isml_batch_attendance_${activeBatch.batchId}`, JSON.stringify(updatedStudents));
         localStorage.setItem('isml_live_attendance_sync', JSON.stringify({
           batchId: activeBatch.batchId,
           batchName: activeBatch.batchName,
           date: sessionDate,
-          students: currentStudents,
+          students: updatedStudents,
         }));
 
         // Broadcast cross-tab and cross-component realtime sync event
@@ -432,7 +459,7 @@ export default function TutorAttendancePage() {
           detail: {
             batchId: activeBatch.batchId,
             batchName: activeBatch.batchName,
-            students: currentStudents,
+            students: updatedStudents,
           }
         }));
       }
