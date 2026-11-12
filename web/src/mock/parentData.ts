@@ -93,6 +93,10 @@ export interface StudentChild {
     syllabusCovered: string;
     leadTutorName: string;
     leadTutorEmail: string;
+    batchName?: string;
+    sectionCode?: string;
+    collegeName?: string;
+    progressPercent?: number;
   };
   attendance: ChildAttendanceSummary;
   lsrwScores: ChildLSRWScores;
@@ -106,6 +110,10 @@ export interface StudentChild {
     isFullyPaid: boolean;
     dueDate: string;
     lastPaymentRef: string;
+    status?: string;
+    totalFee?: number;
+    receiptNo?: string;
+    lastReceiptNo?: string;
   };
 }
 

@@ -287,7 +287,7 @@ export default function DoubtsPage() {
           Topics:
         </span>
         {threads.map((thread) => {
-          const isSelected = activeThread.id === thread.id;
+          const isSelected = activeThread?.id === thread.id;
           return (
             <button
               key={thread.id}

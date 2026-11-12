@@ -102,7 +102,7 @@ export default function AcademicManagerProgramsPage() {
       sortable: true,
       render: (row) => (
         <span className="font-bold text-slate-800 text-xs">
-          {row.studentsCount.toLocaleString()}
+          {(row.studentsCount || 0).toLocaleString()}
         </span>
       ),
     },

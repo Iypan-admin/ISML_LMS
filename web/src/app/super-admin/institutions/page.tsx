@@ -187,7 +187,7 @@ export default function InstitutionsPage() {
       header: 'Students',
       sortable: true,
       render: (row) => (
-        <span className="font-semibold text-slate-700">{row.studentsCount.toLocaleString()}</span>
+        <span className="font-semibold text-slate-700">{(row.studentsCount || 0).toLocaleString()}</span>
       ),
     },
     {

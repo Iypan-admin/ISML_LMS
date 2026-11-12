@@ -175,7 +175,7 @@ export default function CertificatePage() {
               <p className="font-bold flex items-center gap-1">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Valid Academic Certificate Issued
               </p>
-              <p className="font-mono text-[11px]">Issued To: <span className="font-bold">{studentName}</span> ({currentStudent.rollNo})</p>
+              <p className="font-mono text-[11px]">Issued To: <span className="font-bold">{student?.name || currentStudent.name}</span> ({student?.rollNo || currentStudent.rollNo})</p>
               <p className="font-mono text-[11px]">Verification Code: {cert.qrVerificationCode}</p>
             </div>
           </div>

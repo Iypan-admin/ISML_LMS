@@ -304,7 +304,7 @@ export default function AcademicManagerTimetablePage() {
   // Auto-fetch Timing, Days, and Trainer configured during batch creation
   const handleBatchSelect = (batchName: string) => {
     setFormBatchName(batchName);
-    const matchedBatch = liveBatchesList.find((b) => b.name === batchName) || mockBatches.find((b) => b.name === batchName);
+    const matchedBatch = liveBatchesList.find((b: any) => b.name === batchName);
     if (matchedBatch) {
       // 1. Auto-fetch Time Slot
       if (matchedBatch.timing || matchedBatch.batchTiming) {
@@ -326,7 +326,6 @@ export default function AcademicManagerTimetablePage() {
         if (dUpper.includes('THU') && !batchScheduleDays.includes('THURSDAY')) batchScheduleDays.push('THURSDAY');
         if (dUpper.includes('FRI') && !batchScheduleDays.includes('FRIDAY')) batchScheduleDays.push('FRIDAY');
         if (dUpper.includes('SAT') && !batchScheduleDays.includes('SATURDAY')) batchScheduleDays.push('SATURDAY');
-        if (dUpper.includes('SUN') && !batchScheduleDays.includes('SUNDAY')) batchScheduleDays.push('SUNDAY');
       });
 
       if (batchScheduleDays.length > 0) {
@@ -614,7 +613,7 @@ export default function AcademicManagerTimetablePage() {
         const next = [...prev];
         slotsInstances.forEach((slotInstance) => {
           if (!next.some((s) => s.id === slotInstance.id)) {
-            next.push({ ...slotInstance, status: 'PENDING_APPROVAL' as any });
+            next.push(slotInstance as any);
           }
         });
         return next;

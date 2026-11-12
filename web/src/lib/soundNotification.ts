@@ -112,6 +112,10 @@ class SoundNotificationEngine {
     this.playHighChime();
   }
 
+  public playNoticeTone() {
+    this.playHighChime();
+  }
+
   /**
    * 💬 Crisp, friendly in-app chat pop notification sound
    * Clean dual-tone bell pop (~150ms) perfect for real-time messaging

@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     if (isAssignAction) {
       // Upsert: If allocation already exists for this batch, update it instead of creating duplicates
       const existingIdx = allocationsDatabase.findIndex(
-        (a) =>
+        (a: any) =>
           a.batchName &&
           body.batchName &&
           a.batchName.toLowerCase().trim() === body.batchName.toLowerCase().trim()
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
         console.warn('Could not persist allocations to file:', err);
       }
 
-      const faculty = facultyDatabase.find((f) => f.id === body.facultyId);
+      const faculty = facultyDatabase.find((f: any) => f.id === body.facultyId);
       if (faculty) {
         if (!faculty.assignedInstitutions) faculty.assignedInstitutions = [];
         if (body.institutionId && !faculty.assignedInstitutions.some((i: any) => i.id === body.institutionId)) {

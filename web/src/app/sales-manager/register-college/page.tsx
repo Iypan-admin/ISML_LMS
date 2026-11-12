@@ -164,9 +164,9 @@ export default function SalesRegisterCollegePage() {
   const [submittedApp, setSubmittedApp] = useState<any | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const currentPartner = partnerCollegesList.find((c) => c.id === selectedCollegeId) || partnerCollegesList[0];
-  const collegeNameResolved = isMoUPartner ? currentPartner.name : (customCollegeName || 'Independent College');
-  const collegeCodeResolved = isMoUPartner ? currentPartner.code : 'IND-COL';
+  const currentPartner = partnerCollegesList.find((c) => c.id === selectedCollegeId) || partnerCollegesList[0] || { name: 'Partner College', code: 'COL-01' };
+  const collegeNameResolved = isMoUPartner ? (currentPartner?.name || 'Partner College') : (customCollegeName || 'Independent College');
+  const collegeCodeResolved = isMoUPartner ? (currentPartner?.code || 'COL-01') : 'IND-COL';
   const selectedLangObj = languagesOffered.find((l) => l.lang === indLanguage) || languagesOffered[0];
 
   // Bulk File Upload (CSV Parser)
