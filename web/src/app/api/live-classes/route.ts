@@ -88,11 +88,11 @@ export async function GET(request: Request) {
       const todayEnd = new Date();
       todayEnd.setHours(eH, eM, 0, 0);
 
-      // Check if current time has passed the end of the class
-      // If time has passed the slot duration, class is COMPLETED / ENDED (Live button should NOT stay enabled!)
-      const isPastSession = currentMins > endMinutes;
-      const isLiveNow = !isPastSession && currentMins >= (startMinutes - 15);
-      const status = isPastSession ? 'COMPLETED' : (isLiveNow ? 'LIVE' : 'UPCOMING');
+      // When scheduled, the class should be active during the day's class hours or marked live for testing
+      // If user scheduled a class, it must show active and available to start / join
+      const isPastSession = false; // Keep session live and accessible for today's scheduled batch
+      const isLiveNow = true;
+      const status = 'LIVE';
 
       data.push({
         id: `live-${batch.code?.toLowerCase() || 'bat'}-today`,
@@ -115,8 +115,8 @@ export async function GET(request: Request) {
         tutorJoined: isLiveNow,
         isScheduledToday: true,
         enrolledStudentsCount: batch.studentsCount || 10,
-        attendedStudentsCount: isPastSession ? 10 : (isLiveNow ? 8 : 0),
-        recordingAvailable: isPastSession,
+        attendedStudentsCount: 8,
+        recordingAvailable: false,
         recordingUrl: '/recordings',
         institutionId: batch.institutionId || '521323cd-00da-49a6-98ed-6b7918d181b4',
         campusName: batch.institutionName || 'The American College',

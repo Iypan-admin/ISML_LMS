@@ -115,10 +115,11 @@ export default function TutorLiveClassesPage() {
             }
           }
 
-          // A class is only live now if it is for today AND currently in progress
+          // Check if this class is for today's scheduled batch
+          const isTodaySession = item.isScheduledToday || isToday || item.id?.includes('today');
           const isEnded = item.status === 'ENDED' || item.status === 'COMPLETED' || isPastDate;
           const isUpcoming = item.status === 'UPCOMING' || isFutureDate;
-          const isBroadcastingNow = !isEnded && !isUpcoming && (item.status === 'LIVE' || isTimeSlotActive);
+          const isBroadcastingNow = isTodaySession && !isEnded && !isUpcoming;
 
           const computedStatus = isBroadcastingNow
             ? 'LIVE_NOW'
