@@ -81,6 +81,12 @@ export default function AcademicManagerAttendancePage() {
       .then(async (json) => {
         const rawList = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
 
+        // Check if tutor recently submitted roll call in localStorage
+        let localRollCall: any[] = [];
+        try {
+          localRollCall = JSON.parse(localStorage.getItem('isml_live_roll_call') || '[]');
+        } catch {}
+
         // For each class, fetch interactive attendance if available
         const enriched: LiveClassAttendanceRecord[] = await Promise.all(
           rawList.map(async (c: any) => {
@@ -92,6 +98,31 @@ export default function AcademicManagerAttendancePage() {
                 attendees = stateJson.data.attendance;
               }
             } catch {}
+
+            // Merge any local roll call entries matching this batch or course
+            if (localRollCall.length > 0) {
+              const matchingRoll = localRollCall.filter(
+                (r: any) =>
+                  (r.batchName && c.batchName && r.batchName.toLowerCase() === c.batchName.toLowerCase()) ||
+                  (r.courseName && c.courseName && r.courseName.toLowerCase() === c.courseName.toLowerCase()) ||
+                  (r.sessionTopic && c.title && r.sessionTopic.toLowerCase().includes(c.title.toLowerCase()))
+              );
+              if (matchingRoll.length > 0) {
+                matchingRoll.forEach((mr: any) => {
+                  if (mr.status === 'PRESENT' || mr.status === 'LATE') {
+                    if (!attendees.some((a: any) => a.studentId === mr.studentId || a.id === mr.studentId || a.name === mr.studentName)) {
+                      attendees.push({
+                        id: mr.studentId,
+                        studentId: mr.studentId,
+                        name: mr.studentName,
+                        checkInTime: mr.timeSlot || '10:00 AM',
+                        status: mr.status,
+                      });
+                    }
+                  }
+                });
+              }
+            }
 
             const attendedCount = attendees.length > 0 ? attendees.length : (c.attendedStudentsCount || 0);
             const enrolledCount = c.enrolledStudentsCount && c.enrolledStudentsCount > 0 ? c.enrolledStudentsCount : Math.max(attendedCount, 1);
@@ -131,7 +162,14 @@ export default function AcademicManagerAttendancePage() {
   useEffect(() => {
     fetchAttendance();
     const interval = setInterval(fetchAttendance, 4000);
-    return () => clearInterval(interval);
+
+    const handleSync = () => fetchAttendance();
+    window.addEventListener('isml-realtime-event', handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('isml-realtime-event', handleSync);
+    };
   }, []);
 
   // Filter based on College Scope, Search, and Status

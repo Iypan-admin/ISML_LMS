@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
 import { RealtimeSyncProvider } from "@/context/RealtimeSyncContext";
+import MobileBackHandler from "@/components/common/MobileBackHandler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="en" className="overflow-x-hidden max-w-full" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased min-h-screen bg-slate-50 font-sans overflow-x-hidden max-w-full`} suppressHydrationWarning>
         <RealtimeSyncProvider>
+          <MobileBackHandler />
           <AppShell>{children}</AppShell>
         </RealtimeSyncProvider>
       </body>

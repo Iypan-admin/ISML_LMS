@@ -168,7 +168,7 @@ export default function TutorAttendancePage() {
               liveSavedStudents = Array.isArray(parsed) ? parsed : parsed.students;
             }
           }
-        } catch {}
+        } catch { }
 
         const parsedCourses: CourseItem[] = assignedCourses.map((c: any, idx: number) => {
           const style = PASTEL_STYLES[idx % PASTEL_STYLES.length];
@@ -193,10 +193,10 @@ export default function TutorAttendancePage() {
                 matchedAlloc?.tutorRole === 'LEAD_TRAINER'
                   ? 'Lead Native Trainer'
                   : matchedAlloc?.tutorRole === 'SUBSTITUTE_TUTOR'
-                  ? 'Substitute Standby'
-                  : matchedAlloc?.tutorRole === 'DOUBT_SOLVING_TUTOR'
-                  ? 'Doubt Clearing Faculty'
-                  : 'Assistant Evaluator';
+                    ? 'Substitute Standby'
+                    : matchedAlloc?.tutorRole === 'DOUBT_SOLVING_TUTOR'
+                      ? 'Doubt Clearing Faculty'
+                      : 'Assistant Evaluator';
 
               const schedule = matchedAlloc?.scheduleSlots?.[0] || b.batchTiming || '07:30 PM – 11:00 PM';
 
@@ -357,10 +357,10 @@ export default function TutorAttendancePage() {
       [activeBatch.batchId]: prev[activeBatch.batchId].map((s) =>
         s.id === studentId
           ? {
-              ...s,
-              status: newStatus,
-              checkInTime: newStatus === 'ABSENT' || newStatus === 'EXCUSED' ? '--:--' : s.checkInTime === '--:--' ? '10:05 AM' : s.checkInTime,
-            }
+            ...s,
+            status: newStatus,
+            checkInTime: newStatus === 'ABSENT' || newStatus === 'EXCUSED' ? '--:--' : s.checkInTime === '--:--' ? '10:05 AM' : s.checkInTime,
+          }
           : s
       ),
     }));
@@ -399,6 +399,7 @@ export default function TutorAttendancePage() {
         approvedBy: `${currentFaculty.name} (Tutor Roll Call)`
       }));
 
+      // 1. Sync to local database API
       await fetch('/api/portals/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -408,14 +409,39 @@ export default function TutorAttendancePage() {
         })
       });
 
+      // 2. Persist to localStorage for client portals (Students, Parents, Academic Manager)
       if (typeof window !== 'undefined') {
         localStorage.setItem('isml_live_roll_call', JSON.stringify(recordsToSync));
-        window.dispatchEvent(new CustomEvent('isml-realtime-event', { detail: { type: 'ATTENDANCE_UPDATED' } }));
+        localStorage.setItem(`isml_batch_attendance_${activeBatch.batchId}`, JSON.stringify(currentStudents));
+        localStorage.setItem('isml_live_attendance_sync', JSON.stringify({
+          batchId: activeBatch.batchId,
+          batchName: activeBatch.batchName,
+          date: sessionDate,
+          students: currentStudents,
+        }));
+
+        // Broadcast cross-tab and cross-component realtime sync event
+        window.dispatchEvent(new CustomEvent('isml-realtime-event', {
+          detail: {
+            type: 'ATTENDANCE_UPDATED',
+            batchId: activeBatch.batchId,
+            records: recordsToSync,
+          }
+        }));
+        window.dispatchEvent(new CustomEvent('isml-live-attendance-updated', {
+          detail: {
+            batchId: activeBatch.batchId,
+            batchName: activeBatch.batchName,
+            students: currentStudents,
+          }
+        }));
       }
-    } catch {}
+    } catch (e) {
+      console.warn('Error saving attendance:', e);
+    }
 
     showSuccess(
-      `Attendance finalized & signed for ${activeCourse.code} • ${activeBatch.batchName} (${sessionDate}). Synced to student portals.`
+      `Attendance finalized & signed for ${activeCourse.code} • ${activeBatch.batchName} (${sessionDate}). Synced to Student, Parent & Academic Manager portals.`
     );
   };
 
@@ -486,11 +512,10 @@ export default function TutorAttendancePage() {
               <button
                 key={crs.id}
                 onClick={() => handleSelectCourse(crs.id)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${
-                  isSelected
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 relative overflow-hidden ${isSelected
                     ? `${crs.pastelBg} border-[#0052CC] ring-2 ring-blue-500/20 shadow-md`
                     : 'bg-white hover:bg-slate-50/80 border-slate-200/90 shadow-2xs'
-                }`}
+                  }`}
               >
                 {/* Active selection ribbon */}
                 {isSelected && (
@@ -562,11 +587,10 @@ export default function TutorAttendancePage() {
               <button
                 key={b.batchId}
                 onClick={() => setSelectedBatchId(b.batchId)}
-                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                  isSelected
+                className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${isSelected
                     ? 'bg-blue-50/90 border-[#0052CC] ring-2 ring-blue-500/20 shadow-xs'
                     : 'bg-slate-50/70 hover:bg-slate-100/70 border-slate-200'
-                }`}
+                  }`}
               >
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -647,11 +671,10 @@ export default function TutorAttendancePage() {
             <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">PRESENT TODAY</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-xl font-black text-emerald-950">{presentCount}</span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                isPendingAttendance
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${isPendingAttendance
                   ? 'text-amber-800 bg-amber-100'
                   : 'text-emerald-700 bg-emerald-100'
-              }`}>
+                }`}>
                 {isPendingAttendance ? 'Pending' : `${attendanceRate}%`}
               </span>
             </div>
@@ -788,13 +811,12 @@ export default function TutorAttendancePage() {
                       <div className="flex items-center gap-2">
                         <div className="w-16 bg-slate-200 h-2 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${
-                              st.overallAttendancePct >= 85
+                            className={`h-full rounded-full ${st.overallAttendancePct >= 85
                                 ? 'bg-emerald-500'
                                 : st.overallAttendancePct >= 75
-                                ? 'bg-amber-500'
-                                : 'bg-rose-500'
-                            }`}
+                                  ? 'bg-amber-500'
+                                  : 'bg-rose-500'
+                              }`}
                             style={{ width: `${st.overallAttendancePct}%` }}
                           />
                         </div>
@@ -817,41 +839,37 @@ export default function TutorAttendancePage() {
                         )}
                         <button
                           onClick={() => setStudentStatus(st.id, 'PRESENT')}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                            st.status === 'PRESENT'
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${st.status === 'PRESENT'
                               ? 'bg-emerald-600 text-white shadow-xs'
                               : 'text-slate-600 hover:text-emerald-700'
-                          }`}
+                            }`}
                         >
                           Present
                         </button>
                         <button
                           onClick={() => setStudentStatus(st.id, 'LATE')}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                            st.status === 'LATE'
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${st.status === 'LATE'
                               ? 'bg-amber-500 text-slate-950 shadow-xs'
                               : 'text-slate-600 hover:text-amber-700'
-                          }`}
+                            }`}
                         >
                           Late
                         </button>
                         <button
                           onClick={() => setStudentStatus(st.id, 'ABSENT')}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                            st.status === 'ABSENT'
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${st.status === 'ABSENT'
                               ? 'bg-rose-600 text-white shadow-xs'
                               : 'text-slate-600 hover:text-rose-700'
-                          }`}
+                            }`}
                         >
                           Absent
                         </button>
                         <button
                           onClick={() => setStudentStatus(st.id, 'EXCUSED')}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                            st.status === 'EXCUSED'
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${st.status === 'EXCUSED'
                               ? 'bg-blue-600 text-white shadow-xs'
                               : 'text-slate-600 hover:text-blue-700'
-                          }`}
+                            }`}
                         >
                           Excused
                         </button>
