@@ -298,84 +298,8 @@ export default function SuperAdminDashboardPage() {
 
       {/* ─── 3. Main Dashboard Split: Recent Approval Requests vs System Status ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (2 Cols): Pending Approval Queue */}
+        {/* Left Column (2 Cols): Courses & Core Systems */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700">
-                  <CheckSquare className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-[#0B2447]">
-                    Recent Approval Requests
-                  </h2>
-                  <p className="text-[11px] text-slate-500">
-                    Prepared by Academic & Finance Managers awaiting your authorization
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/super-admin/approvals"
-                className="text-xs font-bold text-[#0052CC] hover:underline flex items-center gap-1"
-              >
-                <span>Approval Center</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {displayApprovals.length === 0 ? (
-                <div className="p-8 text-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400">
-                    <CheckSquare className="w-5 h-5" />
-                  </div>
-                  <p className="text-xs font-bold text-slate-700">No Pending Approvals</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    All workflow requests will appear here when submitted from Academic or Finance portals.
-                  </p>
-                </div>
-              ) : (
-                displayApprovals.slice(0, 4).map((req) => (
-                  <div
-                    key={req.id}
-                    className="p-3 sm:p-4 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 min-w-0"
-                  >
-                    <div className="space-y-1.5 min-w-0 flex-1 w-full">
-                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <span className="font-mono text-[11px] font-bold text-[#0052CC] bg-blue-50 px-2 py-0.5 rounded">
-                          {req.id}
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700 font-semibold">
-                          {req.entityType || req.module || 'Workflow'}
-                        </span>
-                        <StatusBadge status={req.currentStatus || req.status} />
-                      </div>
-
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug break-words">
-                        <span className="text-[#0052CC] font-extrabold mr-1">{req.requestType}:</span>
-                        <span>{req.title || req.entityName}</span>
-                      </h3>
-
-                      <p className="text-[11px] text-slate-500 break-words leading-relaxed">
-                        Submitted by <strong className="text-slate-700">{req.submittedBy?.name || req.requestedByUserId || 'Academic Manager'}</strong> • <span suppressHydrationWarning>{new Date(req.createdAt || req.submittedDate || Date.now()).toLocaleDateString()}</span>
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 flex items-center justify-end w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
-                      <Link
-                        href="/super-admin/approvals"
-                        className="w-full sm:w-auto text-center px-4 py-2 bg-[#0052CC] hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-2xs hover:shadow-sm"
-                      >
-                        Review Request
-                      </Link>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
           {/* Real-time Courses & Curriculum Catalog */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
