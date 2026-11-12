@@ -13,7 +13,7 @@
     "graduationYear": 2027,
     "currentSemesterNumber": 1,
     "sectionsCount": 1,
-    "studentsCount": 25,
+    "studentsCount": 3,
     "courseIds": [
       "905803ab-58d8-447b-8e07-94226eaab99a"
     ],
@@ -33,7 +33,12 @@
     "leadFacultyId": "fac-201834",
     "leadFacultyName": "Joy JK",
     "status": "ACTIVE",
-    "createdAt": "2026-11-12T12:43:30.758Z"
+    "createdAt": "2026-11-12T12:43:30.758Z",
+    "studentIds": [
+      "AMER-2026-004",
+      "AMER-2026-005",
+      "AMER-2026-006"
+    ]
   },
   {
     "id": "7d94450c-cf1c-4ebe-bd27-9ac0afb45915",
@@ -49,7 +54,7 @@
     "graduationYear": 2027,
     "currentSemesterNumber": 1,
     "sectionsCount": 1,
-    "studentsCount": 25,
+    "studentsCount": 3,
     "courseIds": [
       "905803ab-58d8-447b-8e07-94226eaab99a"
     ],
@@ -69,6 +74,11 @@
     "leadFacultyId": "fac-201834",
     "leadFacultyName": "Joy JK",
     "status": "ACTIVE",
-    "createdAt": "2026-11-12T12:43:30.758Z"
+    "createdAt": "2026-11-12T12:43:30.758Z",
+    "studentIds": [
+      "AMER-2026-001",
+      "AMER-2026-002",
+      "AMER-2026-003"
+    ]
   }
 ]
