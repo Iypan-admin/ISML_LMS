@@ -1,5 +1,53 @@
 [
   {
+    "id": "alloc-joy-sample-mrng",
+    "facultyId": "fac-201834",
+    "facultyName": "Joy JK",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "tutorRole": "LEAD_TRAINER",
+    "institutionType": "COLLEGE",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "institutionName": "The American College",
+    "courseId": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "courseCode": "SAMPLE-CRS-101",
+    "courseName": "Sample Course",
+    "subjectCode": "SAMPLE-CRS-101",
+    "subjectName": "Sample Course",
+    "batchId": "7d94450c-cf1c-4ebe-bd27-9ac0afb45915",
+    "batchName": "Morning Batch",
+    "languageFamily": "FRENCH",
+    "scheduleSlots": [
+      "Mon, Wed, Fri 09:00 AM - 10:30 AM"
+    ],
+    "status": "ACTIVE",
+    "effectiveFrom": "2026-11-12",
+    "notes": "Lead Faculty Trainer for Sample Course Morning Batch"
+  },
+  {
+    "id": "alloc-joy-sample-evng",
+    "facultyId": "fac-201834",
+    "facultyName": "Joy JK",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "tutorRole": "LEAD_TRAINER",
+    "institutionType": "COLLEGE",
+    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "institutionName": "The American College",
+    "courseId": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "courseCode": "SAMPLE-CRS-101",
+    "courseName": "Sample Course",
+    "subjectCode": "SAMPLE-CRS-101",
+    "subjectName": "Sample Course",
+    "batchId": "9c4ab99e-3fd9-4212-ba60-0e3dfab3efc5",
+    "batchName": "Evening Batch",
+    "languageFamily": "FRENCH",
+    "scheduleSlots": [
+      "Tue, Thu, Sat 06:00 PM - 07:30 PM"
+    ],
+    "status": "ACTIVE",
+    "effectiveFrom": "2026-11-12",
+    "notes": "Lead Faculty Trainer for Sample Course Evening Batch"
+  },
+  {
     "id": "alloc-joy-amer-01",
     "facultyId": "fac-201834",
     "facultyName": "Joy JK",
@@ -17,7 +65,7 @@
     "batchName": "MRNG BATCH (The American College)",
     "languageFamily": "FRENCH",
     "scheduleSlots": [
-      "Mon & Wed 10:00 AM - 11:30 AM"
+      "Mon, Wed, Fri 06:30 PM - 09:00 PM"
     ],
     "status": "ACTIVE",
     "effectiveFrom": "2026-10-15",

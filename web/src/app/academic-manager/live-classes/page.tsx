@@ -33,23 +33,23 @@ export default function AcademicManagerLiveClassesPage() {
   // Fetch live classes from backend API (live status always fresh without stale cache)
   const fetchLiveClasses = React.useCallback(async () => {
     try {
-      const res = await fetch('https://ismllms-production.up.railway.app/api/live-classes', { cache: 'no-store' });
+      const res = await fetch('/api/live-classes', { cache: 'no-store' });
       const json = await res.json();
       if (json?.data && Array.isArray(json.data)) {
         const mapped: ClassSessionItem[] = json.data.map((c: any) => ({
           id: c.id,
           subjectName: c.title || c.subjectName,
-          programName: c.courseName || 'Foreign Language Certification',
+          programName: c.courseName || 'Sample Course',
           batchName: c.batchName || 'Interactive Batch',
           facultyName: c.tutorName || 'Certified Tutor',
           deliveryMode: 'ONLINE',
           meetingUrl: c.meetingUrl,
           roomOrLink: c.roomName || c.meetingUrl,
-          date: c.scheduledStartTime ? c.scheduledStartTime.split('T')[0] : '2026-11-03',
-          timeSlot: `${c.durationMinutes || 60} Mins Session`,
-          attendeesCount: c.enrolledStudentsCount || 35,
-          institutionId: c.institutionId || 'inst-01',
-          status: (c.status === 'LIVE' || c.tutorJoined === true) ? 'LIVE_NOW' : c.status === 'DRAFT' ? 'DRAFT' : 'UPCOMING',
+          date: c.scheduledStartTime ? c.scheduledStartTime.split('T')[0] : '2026-11-12',
+          timeSlot: c.timeSlot || `${c.durationMinutes || 90} Mins Session`,
+          attendeesCount: c.enrolledStudentsCount || 10,
+          institutionId: c.institutionId || '521323cd-00da-49a6-98ed-6b7918d181b4',
+          status: (c.status === 'LIVE' || c.isBroadcastingNow || c.tutorJoined === true) ? 'LIVE_NOW' : c.status === 'DRAFT' ? 'DRAFT' : 'UPCOMING',
         }));
         setClasses(mapped);
       }
@@ -244,13 +244,13 @@ export default function AcademicManagerLiveClassesPage() {
                   topic: row.subjectName,
                   subjectName: row.subjectName,
                   batchName: row.batchName,
-                  batchCode: 'FR-A1-ONLINE',
+                  batchCode: row.batchName?.includes('EVNG') ? 'BAT-SAMPLE-EVNG' : 'BAT-SAMPLE-MRNG',
                   facultyName: row.facultyName,
                   date: row.date,
                   timeSlot: row.timeSlot,
                   status: 'LIVE_NOW',
                   roomOrLink: row.meetingUrl || row.roomOrLink,
-                  attendeesCount: row.attendeesCount || 38,
+                  attendeesCount: row.attendeesCount || 10,
                 });
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${

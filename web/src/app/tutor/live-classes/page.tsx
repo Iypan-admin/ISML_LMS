@@ -34,8 +34,8 @@ export default function TutorLiveClassesPage() {
   const { currentFaculty, myAllocations, canStartLiveClassForBatch } = useTutor();
   const [classes, setClasses] = useState<LiveClass[]>([]);
   useEffect(() => {
-    // 1. Fetch live classes from backend
-    fastFetch('https://ismllms-production.up.railway.app/api/live-classes', (json) => {
+    // 1. Fetch live classes from API route (local fallback + remote)
+    fastFetch('/api/live-classes', (json) => {
       if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
         const mapped: LiveClass[] = json.data.map((item: any) => {
           // Check if tutor allocation overrides slot timing
@@ -73,9 +73,14 @@ export default function TutorLiveClassesPage() {
           const formattedTimeSlot = timeSlotFormatted || `${formatTime(startDate)} – ${formatTime(endDate)}`;
           const formattedDate = formatDate(startDate);
 
-          // Real-time slot status check: enable button if scheduled slot is currently active!
+          // Check date & time slot strictly for this individual class item!
+          const isToday = startDate.toDateString() === new Date().toDateString();
+          const isPastDate = !isToday && startDate.getTime() < Date.now();
+          const isFutureDate = !isToday && startDate.getTime() > Date.now();
+
           let isTimeSlotActive = false;
-          if (matchingAlloc && matchingAlloc.scheduleSlots && matchingAlloc.scheduleSlots.length > 0) {
+          // Only check slot activity if this item is actually scheduled for TODAY
+          if (isToday && matchingAlloc && matchingAlloc.scheduleSlots && matchingAlloc.scheduleSlots.length > 0) {
             const now = new Date();
             const currentDay = now.getDay();
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -110,7 +115,18 @@ export default function TutorLiveClassesPage() {
             }
           }
 
-          const isBroadcastingNow = item.status === 'LIVE' || isTimeSlotActive;
+          // A class is only live now if it is for today AND currently in progress
+          const isEnded = item.status === 'ENDED' || item.status === 'COMPLETED' || isPastDate;
+          const isUpcoming = item.status === 'UPCOMING' || isFutureDate;
+          const isBroadcastingNow = !isEnded && !isUpcoming && (item.status === 'LIVE' || isTimeSlotActive);
+
+          const computedStatus = isBroadcastingNow
+            ? 'LIVE_NOW'
+            : isEnded
+            ? 'COMPLETED'
+            : isUpcoming
+            ? 'UPCOMING'
+            : 'TODAY';
 
           return {
             id: item.id,
@@ -118,16 +134,16 @@ export default function TutorLiveClassesPage() {
             tutorName: item.tutorName || 'Lead Trainer',
             tutorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
             tutorTitle: 'Certified Faculty',
-            status: isBroadcastingNow ? 'LIVE_NOW' : item.status === 'ENDED' ? 'COMPLETED' : 'TODAY',
+            status: computedStatus as any,
             date: formattedDate,
             timeSlot: formattedTimeSlot,
             durationMins: duration,
-            batchCode: item.batchName || 'BAT-01',
+            batchCode: item.batchCode || item.batchName || 'BAT-01',
             batchName: item.batchName || 'General Batch',
             moduleName: item.courseName || 'Language Certification',
             roomToken: item.roomName || item.id,
             attendeesCount: item.enrolledStudentsCount || 0,
-            recordingAvailable: false,
+            recordingAvailable: item.recordingAvailable || false,
           };
         });
         setClasses(mapped);
@@ -135,7 +151,7 @@ export default function TutorLiveClassesPage() {
     });
   }, [myAllocations]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'LIVE_NOW' | 'TODAY'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'LIVE_NOW' | 'TODAY' | 'UPCOMING' | 'COMPLETED'>('ALL');
   const [activeWebinar, setActiveWebinar] = useState<LiveClass | null>(null);
 
   // Restore active webinar on client mount from localStorage / sessionStorage
@@ -211,7 +227,9 @@ export default function TutorLiveClassesPage() {
     }
 
     if (statusFilter === 'LIVE_NOW' && c.status !== 'LIVE_NOW') return false;
-    if (statusFilter === 'TODAY' && c.status !== 'TODAY') return false;
+    if (statusFilter === 'TODAY' && c.status !== 'TODAY' && c.status !== 'LIVE_NOW') return false;
+    if (statusFilter === 'UPCOMING' && c.status !== 'UPCOMING') return false;
+    if (statusFilter === 'COMPLETED' && c.status !== 'COMPLETED') return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return c.topic.toLowerCase().includes(q) || c.batchName.toLowerCase().includes(q);
@@ -279,17 +297,23 @@ export default function TutorLiveClassesPage() {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto">
-          {(['ALL', 'LIVE_NOW', 'TODAY'] as const).map((st) => (
+          {([
+            { id: 'ALL', label: 'All Classes' },
+            { id: 'LIVE_NOW', label: '🔴 Live Now' },
+            { id: 'TODAY', label: "Today's Sessions" },
+            { id: 'UPCOMING', label: 'Upcoming' },
+            { id: 'COMPLETED', label: 'Completed & VOD' }
+          ] as const).map((st) => (
             <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
+              key={st.id}
+              onClick={() => setStatusFilter(st.id as any)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 ${
-                statusFilter === st
+                statusFilter === st.id
                   ? 'bg-[#0052CC] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {st === 'ALL' ? 'All Classes' : st === 'LIVE_NOW' ? '🔴 Live Now' : 'Today’s Sessions'}
+              {st.label}
             </button>
           ))}
         </div>
@@ -326,9 +350,17 @@ export default function TutorLiveClassesPage() {
                       <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
                       <span>Broadcasting Now</span>
                     </span>
+                  ) : cls.status === 'COMPLETED' ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                      Completed • Recording Available
+                    </span>
+                  ) : cls.status === 'UPCOMING' ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      Upcoming • {cls.date}
+                    </span>
                   ) : (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#0052CC] border border-blue-200">
-                      Scheduled {cls.date}
+                      Scheduled Today • {cls.date}
                     </span>
                   )}
                 </div>
@@ -364,8 +396,14 @@ export default function TutorLiveClassesPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Strict Live Time Enforcement: Enable if LIVE_NOW OR if tutor is LEAD_TRAINER for this cohort */}
-                  {cls.status === 'LIVE_NOW' || isLead || isSubstitute ? (
+                  {cls.status === 'COMPLETED' ? (
+                    <Link
+                      href="/tutor/recordings"
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                    >
+                      <span>View Cloud VOD & Attendance</span>
+                    </Link>
+                  ) : cls.status === 'LIVE_NOW' ? (
                     isLead || isSubstitute ? (
                       /* Main Tutor / Host who starts the lecture */
                       <button
@@ -386,7 +424,7 @@ export default function TutorLiveClassesPage() {
                       </button>
                     )
                   ) : (
-                    /* Disabled state when class is not live right now */
+                    /* Disabled state when class is not within the scheduled time slot */
                     <button
                       disabled
                       aria-disabled="true"
@@ -394,7 +432,7 @@ export default function TutorLiveClassesPage() {
                       className="px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-75 select-none"
                     >
                       <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Starts at {cls.timeSlot.split('-')[0].trim()}</span>
+                      <span>Starts at {cls.timeSlot.split(/[-–]/)[0]?.trim() || cls.timeSlot}</span>
                     </button>
                   )}
                 </div>

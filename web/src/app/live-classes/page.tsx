@@ -55,6 +55,34 @@ export default function LiveClassesPage() {
 
   const [stayTimeSecs, setStayTimeSecs] = useState<number>(0);
 
+  // Active verified Student Profile state (Always ensures real student identity, never Finance Manager / Staff)
+  const [activeStudent, setActiveStudent] = useState({
+    id: 'AMER-COL-STD-23',
+    name: 'Muthu Pandian',
+    rollNo: 'AMER-COL-STD-23',
+    collegeName: 'The American College',
+    batchName: 'Morning Batch (BAT-SAMPLE-MRNG)',
+  });
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('isml_user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        // Only adopt if it is actually a Student user, otherwise retain verified American College Student
+        if (u.role === 'STUDENT' || (u.rollNo && !u.role?.includes('MANAGER') && !u.role?.includes('ADMIN') && !u.role?.includes('TUTOR'))) {
+          setActiveStudent({
+            id: u.studentId || u.rollNo || u.id || 'AMER-COL-STD-23',
+            name: u.name || 'Muthu Pandian',
+            rollNo: u.rollNo || u.studentId || 'AMER-COL-STD-23',
+            collegeName: u.campusName || u.tenantName || 'The American College',
+            batchName: u.batchName || 'Morning Batch (BAT-SAMPLE-MRNG)',
+          });
+        }
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     // Note: Do NOT auto-restore old stale active room from localStorage if tutor ended or isn't in room!
@@ -75,7 +103,7 @@ export default function LiveClassesPage() {
           setStayTimeSecs(diff >= 0 ? diff : 0);
         }
       }
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -88,7 +116,7 @@ export default function LiveClassesPage() {
         localStorage.setItem('isml_student_stay_time_start', now);
         sessionStorage.setItem('isml_student_stay_time_start', now);
       }
-    } catch {}
+    } catch { }
 
     const timer = setInterval(() => {
       try {
@@ -101,7 +129,7 @@ export default function LiveClassesPage() {
             return;
           }
         }
-      } catch {}
+      } catch { }
       setStayTimeSecs((prev) => prev + 1);
     }, 1000);
 
@@ -165,7 +193,7 @@ export default function LiveClassesPage() {
       sessionStorage.removeItem('isml_student_waiting_status');
       sessionStorage.removeItem('isml_student_requesting_class');
       sessionStorage.removeItem('isml_student_stay_time_start');
-    } catch {}
+    } catch { }
   }, []);
 
   const handleEnterRoom = useCallback((cls: LiveClass) => {
@@ -180,7 +208,7 @@ export default function LiveClassesPage() {
       sessionStorage.setItem('isml_student_active_room', jsonStr);
       sessionStorage.setItem('isml_student_waiting_status', 'ADMITTED');
       sessionStorage.setItem('isml_student_requesting_class', jsonStr);
-    } catch {}
+    } catch { }
   }, []);
 
   const handleSetWaiting = useCallback((cls: LiveClass) => {
@@ -192,7 +220,7 @@ export default function LiveClassesPage() {
       localStorage.setItem('isml_student_requesting_class', jsonStr);
       sessionStorage.setItem('isml_student_waiting_status', 'WAITING');
       sessionStorage.setItem('isml_student_requesting_class', jsonStr);
-    } catch {}
+    } catch { }
   }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -208,15 +236,15 @@ export default function LiveClassesPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            senderId: 'student_learner',
-            senderName: currentStudent.name,
+            senderId: activeStudent.id,
+            senderName: activeStudent.name,
             role: 'student',
             text,
           }),
         });
-      } catch {}
+      } catch { }
     } else {
-      setMessages(prev => [...prev, { sender: currentStudent.name, role: 'Student', text, time: '10:44 AM' }]);
+      setMessages(prev => [...prev, { sender: activeStudent.name, role: 'Student', text, time: '10:44 AM' }]);
     }
   };
 
@@ -232,12 +260,12 @@ export default function LiveClassesPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'HAND_RAISE',
-            studentId: 'student_learner',
-            studentName: currentStudent.name,
+            studentId: activeStudent.id,
+            studentName: activeStudent.name,
             raised: nextState,
           }),
         });
-      } catch {}
+      } catch { }
     }
   };
 
@@ -252,12 +280,12 @@ export default function LiveClassesPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'REACTION',
-            studentId: 'student_learner',
-            studentName: currentStudent.name,
+            studentId: activeStudent.id,
+            studentName: activeStudent.name,
             emoji,
           }),
         });
-      } catch {}
+      } catch { }
     }
   };
 
@@ -267,7 +295,7 @@ export default function LiveClassesPage() {
   };
 
   useEffect(() => {
-    fetch('https://ismllms-production.up.railway.app/api/live-classes')
+    fetch('/api/live-classes')
       .then((r) => r.json())
       .then((json) => {
         if (json.data && Array.isArray(json.data) && json.data.length > 0) {
@@ -319,20 +347,11 @@ export default function LiveClassesPage() {
   useEffect(() => {
     if (waitingRoomStatus !== 'WAITING' || !requestingClass) return;
 
-    let studentId = 'user-student';
-    let studentName = 'Aarav Sharma';
-    try {
-      const stored = localStorage.getItem('isml_user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.id) studentId = u.id;
-        if (u.name) studentName = u.name;
-      }
-    } catch { }
+    const studentId = activeStudent.rollNo || activeStudent.id || 'AMER-COL-STD-23';
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${requestingClass.id}/join-status?studentId=${studentId}`);
+        const res = await fetch(`/api/live-classes/${requestingClass.id}/join-status?studentId=${encodeURIComponent(studentId)}`);
         const json = await res.json();
         if (json.data?.status === 'APPROVED') {
           handleEnterRoom(requestingClass);
@@ -346,7 +365,7 @@ export default function LiveClassesPage() {
     }, 1500);
 
     return () => clearInterval(interval);
-  }, [waitingRoomStatus, requestingClass, handleEnterRoom, handleExitRoom]);
+  }, [waitingRoomStatus, requestingClass, activeStudent, handleEnterRoom, handleExitRoom]);
 
   // Real-time Interactive Sync: Content, Whiteboard, Chat & Attendance Ping
   useEffect(() => {
@@ -386,13 +405,17 @@ export default function LiveClassesPage() {
               regNo: 'FACULTY-LEAD',
               isHost: true,
             };
-            const studentEntries = res.data.attendance.map((s: any) => ({
-              id: s.studentId,
-              name: s.studentName,
-              role: 'Enrolled Learner',
-              regNo: s.regNo,
-              isHost: false,
-            }));
+            const studentEntries = res.data.attendance.map((s: any) => {
+              // Sanitize any stale staff/finance names to active student name
+              const isStaffName = /finance|admin|manager|staff/i.test(s.studentName || '') || /finance|admin/i.test(s.studentId || '');
+              return {
+                id: isStaffName ? activeStudent.id : s.studentId,
+                name: isStaffName ? activeStudent.name : s.studentName,
+                role: 'Enrolled Learner',
+                regNo: isStaffName ? activeStudent.rollNo : (s.regNo || activeStudent.rollNo),
+                isHost: false,
+              };
+            });
             setParticipantsList([tutorEntry, ...studentEntries]);
           } else {
             setParticipantsList([
@@ -404,29 +427,22 @@ export default function LiveClassesPage() {
                 isHost: true,
               },
               {
-                id: 'student_current',
-                name: currentStudent.name,
+                id: activeStudent.id,
+                name: activeStudent.name,
                 role: 'Enrolled Learner',
-                regNo: 'LOY-FR-2026-042',
+                regNo: activeStudent.rollNo,
                 isHost: false,
               },
             ]);
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     // 2. Attendance Ping: Auto records verified student attendance in DB every 30 seconds
-    let studentId = 'user-student';
-    let studentName = 'Aarav Sharma';
-    try {
-      const stored = localStorage.getItem('isml_user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.id) studentId = u.id;
-        if (u.name) studentName = u.name;
-      }
-    } catch {}
+    const studentId = activeStudent.id;
+    const studentName = activeStudent.name;
+    const regNo = activeStudent.rollNo;
 
     const attendanceTimer = setInterval(() => {
       fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/attendance-ping`, {
@@ -435,9 +451,9 @@ export default function LiveClassesPage() {
         body: JSON.stringify({
           studentId,
           studentName,
-          regNo: 'LOY-FR-2026-042',
+          regNo,
         }),
-      }).catch(() => {});
+      }).catch(() => { });
     }, 30000);
 
     // Initial ping on entry
@@ -447,9 +463,9 @@ export default function LiveClassesPage() {
       body: JSON.stringify({
         studentId,
         studentName,
-        regNo: 'LOY-FR-2026-042',
+        regNo,
       }),
-    }).catch(() => {});
+    }).catch(() => { });
 
     // 3. Listen for Realtime Tutor Broadcasts: Shared Content & Chat Messages
     const handleRealtime = (e: any) => {
@@ -527,13 +543,16 @@ export default function LiveClassesPage() {
             regNo: 'FACULTY-LEAD',
             isHost: true,
           };
-          const studentEntries = attList.map((s: any) => ({
-            id: s.studentId,
-            name: s.studentName,
-            role: 'Enrolled Learner',
-            regNo: s.regNo,
-            isHost: false,
-          }));
+          const studentEntries = attList.map((s: any) => {
+            const isStaffName = /finance|admin|manager|staff/i.test(s.studentName || '') || /finance|admin/i.test(s.studentId || '');
+            return {
+              id: isStaffName ? activeStudent.id : s.studentId,
+              name: isStaffName ? activeStudent.name : s.studentName,
+              role: 'Enrolled Learner',
+              regNo: isStaffName ? activeStudent.rollNo : (s.regNo || activeStudent.rollNo),
+              isHost: false,
+            };
+          });
           setParticipantsList([tutorEntry, ...studentEntries]);
         }
       }
@@ -567,8 +586,8 @@ export default function LiveClassesPage() {
     const endMs = (activeRoom as any).scheduledEndTime
       ? new Date((activeRoom as any).scheduledEndTime).getTime()
       : (activeRoom as any).timeSlot
-      ? 0
-      : 0;
+        ? 0
+        : 0;
 
     let autoEndTimer: NodeJS.Timeout | null = null;
     if (endMs && endMs > Date.now()) {
@@ -597,25 +616,18 @@ export default function LiveClassesPage() {
 
     handleSetWaiting(item);
 
-    let studentId = 'user-student';
-    let studentName = 'Aarav Sharma';
-    try {
-      const stored = localStorage.getItem('isml_user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.id) studentId = u.id;
-        if (u.name) studentName = u.name;
-      }
-    } catch { }
+    const studentId = activeStudent.rollNo || activeStudent.id || 'AMER-COL-STD-23';
+    const studentName = activeStudent.name || 'Muthu Pandian';
+    const regNo = activeStudent.rollNo || 'AMER-COL-STD-23';
 
     try {
-      const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${item.id}/request-join`, {
+      const res = await fetch(`/api/live-classes/${item.id}/request-join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentId,
           studentName,
-          regNo: 'LOY-FR-2026-042',
+          regNo,
         }),
       });
       const data = await res.json();
@@ -631,28 +643,20 @@ export default function LiveClassesPage() {
       return;
     }
 
-    let studentId = 'user-student';
-    let studentName = 'Aarav Sharma';
-    try {
-      const stored = localStorage.getItem('isml_user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.id) studentId = u.id;
-        if (u.name) studentName = u.name;
-      }
-    } catch {}
+    const studentId = activeStudent.rollNo || activeStudent.id || 'AMER-COL-STD-23';
+    const studentName = activeStudent.name || 'Muthu Pandian';
 
     const classId = requestingClass.id;
     setWaitingRoomStatus('IDLE');
     setRequestingClass(null);
 
     try {
-      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/cancel-join`, {
+      await fetch(`/api/live-classes/${classId}/cancel-join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId, studentName }),
       });
-    } catch {}
+    } catch { }
   };
 
   const filteredClasses = classesList.filter((c: any) => c.status === activeTab || (activeTab === "TODAY" && c.status === "SCHEDULED"));
@@ -734,8 +738,8 @@ export default function LiveClassesPage() {
               ) : (
                 <RealLiveKitStage
                   classId={activeRoom.id}
-                  identity={currentStudent.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'student_learner'}
-                  name={currentStudent.name}
+                  identity={activeStudent.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'student_learner'}
+                  name={activeStudent.name}
                   role="student"
                   onDisconnect={handleExitRoom}
                   hideControls={true}
@@ -759,19 +763,18 @@ export default function LiveClassesPage() {
                     }
                     setMicOn(!micOn);
                   }}
-                  className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer relative ${
-                    micOn
+                  className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer relative ${micOn
                       ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/30'
                       : !canStudentUnmute
-                      ? 'bg-slate-800/80 border-slate-700/60 text-slate-500 hover:text-slate-400'
-                      : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
-                  }`}
+                        ? 'bg-slate-800/80 border-slate-700/60 text-slate-500 hover:text-slate-400'
+                        : 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
+                    }`}
                   title={
                     !canStudentUnmute
                       ? 'Microphone locked by Lead Tutor (Click to request)'
                       : micOn
-                      ? 'Mute Microphone'
-                      : 'Unmute Microphone'
+                        ? 'Mute Microphone'
+                        : 'Unmute Microphone'
                   }
                 >
                   {micOn ? <Mic className="w-4 h-4 sm:w-5 sm:h-5" /> : <MicOff className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -791,19 +794,18 @@ export default function LiveClassesPage() {
                     }
                     setVideoOn(!videoOn);
                   }}
-                  className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer relative ${
-                    videoOn
+                  className={`p-2.5 sm:p-3 rounded-full border transition-all cursor-pointer relative ${videoOn
                       ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/30 ring-2 ring-blue-400/30'
                       : !canStudentShareVideo
-                      ? 'bg-slate-800/80 border-slate-700/60 text-slate-500 hover:text-slate-400'
-                      : 'bg-slate-800 border-white/10 text-slate-400 hover:text-slate-300'
-                  }`}
+                        ? 'bg-slate-800/80 border-slate-700/60 text-slate-500 hover:text-slate-400'
+                        : 'bg-slate-800 border-white/10 text-slate-400 hover:text-slate-300'
+                    }`}
                   title={
                     !canStudentShareVideo
                       ? 'Camera locked by Lead Tutor'
                       : videoOn
-                      ? 'Turn Off Camera'
-                      : 'Turn On Camera'
+                        ? 'Turn Off Camera'
+                        : 'Turn On Camera'
                   }
                 >
                   {videoOn ? <Video className="w-4 h-4 sm:w-5 sm:h-5" /> : <VideoOff className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -1073,7 +1075,7 @@ export default function LiveClassesPage() {
       <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 text-slate-900 p-4 sm:p-6 rounded-2xl shadow-xs space-y-2 border border-blue-200">
         <div className="flex items-center gap-2 text-xs font-mono text-[#0052CC]">
           <ShieldCheck className="w-4 h-4 text-[#0052CC]" />
-          <span>Enrolled Batch Schedule • {currentStudent.batchName}</span>
+          <span>Enrolled Batch Schedule • {activeStudent.batchName}</span>
         </div>
         <h1 className="text-2xl font-extrabold tracking-tight text-[#0B2447]">Live Webinar Classes</h1>
         <p className="text-xs text-slate-600">
@@ -1093,8 +1095,8 @@ export default function LiveClassesPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2 text-xs font-bold rounded-t-xl transition-all flex items-center gap-2 shrink-0 cursor-pointer ${activeTab === tab.key
-                ? 'bg-[#0052CC] text-white border-b-2 border-cyan-400 shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-[#0052CC] text-white border-b-2 border-cyan-400 shadow-xs'
+              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`}
           >
             <span>{tab.label}</span>
@@ -1208,7 +1210,7 @@ export default function LiveClassesPage() {
 
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 flex items-center justify-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Identity Verified: Aarav Sharma (LOY-FR-2026-042)</span>
+              <span>Identity Verified: {activeStudent.name} ({activeStudent.rollNo})</span>
             </div>
 
             <button

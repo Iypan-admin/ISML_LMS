@@ -693,7 +693,7 @@ export default function LiveWebinarStudioModal({
 
     const checkRequests = async () => {
       try {
-        const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/join-requests`);
+        const res = await fetch(`/api/live-classes/${classId}/join-requests`);
         const json = await res.json();
         if (json.data && Array.isArray(json.data)) {
           const pendings = json.data.filter((r: any) => r.status === 'PENDING');
@@ -761,7 +761,7 @@ export default function LiveWebinarStudioModal({
 
   const handleAdmit = async (studentId: string) => {
     try {
-      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/admit-student`, {
+      await fetch(`/api/live-classes/${classId}/admit-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId }),
@@ -773,7 +773,7 @@ export default function LiveWebinarStudioModal({
 
   const handleReject = async (studentId: string) => {
     try {
-      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/reject-student`, {
+      await fetch(`/api/live-classes/${classId}/reject-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId }),

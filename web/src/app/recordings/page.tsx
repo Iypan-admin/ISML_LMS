@@ -8,6 +8,7 @@ import {
   Clock, 
   ShieldCheck, 
   Play, 
+  Pause,
   Calendar, 
   Eye, 
   Sparkles,
@@ -15,7 +16,11 @@ import {
   RefreshCw,
   Maximize,
   Video,
-  FileText
+  FileText,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+  RotateCw
 } from 'lucide-react';
 
 export interface LiveRecordingItem {
@@ -47,8 +52,40 @@ export default function RecordingsPage() {
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [videoDuration, setVideoDuration] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [currentSpeed, setCurrentSpeed] = useState<number>(1);
+  const [isScrubbing, setIsScrubbing] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const togglePlayPause = () => {
+    const v = videoRef.current;
+    if (v) {
+      if (v.paused) {
+        v.play().catch(() => {});
+        setIsPlaying(true);
+      } else {
+        v.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    const v = videoRef.current;
+    if (v) {
+      v.muted = !v.muted;
+      setIsMuted(v.muted);
+    }
+  };
+
+  const setSpeed = (speed: number) => {
+    const v = videoRef.current;
+    if (v) {
+      v.playbackRate = speed;
+      setCurrentSpeed(speed);
+    }
+  };
 
   // Fetch real original recorded sessions from backend
   const fetchLiveRecordings = async () => {
@@ -283,32 +320,25 @@ export default function RecordingsPage() {
               </button>
             </div>
 
-            <div className="relative aspect-video bg-black flex flex-col justify-between overflow-hidden">
-              <div className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden bg-black">
+            <div className="relative aspect-video bg-black flex flex-col justify-between overflow-hidden select-none">
+              {/* Video Viewport */}
+              <div
+                className="relative w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden bg-black cursor-pointer"
+                onClick={togglePlayPause}
+              >
                 <video
                   ref={videoRef}
                   key={selectedRecording.id + (selectedRecording.videoUrl || '')}
                   src={selectedRecording.videoUrl || '/samples/french-lecture.mp4'}
-                  controls
                   autoPlay
                   playsInline
                   preload="auto"
-                  className="w-full h-full object-contain cursor-pointer"
-                  onClick={() => {
-                    const v = videoRef.current;
-                    if (v) {
-                      if (v.paused) {
-                        v.play();
-                        setIsPlaying(true);
-                      } else {
-                        v.pause();
-                        setIsPlaying(false);
-                      }
-                    }
-                  }}
+                  className="w-full h-full object-contain"
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
                   onTimeUpdate={() => {
                     const v = videoRef.current;
-                    if (v) {
+                    if (v && !isScrubbing) {
                       setCurrentTime(v.currentTime);
                       if (!videoDuration || videoDuration === 0) {
                         const d = (v.duration && !isNaN(v.duration) && v.duration !== Infinity && v.duration > 0)
@@ -334,72 +364,137 @@ export default function RecordingsPage() {
                     }
                   }}
                 />
+
+                {/* Central Play/Pause Watermark Overlay when Paused */}
+                {!isPlaying && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-all pointer-events-none">
+                    <div className="w-16 h-16 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-2xl transform scale-110">
+                      <Play className="w-8 h-8 fill-white ml-1" />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Fast Skip Toolbar */}
-              <div className="w-full bg-slate-900/95 border-t border-white/10 px-3 py-2 flex items-center justify-between text-xs text-white z-20">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleSeek(currentTime - 10)}
-                    className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white rounded-lg font-semibold cursor-pointer transition-colors"
-                    title="Rewind 10 seconds"
-                  >
-                    ⏪ -10s
-                  </button>
-
-                  <button
-                    onClick={() => handleSeek(currentTime + 10)}
-                    className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white rounded-lg font-semibold cursor-pointer transition-colors"
-                    title="Forward 10 seconds"
-                  >
-                    +10s ⏩
-                  </button>
-
-                  {/* Timestamp: Current Time / Total Duration */}
-                  <div className="font-mono text-xs text-slate-300 bg-black/50 px-2 py-0.5 rounded border border-white/10">
-                    <span className="text-white font-bold">{formatTime(currentTime)}</span>
-                    <span className="mx-1 text-slate-500">/</span>
-                    <span className="text-cyan-300 font-bold">{formatTime(videoDuration)}</span>
+              {/* Modern Media Player Scrub Bar & Controls */}
+              <div className="w-full bg-gradient-to-t from-slate-950 via-slate-900/95 to-slate-900/80 border-t border-white/10 px-4 py-2.5 flex flex-col gap-2 z-20">
+                {/* Scrubbing Range Bar */}
+                <div className="relative w-full flex items-center group/scrubber py-1">
+                  {/* Background Track */}
+                  <div className="w-full h-1.5 group-hover/scrubber:h-2.5 bg-white/20 rounded-full overflow-hidden transition-all duration-150 relative">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full"
+                      style={{
+                        width: `${videoDuration > 0 ? (currentTime / videoDuration) * 100 : 0}%`,
+                      }}
+                    />
                   </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={videoDuration || 100}
+                    step={0.1}
+                    value={currentTime}
+                    onMouseDown={() => setIsScrubbing(true)}
+                    onTouchStart={() => setIsScrubbing(true)}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setCurrentTime(val);
+                      handleSeek(val);
+                    }}
+                    onMouseUp={() => setIsScrubbing(false)}
+                    onTouchEnd={() => setIsScrubbing(false)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    title="Seek time"
+                  />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {/* Playback Speed selector */}
-                  {[1, 1.25, 1.5, 2].map((speed) => (
+                {/* Controls Row */}
+                <div className="flex items-center justify-between text-xs text-white">
+                  {/* Left: Play/Pause, -10s, +10s, Volume, Timestamps */}
+                  <div className="flex items-center gap-3">
                     <button
-                      key={speed}
-                      onClick={() => {
-                        if (videoRef.current) videoRef.current.playbackRate = speed;
-                      }}
-                      className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 hover:bg-white/20 text-slate-300 cursor-pointer"
-                      title={`${speed}x Speed`}
+                      onClick={togglePlayPause}
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                      title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
                     >
-                      {speed}x
+                      {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white" />}
                     </button>
-                  ))}
 
-                  {/* Fullscreen Button */}
-                  <button
-                    onClick={() => {
-                      const v = videoRef.current;
-                      if (v) {
-                        if (!document.fullscreenElement) {
-                          if (v.requestFullscreen) {
-                            v.requestFullscreen().catch(() => {});
-                          } else if ((v as any).webkitRequestFullscreen) {
-                            (v as any).webkitRequestFullscreen();
+                    <button
+                      onClick={() => handleSeek(currentTime - 10)}
+                      className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white rounded-lg font-semibold cursor-pointer transition-colors flex items-center gap-1"
+                      title="Rewind 10 seconds"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span className="text-[11px]">-10s</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleSeek(currentTime + 10)}
+                      className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white rounded-lg font-semibold cursor-pointer transition-colors flex items-center gap-1"
+                      title="Forward 10 seconds"
+                    >
+                      <span className="text-[11px]">+10s</span>
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={toggleMute}
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                      title={isMuted ? 'Unmute' : 'Mute'}
+                    >
+                      {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
+                    </button>
+
+                    {/* Timestamp: Current Time / Total Duration */}
+                    <div className="font-mono text-xs text-slate-300 bg-black/60 px-2.5 py-1 rounded-lg border border-white/10">
+                      <span className="text-white font-bold">{formatTime(currentTime)}</span>
+                      <span className="mx-1 text-slate-500">/</span>
+                      <span className="text-cyan-300 font-bold">{formatTime(videoDuration)}</span>
+                    </div>
+                  </div>
+
+                  {/* Right: Speed Multiplier & Fullscreen */}
+                  <div className="flex items-center gap-2">
+                    {/* Playback Speed selector */}
+                    {[1, 1.25, 1.5, 2].map((speed) => (
+                      <button
+                        key={speed}
+                        onClick={() => setSpeed(speed)}
+                        className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                          currentSpeed === speed
+                            ? 'bg-blue-600 text-white ring-1 ring-blue-400'
+                            : 'bg-white/10 hover:bg-white/20 text-slate-300'
+                        }`}
+                        title={`${speed}x Speed`}
+                      >
+                        {speed}x
+                      </button>
+                    ))}
+
+                    {/* Fullscreen Button */}
+                    <button
+                      onClick={() => {
+                        const v = videoRef.current;
+                        if (v) {
+                          if (!document.fullscreenElement) {
+                            if (v.requestFullscreen) {
+                              v.requestFullscreen().catch(() => {});
+                            } else if ((v as any).webkitRequestFullscreen) {
+                              (v as any).webkitRequestFullscreen();
+                            }
+                          } else {
+                            document.exitFullscreen().catch(() => {});
                           }
-                        } else {
-                          document.exitFullscreen().catch(() => {});
                         }
-                      }
-                    }}
-                    className="p-1.5 rounded-lg bg-white/15 hover:bg-[#0052CC] text-white flex items-center gap-1 cursor-pointer transition-colors"
-                    title="Full Screen (F)"
-                  >
-                    <Maximize className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-bold hidden sm:inline">Fullscreen</span>
-                  </button>
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-[#0052CC] text-white flex items-center gap-1.5 cursor-pointer transition-colors"
+                      title="Full Screen (F)"
+                    >
+                      <Maximize className="w-3.5 h-3.5" />
+                      <span className="text-[11px] font-bold hidden sm:inline">Fullscreen</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
