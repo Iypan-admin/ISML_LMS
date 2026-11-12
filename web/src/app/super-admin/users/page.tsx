@@ -59,8 +59,42 @@ export default function UsersPage() {
 
   const [users, setUsers] = useState<SuperAdminUser[]>([]);
   
-  // Fetch users from Supabase backend on mount with 0ms fast cache
+  // Fetch users from API on mount with local staff fallback and 0ms fast cache
   React.useEffect(() => {
+    // 1. Fetch locally created staff users
+    fetch('/api/portals/users')
+      .then((res) => res.json())
+      .then((localJson) => {
+        if (localJson?.data && Array.isArray(localJson.data) && localJson.data.length > 0) {
+          const localMapped: SuperAdminUser[] = localJson.data.map((u: any) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+            roleId: u.roleId,
+            roleName: u.roleName,
+            roleCode: u.roleCode,
+            collegeId: u.collegeId,
+            collegeName: u.collegeName,
+            status: u.status || 'ACTIVE',
+            permissions: [],
+            lastLoginAt: u.lastLoginAt || 'Never',
+            createdAt: u.createdAt || new Date().toISOString(),
+          }));
+          setUsers((prev) => {
+            const merged = [...localMapped];
+            prev.forEach((p) => {
+              if (!merged.some((m) => m.email?.toLowerCase() === p.email?.toLowerCase())) {
+                merged.push(p);
+              }
+            });
+            return merged;
+          });
+        }
+      })
+      .catch(() => null);
+
+    // 2. Fetch from backend
     fastFetch('https://ismllms-production.up.railway.app/api/portals/users', (json) => {
       if (json?.data && json.data.length > 0) {
         // Exclude learners and parents from Administrators & Staff directory
@@ -87,7 +121,15 @@ export default function UsersPage() {
           lastLoginAt: u.lastLoginAt || new Date().toISOString(),
           createdAt: u.createdAt || new Date().toISOString(),
         }));
-        setUsers(mapped);
+        setUsers((prev) => {
+          const merged = [...prev];
+          mapped.forEach((m) => {
+            if (!merged.some((ex) => ex.email?.toLowerCase() === m.email?.toLowerCase())) {
+              merged.push(m);
+            }
+          });
+          return merged;
+        });
       }
     });
   }, []);

@@ -210,6 +210,13 @@ export default function SuperAdminDashboardPage() {
             <span>Review Approvals ({pendingApprovalsCount})</span>
           </Link>
           <Link
+            href="/super-admin/users"
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+          >
+            <Users className="w-4 h-4" />
+            <span>+ Add New Users</span>
+          </Link>
+          <Link
             href="/super-admin/finance"
             className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
           >
