@@ -14,77 +14,7 @@ export class PortalsDataController {
 
   public static inMemoryApprovals: any[] = [];
   public static inMemoryCourses: any[] = [];
-  public static inMemoryBatches: any[] = [
-    {
-      id: 'batch-loyola-a1',
-      name: 'Loyola French B1 Executive Cohort',
-      code: 'LOY-FR-B1',
-      institutionId: 'inst-01',
-      institutionName: 'Loyola College of Arts & Science',
-      programId: 'crs-fr-b1',
-      programName: 'French B1 Intermediate Certification',
-      departmentName: 'Foreign Languages & Linguistics',
-      academicYear: '2026–2027',
-      admissionYear: 2026,
-      graduationYear: 2027,
-      currentSemesterNumber: 1,
-      sectionsCount: 1,
-      studentsCount: 35,
-      courseIds: ['crs-fr-b1'],
-      courseNames: ['French B1 Intermediate Certification'],
-      batchTiming: '10:00 AM – 11:30 AM',
-      scheduleDays: ['mon', 'wed', 'fri'],
-      assignedFacultyName: 'Prof. Marie Delacroix',
-      assignedStaffNames: ['Ms. Ananya Sharma (TA)'],
-      status: 'ACTIVE',
-    },
-    {
-      id: 'batch-amer-a1',
-      name: 'American College German A1 Professional Track',
-      code: 'AMER-GER-A1',
-      institutionId: 'inst-amer',
-      institutionName: 'The American College',
-      programId: 'crs-de-a1',
-      programName: 'German A1 Fast-Track Immersion',
-      departmentName: 'Department of European Studies',
-      academicYear: '2026–2027',
-      admissionYear: 2026,
-      graduationYear: 2027,
-      currentSemesterNumber: 1,
-      sectionsCount: 1,
-      studentsCount: 10,
-      courseIds: ['crs-de-a1'],
-      courseNames: ['German A1 Fast-Track Immersion'],
-      batchTiming: '02:00 PM – 03:30 PM',
-      scheduleDays: ['tue', 'thu', 'sat'],
-      assignedFacultyName: 'Dr. Wolfgang Weber',
-      assignedStaffNames: ['Mr. David Raja (TA)'],
-      status: 'ACTIVE',
-    },
-    {
-      id: 'batch-lions-junior',
-      name: 'Sivakasi Lions School Junior French Cohort (Grade 9-10)',
-      code: 'LIONS-FR-JR',
-      institutionId: 'inst-lions',
-      institutionName: 'Sivakasi Lions Matriculation Higher Secondary School',
-      programId: 'crs-fr-school',
-      programName: 'Junior Foreign Language Track',
-      departmentName: 'K-12 Modern Foreign Languages',
-      academicYear: '2026–2027',
-      admissionYear: 2026,
-      graduationYear: 2027,
-      currentSemesterNumber: 1,
-      sectionsCount: 1,
-      studentsCount: 10,
-      courseIds: ['crs-fr-school'],
-      courseNames: ['Junior Foreign Language Track'],
-      batchTiming: '09:00 AM – 10:30 AM',
-      scheduleDays: ['mon', 'wed', 'fri'],
-      assignedFacultyName: 'Rev. Sister Mary Vasanthi',
-      assignedStaffNames: ['Mrs. P. Shanthi'],
-      status: 'ACTIVE',
-    },
-  ];
+  public static inMemoryBatches: any[] = [];
   public static inMemoryFaculty: any[] = [];
   public static inMemoryAllocations: any[] = [];
   public static inMemoryBatchStudents: Record<string, any[]> = {};
@@ -2340,12 +2270,13 @@ export class PortalsDataController {
     const data = await BackendCacheService.getOrFetch(
       key,
       async () => {
-        let result = [...PortalsDataController.inMemoryBatches];
+        let result: any[] = [];
         try {
           const dbBatches = await this.prisma.batches.findMany({
             include: {
               batchInstitutions: true,
               batchSchedules: true,
+              course: true,
             },
             orderBy: { createdAt: 'desc' },
           });
@@ -2355,10 +2286,11 @@ export class PortalsDataController {
                 result.push({
                   id: db.id,
                   name: db.name,
-                  institutionId: db.batchInstitutions?.[0]?.institutionId || 'inst-01',
-                  institutionName: 'Loyola College of Arts & Science',
+                  code: db.code,
+                  institutionId: db.batchInstitutions?.[0]?.institutionId || db.tenantId || 'inst-01',
+                  institutionName: 'The American College',
                   programId: db.courseId,
-                  programName: 'Language Certification',
+                  programName: db.course?.name || 'Language Course',
                   departmentName: 'Foreign Languages & Linguistics',
                   academicYear: '2026–2027',
                   admissionYear: 2026,
@@ -2366,18 +2298,26 @@ export class PortalsDataController {
                   currentSemesterNumber: 1,
                   sectionsCount: 1,
                   studentsCount: db.maxStudents || 35,
-                  courseIds: [db.courseId],
-                  courseNames: ['Language Certification'],
-                  batchTiming: '10:00 AM – 11:30 AM',
+                  courseIds: [db.courseId].filter(Boolean),
+                  courseNames: [db.course?.name || 'Language Course'],
+                  batchTiming: '09:00 AM – 10:30 AM',
                   scheduleDays: ['mon', 'wed', 'fri'],
                   assignedFacultyName: 'Dr. Anandhakumar V.',
-                  assignedStaffNames: ['Ms. Ananya Sharma (TA)'],
-                  status: db.status === 'ONGOING' ? 'ACTIVE' : db.status || 'DRAFT',
+                  assignedStaffNames: ['Joy JK'],
+                  status: db.status === 'ONGOING' ? 'ACTIVE' : db.status || 'ACTIVE',
                 });
               }
             });
           }
         } catch { }
+
+        // Merge in-memory batches if created during session
+        PortalsDataController.inMemoryBatches.forEach((mem) => {
+          if (!result.find((r) => r.id === mem.id || r.name === mem.name)) {
+            result.unshift(mem);
+          }
+        });
+
         return result;
       },
       fallback,
