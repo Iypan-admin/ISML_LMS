@@ -310,7 +310,7 @@ export default function LiveClassesPage() {
             const formattedDate = formatDate(startDate);
 
             const isEnded = item.status === 'ENDED' || item.status === 'COMPLETED' || endDate.getTime() < Date.now();
-            const isLive = item.status === 'LIVE' || item.tutorJoined === true;
+            const isLive = !isEnded && (item.status === 'LIVE' || item.isBroadcastingNow === true);
             const isToday = startDate.toDateString() === new Date().toDateString();
 
             let computedStatus = 'UPCOMING';
@@ -322,19 +322,19 @@ export default function LiveClassesPage() {
             return {
               id: item.id,
               topic: item.title || 'Live Interactive Class',
-              tutorName: item.tutorName || 'Lead Trainer',
-              tutorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-              tutorTitle: 'Certified Faculty',
+              tutorName: item.tutorName || 'Joy JK',
+              tutorAvatar: '',
+              tutorTitle: 'Lead Certified Faculty',
               status: computedStatus,
               date: formattedDate,
-              timeSlot: formattedTimeSlot,
-              durationMins: item.durationMinutes || 60,
-              batchCode: item.batchName || 'BAT-01',
-              batchName: item.batchName || 'General Batch',
-              moduleName: item.courseName || 'Language Certification',
+              timeSlot: item.timeSlot || formattedTimeSlot,
+              durationMins: item.durationMinutes || 90,
+              batchCode: item.batchCode || 'BAT-01',
+              batchName: item.batchName || 'Evening Batch',
+              moduleName: item.courseName || 'Sample Course',
               roomToken: item.roomName || item.id,
-              attendeesCount: item.enrolledStudentsCount || 35,
-              recordingAvailable: false,
+              attendeesCount: item.enrolledStudentsCount || 10,
+              recordingAvailable: isEnded,
             };
           });
           setClassesList(mapped);
@@ -1117,45 +1117,78 @@ export default function LiveClassesPage() {
           </div>
         ) : (
           filteredClasses.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
-              <div className="p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${item.status === 'LIVE_NOW' ? 'bg-rose-600 text-white animate-live-pulse' : 'bg-blue-100 text-[#0052CC]'
-                    }`}>
-                    {item.status === 'LIVE_NOW' ? '🔴 LIVE WEBINAR NOW' : item.timeSlot}
+            <div key={item.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden flex flex-col justify-between hover:border-blue-300 hover:shadow-md transition-all">
+              <div className="p-5 space-y-4">
+                {/* Header Badge Strip: Status + Course Tag */}
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-black tracking-wide flex items-center gap-1.5 ${
+                      item.status === 'LIVE_NOW'
+                        ? 'bg-rose-600 text-white animate-live-pulse'
+                        : item.status === 'COMPLETED'
+                        ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                        : 'bg-blue-50 text-[#0052CC] border border-blue-200'
+                    }`}
+                  >
+                    {item.status === 'LIVE_NOW' && <span className="w-2 h-2 rounded-full bg-white animate-ping" />}
+                    {item.status === 'LIVE_NOW'
+                      ? '🔴 LIVE WEBINAR NOW'
+                      : item.status === 'COMPLETED'
+                      ? 'COMPLETED / ENDED'
+                      : `SCHEDULED: ${item.timeSlot}`}
                   </span>
-                  <span className="text-xs font-mono font-semibold text-slate-500">{item.moduleName}</span>
+                  <span className="text-xs font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                    {item.moduleName}
+                  </span>
                 </div>
 
-                <h3 className="text-base font-bold text-[#0B2447] leading-snug">{item.topic}</h3>
-
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-blue-400">
-                    <Image src={item.tutorAvatar} alt={item.tutorName} fill className="object-cover" />
+                {/* Topic / Title */}
+                <div>
+                  <h3 className="text-base font-extrabold text-[#0B2447] leading-snug line-clamp-2">
+                    {item.topic}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500 font-semibold">
+                    <span className="text-slate-800 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                      Batch: {item.batchName}
+                    </span>
+                    <span>•</span>
+                    <span>{item.attendeesCount} Enrolled Students</span>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-800">{item.tutorName}</p>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">{item.tutorTitle}</p>
+                </div>
+
+                {/* Trainer Profile Block (Modern Initials Badge - No Fake Static Stock Photos) */}
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs border border-blue-400/40">
+                    {item.tutorName ? item.tutorName.charAt(0).toUpperCase() : 'T'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-extrabold text-slate-900 truncate">{item.tutorName}</p>
+                    <p className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{item.tutorTitle}</span>
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="space-y-1">
-                  <div className="text-xs text-slate-700 font-bold flex items-center gap-1.5">
+              {/* Bottom Schedule Strip: Date, Time & Join Trigger */}
+              <div className="p-4 bg-slate-50/90 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1 text-xs">
+                  <div className="text-slate-800 font-extrabold flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-[#0052CC] shrink-0" />
                     <span>{item.timeSlot}</span>
-                    <span className="text-slate-400 font-normal">({item.durationMins} Mins)</span>
+                    <span className="text-slate-500 font-semibold">({item.durationMins} Mins)</span>
                   </div>
                   <div className="text-[11px] text-slate-500 font-medium pl-5">
-                    Date: <strong className="text-slate-700">{item.date}</strong>
+                    Date: <strong className="text-slate-800 font-bold">{item.date}</strong>
                   </div>
                 </div>
 
+                {/* Action button - only enabled when LIVE, never after completed */}
                 {item.status === 'LIVE_NOW' && (
                   <button
                     onClick={() => handleStudentJoinClick(item)}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-xl shadow-md flex items-center gap-1.5 transition-transform transform active:scale-95 cursor-pointer ring-2 ring-rose-400/40"
+                    className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-md flex items-center justify-center gap-2 transition-all transform active:scale-95 cursor-pointer ring-2 ring-rose-400/40"
                   >
                     <Video className="w-4 h-4" />
                     <span>Join Live Class</span>
@@ -1164,24 +1197,30 @@ export default function LiveClassesPage() {
 
                 {item.status === 'COMPLETED' && (
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-slate-100 text-slate-500 text-xs font-bold rounded-lg border border-slate-200">
-                      Session Ended
+                    <span className="px-3 py-1.5 bg-slate-200 text-slate-600 text-xs font-bold rounded-xl border border-slate-300">
+                      Session Concluded
                     </span>
-                    {item.recordingAvailable && (
-                      <a
-                        href="/recordings"
-                        className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-lg flex items-center gap-1"
-                      >
-                        <Film className="w-3.5 h-3.5" /> Watch Replay
-                      </a>
-                    )}
+                    <a
+                      href="/recordings"
+                      className="px-3.5 py-1.5 bg-[#0052CC] hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-2xs transition-colors"
+                    >
+                      <Film className="w-3.5 h-3.5" />
+                      <span>Watch Replay</span>
+                    </a>
                   </div>
                 )}
 
                 {item.status === 'TODAY' && (
-                  <span className="px-3 py-1.5 bg-slate-100 text-slate-500 text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-xl border border-slate-200 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-blue-600" />
                     <span>Starts {item.timeSlot}</span>
+                  </span>
+                )}
+
+                {item.status === 'UPCOMING' && (
+                  <span className="px-3 py-1.5 bg-slate-100 text-slate-500 text-xs font-bold rounded-xl border border-slate-200 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Scheduled Upcoming</span>
                   </span>
                 )}
               </div>

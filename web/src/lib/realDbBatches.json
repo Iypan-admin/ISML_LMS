@@ -20,10 +20,13 @@
     "courseNames": [
       "Sample Course"
     ],
-    "batchTiming": "06:00 PM – 07:30 PM",
+    "batchTiming": "06:30 PM - 09:00 PM",
     "scheduleDays": [
+      "MON",
       "TUE",
+      "WED",
       "THU",
+      "FRI",
       "SAT"
     ],
     "assignedFacultyName": "Joy JK",

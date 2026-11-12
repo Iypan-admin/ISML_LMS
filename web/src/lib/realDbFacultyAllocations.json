@@ -41,7 +41,7 @@
     "batchName": "Evening Batch",
     "languageFamily": "FRENCH",
     "scheduleSlots": [
-      "Tue, Thu, Sat 06:00 PM - 07:30 PM"
+      "Tue, Thu, Sat, Mon, Wed, Fri 06:30 PM - 09:00 PM"
     ],
     "status": "ACTIVE",
     "effectiveFrom": "2026-11-12",

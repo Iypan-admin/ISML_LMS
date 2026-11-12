@@ -252,25 +252,16 @@ export default function MasterTutorDashboardPage() {
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {leadBatches.length > 0 && (() => {
             const firstLead = leadBatches[0];
-            const timing = getSlotTimingStatus(firstLead.scheduleSlots);
             return (
               <button
                 onClick={() => {
-                  if (timing.isLive) {
-                    handleStartClass(firstLead.batchName, firstLead.subjectName);
-                  } else {
-                    showInfo(`Classroom Locked: Live Broadcast for "${firstLead.batchName}" is only available during the scheduled slot (${firstLead.scheduleSlots.join(', ')}).`);
-                  }
+                  handleStartClass(firstLead.batchName, firstLead.subjectName);
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 ${
-                  timing.isLive
-                    ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer animate-pulse'
-                    : 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed hover:bg-slate-200'
-                }`}
-                title={timing.isLive ? 'Session in progress - Enter Live Studio' : 'Scheduled class is not currently live'}
+                className="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white cursor-pointer animate-pulse"
+                title="Enter Live Studio Broadcast"
               >
-                {timing.isLive ? <Radio className="w-4 h-4 animate-pulse" /> : <Lock className="w-4 h-4" />}
-                <span>{timing.isLive ? `Enter Live: ${firstLead.batchName}` : `Class Locked (${firstLead.batchName})`}</span>
+                <Radio className="w-4 h-4 animate-pulse" />
+                <span>Enter Live: {firstLead.batchName}</span>
               </button>
             );
           })()}
@@ -450,31 +441,14 @@ export default function MasterTutorDashboardPage() {
 
                       // STRICT RULE: ONLY Lead Native Trainer has permission to start and broadcast live classes!
                       if (isLead) {
-                        if (timing.isLive) {
-                          return (
-                            <button
-                              onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName)}
-                              className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer animate-pulse"
-                              title="Lead Native Trainer Exclusive: Enter Live Studio Broadcast"
-                            >
-                              <Radio className="w-3.5 h-3.5" />
-                              <span>🔴 Start Live Studio (Host)</span>
-                            </button>
-                          );
-                        }
-
                         return (
                           <button
-                            onClick={() => {
-                              showInfo(
-                                `Classroom Locked: Live Broadcast for "${alloc.batchName}" is scheduled at ${alloc.scheduleSlots.join(', ')}.`
-                              );
-                            }}
-                            className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-not-allowed"
-                            title={`Locked until slot time: ${alloc.scheduleSlots.join(', ')}`}
+                            onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName)}
+                            className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer animate-pulse"
+                            title="Lead Native Trainer Exclusive: Enter Live Studio Broadcast"
                           >
-                            <Lock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>🔒 Live Class ({alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || 'Scheduled'})</span>
+                            <Radio className="w-3.5 h-3.5" />
+                            <span>🔴 Start Live Studio (Host)</span>
                           </button>
                         );
                       }
@@ -775,31 +749,14 @@ export default function MasterTutorDashboardPage() {
                         );
                       }
 
-                      if (timing.isLive) {
-                        return (
-                          <button
-                            onClick={() => handleStartClass(alloc.batchName, alloc.subjectName)}
-                            className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
-                            title="Session live right now! Click to enter Live Studio"
-                          >
-                            <Radio className="w-3.5 h-3.5" />
-                            <span>Enter Live Studio</span>
-                          </button>
-                        );
-                      }
-
                       return (
                         <button
-                          onClick={() => {
-                            showInfo(
-                              `Class Locked: Live Studio for "${alloc.batchName}" unlocks during scheduled session hours (${alloc.scheduleSlots.join(', ')}).`
-                            );
-                          }}
-                          className="px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-not-allowed border border-slate-200 transition-colors"
-                          title={`Locked until slot time: ${alloc.scheduleSlots.join(', ')}`}
+                          onClick={() => handleStartClass(alloc.batchName, alloc.subjectName)}
+                          className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
+                          title="Click to enter Live Studio"
                         >
-                          <Lock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Class Locked</span>
+                          <Radio className="w-3.5 h-3.5" />
+                          <span>Enter Live Studio</span>
                         </button>
                       );
                     })()}

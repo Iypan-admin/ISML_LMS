@@ -14,11 +14,29 @@ function getBatches(): any[] {
   return [];
 }
 
+function getTimetable(): any[] {
+  try {
+    const p = path.join(process.cwd(), 'web', 'src', 'lib', 'realDbTimetable.json');
+    const altP = path.join(process.cwd(), 'src', 'lib', 'realDbTimetable.json');
+    const target = fs.existsSync(p) ? p : fs.existsSync(altP) ? altP : null;
+    if (target) {
+      return JSON.parse(fs.readFileSync(target, 'utf8'));
+    }
+  } catch {}
+  return [];
+}
+
 export async function GET(request: Request) {
   try {
     const batches = getBatches();
+    const timetable = getTimetable();
     const now = new Date();
     const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    const daysMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const currentDayName = daysMap[now.getDay()];
+
+    const data: any[] = [];
 
     // Distinct batches
     const distinctBatches = batches.filter(
@@ -26,17 +44,41 @@ export async function GET(request: Request) {
         index === self.findIndex((t: any) => t.code === b.code || t.name === b.name)
     );
 
-    const data: any[] = [];
+    distinctBatches.forEach((batch: any) => {
+      // Find timetable slot for this batch for today
+      const todaySlot = timetable.find(
+        (t: any) =>
+          t.batchName?.toLowerCase().trim() === batch.name?.toLowerCase().trim() &&
+          t.day?.toUpperCase() === currentDayName
+      ) || timetable.find(
+        (t: any) => t.batchName?.toLowerCase().trim() === batch.name?.toLowerCase().trim()
+      );
 
-    // Helper to format Date: "Nov 12, 2026"
-    const formatDate = (d: Date) =>
-      d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      // Determine timeslot
+      let timeSlot = todaySlot?.timeSlot || batch.batchTiming || '06:30 PM - 09:00 PM';
+      if (!timeSlot || timeSlot === '06:00 PM – 07:30 PM') {
+        timeSlot = '06:30 PM - 09:00 PM';
+      }
 
-    distinctBatches.forEach((batch: any, index: number) => {
-      const isMorning = batch.name?.toLowerCase().includes('morning') || batch.code?.includes('MRNG');
-      const timeSlot = isMorning ? '09:00 AM – 10:30 AM' : '06:00 PM – 07:30 PM';
-      const [sH, sM] = isMorning ? [9, 0] : [18, 0];
-      const [eH, eM] = isMorning ? [10, 30] : [19, 30];
+      // Parse hours
+      const timeMatch = timeSlot.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      let sH = 18, sM = 30, eH = 21, eM = 0;
+      if (timeMatch) {
+        let h1 = parseInt(timeMatch[1], 10);
+        const m1 = parseInt(timeMatch[2], 10);
+        const ampm1 = timeMatch[3].toUpperCase();
+        if (ampm1 === 'PM' && h1 < 12) h1 += 12;
+        if (ampm1 === 'AM' && h1 === 12) h1 = 0;
+        sH = h1; sM = m1;
+
+        let h2 = parseInt(timeMatch[4], 10);
+        const m2 = parseInt(timeMatch[5], 10);
+        const ampm2 = timeMatch[6].toUpperCase();
+        if (ampm2 === 'PM' && h2 < 12) h2 += 12;
+        if (ampm2 === 'AM' && h2 === 12) h2 = 0;
+        eH = h2; eM = m2;
+      }
+
       const startMinutes = sH * 60 + sM;
       const endMinutes = eH * 60 + eM;
 
@@ -46,12 +88,15 @@ export async function GET(request: Request) {
       const todayEnd = new Date();
       todayEnd.setHours(eH, eM, 0, 0);
 
-      const isLiveNow = currentMins >= startMinutes - 15 && currentMins <= endMinutes;
-      const isPastToday = currentMins > endMinutes;
+      // Check if current time has passed the end of the class
+      // If time has passed the slot duration, class is COMPLETED / ENDED (Live button should NOT stay enabled!)
+      const isPastSession = currentMins > endMinutes;
+      const isLiveNow = !isPastSession && currentMins >= (startMinutes - 15);
+      const status = isPastSession ? 'COMPLETED' : (isLiveNow ? 'LIVE' : 'UPCOMING');
 
       data.push({
-        id: `live-${batch.code?.toLowerCase()}-today`,
-        title: `${batch.programName || 'Sample Course'} — Live Lecture: Module Foundations`,
+        id: `live-${batch.code?.toLowerCase() || 'bat'}-today`,
+        title: `${batch.programName || 'Sample Course'} — Live Interactive Studio`,
         language: 'French / International',
         level: 'A1',
         courseName: batch.programName || 'Sample Course',
@@ -61,15 +106,18 @@ export async function GET(request: Request) {
         tutorId: 'fac-201834',
         scheduledStartTime: todayStart.toISOString(),
         scheduledEndTime: todayEnd.toISOString(),
-        timeSlot,
-        durationMinutes: 90,
+        timeSlot: `${timeSlot.replace('–', '-')}`,
+        durationMinutes: (endMinutes - startMinutes) > 0 ? (endMinutes - startMinutes) : 90,
         meetingUrl: `https://meet.isml.edu/live-${batch.code?.toLowerCase()}`,
         roomName: `isml-room-${batch.code?.toLowerCase()}`,
-        status: isLiveNow ? 'LIVE' : isPastToday ? 'ENDED' : 'SCHEDULED',
+        status: status,
         isBroadcastingNow: isLiveNow,
+        tutorJoined: isLiveNow,
         isScheduledToday: true,
         enrolledStudentsCount: batch.studentsCount || 10,
-        attendedStudentsCount: isLiveNow ? 8 : isPastToday ? 10 : 0,
+        attendedStudentsCount: isPastSession ? 10 : (isLiveNow ? 8 : 0),
+        recordingAvailable: isPastSession,
+        recordingUrl: '/recordings',
         institutionId: batch.institutionId || '521323cd-00da-49a6-98ed-6b7918d181b4',
         campusName: batch.institutionName || 'The American College',
       });
