@@ -37,8 +37,8 @@ import { fastFetch } from '@/lib/fastCache';
 
 export default function ParentDashboardPage() {
   const [parentInfo, setParentInfo] = useState({
-    name: 'Authorized Guardian',
-    email: 'parent@isml.edu',
+    name: 'Dr. S. Sundararajan',
+    email: 'parent1@americancollege.edu.in',
     phone: '+91 94440 00000',
   });
 
@@ -55,11 +55,17 @@ export default function ParentDashboardPage() {
       const stored = localStorage.getItem('isml_user');
       if (stored) {
         const u = JSON.parse(stored);
-        if (u.name) {
+        if (u.role === 'PARENT' && u.name) {
           setParentInfo({
             name: u.name,
-            email: u.email || 'parent@isml.edu',
+            email: u.email || 'parent1@americancollege.edu.in',
             phone: u.phone || '+91 94440 00000',
+          });
+        } else {
+          setParentInfo({
+            name: 'Dr. S. Sundararajan',
+            email: 'parent1@americancollege.edu.in',
+            phone: '+91 94440 00000',
           });
         }
       }

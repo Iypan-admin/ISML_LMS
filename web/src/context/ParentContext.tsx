@@ -26,7 +26,7 @@ export function ParentProvider({ children }: { children: React.ReactNode }) {
         const stored = localStorage.getItem('isml_user');
         if (stored) {
           const u = JSON.parse(stored);
-          if (u.name) {
+          if (u.role === 'PARENT' && u.name) {
             return {
               ...mockParentUser,
               id: u.id || 'amer-p-1',
@@ -37,11 +37,38 @@ export function ParentProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch {}
-    return mockParentUser;
+    return {
+      ...mockParentUser,
+      name: 'Dr. S. Sundararajan',
+      email: 'parent1@americancollege.edu.in',
+    };
   });
   const [selectedChildId, setSelectedChildId] = useState<string>('');
 
   React.useEffect(() => {
+    // Sync parent profile if stored user changes or if current active is not a parent
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('isml_user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u.role === 'PARENT' && u.name) {
+            setParent((prev) => ({
+              ...prev,
+              name: u.name,
+              email: u.email || prev.email,
+            }));
+          } else {
+            // Default parent account for Muthu Pandian (The American College)
+            setParent((prev) => ({
+              ...prev,
+              name: 'Dr. S. Sundararajan',
+              email: 'parent1@americancollege.edu.in',
+            }));
+          }
+        }
+      }
+    } catch {}
     // Dynamically load real DB students, real attendance and real timetable
     Promise.all([
       fetch('/api/portals/students').then((res) => res.json()).catch(() => ({ data: [] })),
