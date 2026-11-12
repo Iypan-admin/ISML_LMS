@@ -407,7 +407,7 @@ export default function SuperAdminDashboardPage() {
                   No courses created yet. New courses submitted from the Academic Manager portal will automatically reflect here.
                 </div>
               ) : (
-                dbCourses.map((crs) => (
+                dbCourses.slice(0, 5).map((crs) => (
                   <div
                     key={crs.id}
                     className="p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-colors flex items-center justify-between gap-3"
@@ -451,6 +451,19 @@ export default function SuperAdminDashboardPage() {
                 ))
               )}
             </div>
+
+            {dbCourses.length > 5 && (
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Showing 5 of {dbCourses.length} active courses</span>
+                <Link
+                  href="/super-admin/courses"
+                  className="font-bold text-[#0052CC] hover:underline flex items-center gap-1"
+                >
+                  <span>View All {dbCourses.length} Courses in Catalog</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Quick Access to Core Portals */}

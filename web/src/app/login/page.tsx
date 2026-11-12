@@ -271,7 +271,7 @@ function LoginPageContent() {
       <header className="relative z-10 pt-2 shrink-0">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/80 text-xs font-semibold text-blue-700 shadow-xs">
           <ShieldCheck className="w-4 h-4 text-blue-600" />
-          <span>ISML Enterprise Multi-Tenant Foreign Language LMS</span>
+          <span>ISML College & School Learning Portal</span>
         </div>
       </header>
 
@@ -284,9 +284,9 @@ function LoginPageContent() {
             <div className="relative w-14 h-14 mx-auto mb-2 drop-shadow-xs">
               <Image src="/logo.png" alt="ISML Logo" fill className="object-contain" priority />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Portal Authentication</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Sign In to Your Account</h2>
             <p className="text-xs text-slate-500 font-medium">
-              Role-Based Access Control • NestJS + Supabase Secured
+              Enter your credentials to access your dashboard
             </p>
           </div>
 
@@ -309,7 +309,7 @@ function LoginPageContent() {
           {/* 🔽 Role Selector Dropdown */}
           <div className="relative">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Select 1 of 8 Portals (Demo Auto-Fill)
+              Select Your Role / Account
             </label>
             <button
               type="button"
@@ -421,9 +421,8 @@ function LoginPageContent() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded bg-white border-slate-300 text-blue-600 focus:ring-0 cursor-pointer"
                 />
-                <span className="font-medium">Remember session</span>
+                <span className="font-medium">Keep me signed in</span>
               </label>
-              <span className="text-slate-400">JWT Token auto-rotation</span>
             </div>
 
             {/* Submit Button */}
@@ -433,10 +432,10 @@ function LoginPageContent() {
               className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-sm shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
             >
               {loading ? (
-                <span>Authenticating with NestJS & Supabase...</span>
+                <span>Signing in...</span>
               ) : (
                 <>
-                  <span>Sign In to {currentRoleObj.name}</span>
+                  <span>Sign In as {currentRoleObj.name}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -447,7 +446,7 @@ function LoginPageContent() {
 
       {/* Footer */}
       <footer className="relative z-10 text-center text-[11px] text-slate-500">
-        © 2026 ISML Foreign Language LMS. Strict Security Authentication Layer.
+        © 2026 ISML Education Systems. All rights reserved.
       </footer>
     </div>
   );
