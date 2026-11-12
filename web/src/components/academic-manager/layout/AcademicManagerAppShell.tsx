@@ -496,7 +496,13 @@ export function AcademicManagerMobileNav() {
               type="button"
               onClick={() => {
                 setDrawerOpen(false);
-                router.push('/login');
+                try {
+                  localStorage.removeItem('isml_user');
+                  localStorage.removeItem('isml_admin_user');
+                  localStorage.removeItem('isml_token');
+                  sessionStorage.clear();
+                } catch {}
+                window.location.href = '/login';
               }}
               className="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer border border-rose-500/30"
             >

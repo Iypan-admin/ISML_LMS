@@ -391,7 +391,12 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  setShowSignOutModal(true);
+                  try {
+                    localStorage.removeItem('isml_user');
+                    localStorage.removeItem('isml_admin_user');
+                    sessionStorage.clear();
+                  } catch {}
+                  window.location.href = '/login';
                 }}
                 className="w-full py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition"
               >

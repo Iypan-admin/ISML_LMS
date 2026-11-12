@@ -145,7 +145,16 @@ export default function MobileNav() {
                       Cancel
                     </button>
                     <button
-                      onClick={() => { setDrawerOpen(false); router.push('/login'); }}
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        try {
+                          localStorage.removeItem('isml_user');
+                          localStorage.removeItem('isml_student_profile');
+                          localStorage.removeItem('isml_token');
+                          sessionStorage.clear();
+                        } catch {}
+                        window.location.href = '/login';
+                      }}
                       className="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1"
                     >
                       <LogOut className="w-3.5 h-3.5" />
