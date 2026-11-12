@@ -264,24 +264,6 @@ export default function TutorRecordingsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {activeTab === 'AUTO_WEBINARS' && autoCloudRecordings.length > 0 && (
-            <button
-              onClick={async () => {
-                if (confirm('Are you sure you want to delete and clear all recorded live sessions?')) {
-                  try {
-                    localStorage.removeItem('isml_archived_live_recordings');
-                    await fetch('https://ismllms-production.up.railway.app/api/live-classes/recordings/clear', { method: 'POST' });
-                  } catch {}
-                  setAutoCloudRecordings([]);
-                }
-              }}
-              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
-              title="Clear all recorded test sessions"
-            >
-              <span>Delete All Recordings</span>
-            </button>
-          )}
-
           <div className="relative flex-1 sm:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
