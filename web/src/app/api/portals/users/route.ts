@@ -162,7 +162,6 @@ export async function POST(request: Request) {
     };
 
     // Save to local staff database
-    const currentUsers = getStaffUsersDb();
     const existingIdx = currentUsers.findIndex((u) => u.email?.toLowerCase() === email);
     if (existingIdx !== -1) {
       currentUsers[existingIdx] = { ...currentUsers[existingIdx], ...newUserRecord };
