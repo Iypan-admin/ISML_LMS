@@ -4,6 +4,7 @@ import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
 import { RealtimeSyncProvider } from "@/context/RealtimeSyncContext";
 import MobileBackHandler from "@/components/common/MobileBackHandler";
+import AuthGuard from "@/components/common/AuthGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +39,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased min-h-screen bg-slate-50 font-sans overflow-x-hidden max-w-full`} suppressHydrationWarning>
         <RealtimeSyncProvider>
           <MobileBackHandler />
-          <AppShell>{children}</AppShell>
+          <AuthGuard>
+            <AppShell>{children}</AppShell>
+          </AuthGuard>
         </RealtimeSyncProvider>
       </body>
     </html>
