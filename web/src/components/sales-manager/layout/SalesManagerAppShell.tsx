@@ -188,13 +188,23 @@ export function SalesManagerSidebar({ onClose, isMobile = false }: { onClose?: (
             <p className="text-[10px] text-cyan-300/80 truncate">Admissions Lead</p>
           </div>
         </div>
-        <Link
-          href="/login"
+        <button
+          onClick={() => {
+            if (onClose) onClose();
+            try {
+              localStorage.removeItem('isml_user');
+              localStorage.removeItem('isml_admin_user');
+              localStorage.removeItem('isml_token');
+              localStorage.clear();
+              sessionStorage.clear();
+            } catch {}
+            window.location.href = '/login';
+          }}
           title="Sign Out"
-          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors shrink-0"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
-        </Link>
+        </button>
       </div>
     </aside>
   );

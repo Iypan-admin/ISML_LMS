@@ -33,18 +33,6 @@ function LoginPageContent() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   React.useEffect(() => {
-    // If user is already authenticated in this session, prevent landing on login page upon mobile back button
-    try {
-      const stored = localStorage.getItem('isml_user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.portalRoute) {
-          router.replace(u.portalRoute);
-          return;
-        }
-      }
-    } catch {}
-
     const queryEmail = searchParams.get('email');
     const queryRole = searchParams.get('role');
     if (queryEmail) {
