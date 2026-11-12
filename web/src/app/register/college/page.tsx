@@ -255,7 +255,7 @@ export default function CollegeRegistrationPage() {
       });
 
       // Sync with backend & Super Admin Approval Center
-      fetch('http://localhost:4000/api/portals/admissions/register', {
+      fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

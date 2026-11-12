@@ -23,7 +23,7 @@ export default function ClassesPage() {
 
   // Fetch real live classes from backend with 0ms fast cache
   const fetchLiveClasses = useCallback(async () => {
-    fastFetch('http://localhost:4000/api/live-classes', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/live-classes', (data) => {
       if (data) {
         const list = Array.isArray(data) ? data : (data.data || []);
         const mapped: ClassSessionItem[] = list.map((c: any) => ({

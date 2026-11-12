@@ -56,8 +56,8 @@ export default function CollegeAdminAttendancePage() {
     } catch { }
 
     const queryUrl = collegeIdParam
-      ? `http://localhost:4000/api/portals/students?collegeId=${encodeURIComponent(collegeIdParam)}`
-      : 'http://localhost:4000/api/portals/students?collegeId=inst-01';
+      ? `https://ismllms-production.up.railway.app/api/portals/students?collegeId=${encodeURIComponent(collegeIdParam)}`
+      : 'https://ismllms-production.up.railway.app/api/portals/students?collegeId=inst-01';
 
     fastFetch(queryUrl, (json) => {
       if (json && json.data) {

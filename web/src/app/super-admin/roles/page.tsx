@@ -964,7 +964,7 @@ export default function RolesExactSidebarCrudPage() {
     showToast(`Role "${newRole.name}" created! You can now toggle C-U-R-D.`);
 
     // Persist new role to Supabase backend database
-    fetch('http://localhost:4000/api/portals/roles', {
+    fetch('https://ismllms-production.up.railway.app/api/portals/roles', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newRole),
@@ -1017,7 +1017,7 @@ export default function RolesExactSidebarCrudPage() {
     showToast(`Role "${deletedName}" deleted.`);
 
     // Delete in Supabase backend database
-    fetch(`http://localhost:4000/api/portals/roles/${targetId}/delete`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/roles/${targetId}/delete`, {
       method: 'POST',
     }).catch(() => null);
   };

@@ -44,7 +44,7 @@ export default function InstitutionsPage() {
 
   // Fetch institutions from Supabase Backend API with 0ms fast cache
   React.useEffect(() => {
-    fastFetch('http://localhost:4000/api/portals/institutions', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/institutions', (json) => {
       if (json && json.data && json.data.length > 0) {
         const mapped: Institution[] = json.data.map((item: any) => ({
           id: item.id,
@@ -95,7 +95,7 @@ export default function InstitutionsPage() {
     setEditingInst(null);
 
     // Persist update to Supabase backend database
-    fetch(`http://localhost:4000/api/portals/institutions/${updatedInst.id}/update`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/institutions/${updatedInst.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedInst),
@@ -110,7 +110,7 @@ export default function InstitutionsPage() {
     setDeleteTarget(null);
 
     // Delete in Supabase backend database
-    fetch(`http://localhost:4000/api/portals/institutions/${targetId}/delete`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/institutions/${targetId}/delete`, {
       method: 'POST',
     }).catch(() => null);
   };
@@ -126,7 +126,7 @@ export default function InstitutionsPage() {
     );
 
     // Sync status with Supabase backend database
-    fetch(`http://localhost:4000/api/portals/institutions/${inst.id}/update`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/institutions/${inst.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: nextStatus }),

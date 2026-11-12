@@ -120,7 +120,7 @@ export default function SuperAdminSidebar() {
 
     const fetchCount = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/portals/approvals', { cache: 'no-store' });
+        const res = await fetch('https://ismllms-production.up.railway.app/api/portals/approvals', { cache: 'no-store' });
         const json = await res.json();
         if (json.data && Array.isArray(json.data)) {
           const count = json.data.filter((item: any) => {

@@ -74,10 +74,10 @@ export default function ScheduleOnlineMeetingDrawer({
     if (!isOpen) return;
 
     Promise.all([
-      fetch('http://localhost:4000/api/portals/courses')
+      fetch('https://ismllms-production.up.railway.app/api/portals/courses')
         .then((r) => r.json())
         .catch(() => ({ data: [] })),
-      fetch('http://localhost:4000/api/portals/batches')
+      fetch('https://ismllms-production.up.railway.app/api/portals/batches')
         .then((r) => r.json())
         .catch(() => ({ data: [] })),
     ]).then(([coursesRes, batchesRes]) => {
@@ -215,7 +215,7 @@ export default function ScheduleOnlineMeetingDrawer({
     };
 
     // Persist to backend and Supabase database (Syncs with Super Admin Approval Center)
-    fetch('http://localhost:4000/api/live-classes/schedule', {
+    fetch('https://ismllms-production.up.railway.app/api/live-classes/schedule', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

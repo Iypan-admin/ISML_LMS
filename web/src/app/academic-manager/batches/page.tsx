@@ -34,7 +34,7 @@ export default function AcademicManagerBatchesPage() {
         res = await fetch('/api/portals/batches', { cache: 'no-store' });
         if (!res.ok) throw new Error();
       } catch {
-        res = await fetch('http://localhost:4000/api/portals/batches', { cache: 'no-store' });
+        res = await fetch('https://ismllms-production.up.railway.app/api/portals/batches', { cache: 'no-store' });
       }
       const json = await res.json();
       if (json && json.status === 'success' && Array.isArray(json.data)) {

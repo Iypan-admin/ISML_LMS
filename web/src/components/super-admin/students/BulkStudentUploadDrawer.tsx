@@ -670,7 +670,7 @@ export default function BulkStudentUploadDrawer({
 
     // Dispatch real bulk emails and persist batch to backend queue
     try {
-      await fetch('http://localhost:4000/api/portals/admissions/bulk-register', {
+      await fetch('https://ismllms-production.up.railway.app/api/portals/admissions/bulk-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

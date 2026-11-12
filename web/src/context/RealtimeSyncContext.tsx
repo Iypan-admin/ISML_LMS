@@ -14,7 +14,7 @@ interface RealtimeSyncContextType {
 
 const RealtimeSyncContext = createContext<RealtimeSyncContextType | null>(null);
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://ismllms-production.up.railway.app';
 
 export function RealtimeSyncProvider({ children }: { children: React.ReactNode }) {
   const listenersRef = useRef<Map<string, Set<RealtimeCallback>>>(new Map());

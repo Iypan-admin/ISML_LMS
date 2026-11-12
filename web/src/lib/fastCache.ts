@@ -71,21 +71,21 @@ export function prefetchAllPortalData() {
   if (typeof window === 'undefined') return;
 
   const endpoints = [
-    'http://localhost:4000/api/portals/student/learning',
-    'http://localhost:4000/api/portals/student/profile',
-    'http://localhost:4000/api/live-classes',
-    'http://localhost:4000/api/portals/batches',
-    'http://localhost:4000/api/portals/courses',
-    'http://localhost:4000/api/portals/faculty',
-    'http://localhost:4000/api/portals/approvals',
-    'http://localhost:4000/api/portals/executive-metrics',
-    'http://localhost:4000/api/portals/institutions',
-    'http://localhost:4000/api/portals/recordings',
-    'http://localhost:4000/api/portals/users',
-    'http://localhost:4000/api/portals/finance/fee-structures',
-    'http://localhost:4000/api/portals/college/bulk-payments',
-    'http://localhost:4000/api/portals/curriculum-matrices/schools',
-    'http://localhost:4000/api/portals/curriculum-matrices/colleges',
+    'https://ismllms-production.up.railway.app/api/portals/student/learning',
+    'https://ismllms-production.up.railway.app/api/portals/student/profile',
+    'https://ismllms-production.up.railway.app/api/live-classes',
+    'https://ismllms-production.up.railway.app/api/portals/batches',
+    'https://ismllms-production.up.railway.app/api/portals/courses',
+    'https://ismllms-production.up.railway.app/api/portals/faculty',
+    'https://ismllms-production.up.railway.app/api/portals/approvals',
+    'https://ismllms-production.up.railway.app/api/portals/executive-metrics',
+    'https://ismllms-production.up.railway.app/api/portals/institutions',
+    'https://ismllms-production.up.railway.app/api/portals/recordings',
+    'https://ismllms-production.up.railway.app/api/portals/users',
+    'https://ismllms-production.up.railway.app/api/portals/finance/fee-structures',
+    'https://ismllms-production.up.railway.app/api/portals/college/bulk-payments',
+    'https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/schools',
+    'https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/colleges',
   ];
 
   endpoints.forEach((url) => {

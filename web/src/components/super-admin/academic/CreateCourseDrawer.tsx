@@ -67,7 +67,7 @@ export default function CreateCourseDrawer({
 
   // Fetch all live partner institutions directly from DB
   useEffect(() => {
-    fetch('http://localhost:4000/api/portals/institutions')
+    fetch('https://ismllms-production.up.railway.app/api/portals/institutions')
       .then((r) => r.json())
       .then((res) => {
         if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
@@ -143,7 +143,7 @@ export default function CreateCourseDrawer({
   const [dbTutors, setDbTutors] = useState<Array<{ id: string; name: string; designation?: string }>>(DEFAULT_REAL_DB_TUTORS);
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/portals/faculty')
+    fetch('https://ismllms-production.up.railway.app/api/portals/faculty')
       .then((r) => r.json())
       .then((res) => {
         const list = Array.isArray(res) ? res : res?.data;
@@ -393,7 +393,7 @@ export default function CreateCourseDrawer({
     };
 
     // Persist new course to centralized backend
-    fetch('http://localhost:4000/api/portals/courses', {
+    fetch('https://ismllms-production.up.railway.app/api/portals/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

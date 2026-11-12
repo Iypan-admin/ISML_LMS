@@ -49,7 +49,7 @@ export default function AcademicManagerCoursesPage() {
 
   // Fetch live courses directly from DB API
   const fetchLiveCourses = React.useCallback(() => {
-    fetch('http://localhost:4000/api/portals/courses')
+    fetch('https://ismllms-production.up.railway.app/api/portals/courses')
       .then((res) => res.json())
       .then((res) => {
         if (res && res.status === 'success' && Array.isArray(res.data)) {

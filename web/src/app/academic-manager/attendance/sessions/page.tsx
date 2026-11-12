@@ -76,7 +76,7 @@ export default function AcademicManagerAttendancePage() {
 
   // Fetch real live classes and live attendance directly from backend
   const fetchAttendance = () => {
-    fetch('http://localhost:4000/api/live-classes', { cache: 'no-store' })
+    fetch('https://ismllms-production.up.railway.app/api/live-classes', { cache: 'no-store' })
       .then((res) => res.json())
       .then(async (json) => {
         const rawList = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
@@ -86,7 +86,7 @@ export default function AcademicManagerAttendancePage() {
           rawList.map(async (c: any) => {
             let attendees: any[] = c.attendance && Array.isArray(c.attendance) ? [...c.attendance] : [];
             try {
-              const stateRes = await fetch(`http://localhost:4000/api/live-classes/${c.id}/interactive-state`, { cache: 'no-store' });
+              const stateRes = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${c.id}/interactive-state`, { cache: 'no-store' });
               const stateJson = await stateRes.json();
               if (stateJson?.data?.attendance && Array.isArray(stateJson.data.attendance) && stateJson.data.attendance.length > 0) {
                 attendees = stateJson.data.attendance;

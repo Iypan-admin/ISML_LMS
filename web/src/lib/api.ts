@@ -2,7 +2,7 @@
 // ISML ENTERPRISE API SERVICE LAYER (Connecting 8 Frontend Portals to NestJS Backend)
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://ismllms-production.up.railway.app/api';
 
 export interface ApiResponse<T = any> {
   status: 'success' | 'error';

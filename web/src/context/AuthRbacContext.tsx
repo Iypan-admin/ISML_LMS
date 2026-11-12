@@ -170,7 +170,7 @@ export function AuthRbacProvider({ children }: { children: React.ReactNode }) {
     );
 
     // Asynchronously synchronize with Enterprise Backend DB
-    fetch(`http://localhost:4000/api/portals/roles/${roleId}/permissions`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/roles/${roleId}/permissions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ permissions: newPermissions }),

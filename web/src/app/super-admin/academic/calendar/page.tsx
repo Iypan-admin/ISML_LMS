@@ -102,7 +102,7 @@ export default function SuperAdminAcademicCalendarPage() {
 
       // 1. Fetch live classes
       try {
-        const resClasses = await fetch('http://localhost:4000/api/live-classes');
+        const resClasses = await fetch('https://ismllms-production.up.railway.app/api/live-classes');
         if (resClasses.ok) {
           const classesData = await resClasses.json();
           const items = Array.isArray(classesData) ? classesData : (classesData.data || []);
@@ -133,7 +133,7 @@ export default function SuperAdminAcademicCalendarPage() {
 
       // 2. Fetch 1:1 Human Speaking Vivas
       try {
-        const resViva = await fetch('http://localhost:4000/api/portals/tutor/speaking-viva');
+        const resViva = await fetch('https://ismllms-production.up.railway.app/api/portals/tutor/speaking-viva');
         if (resViva.ok) {
           const vivaData = await resViva.json();
           const items = Array.isArray(vivaData.data) ? vivaData.data : [];

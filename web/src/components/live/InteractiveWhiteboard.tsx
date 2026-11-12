@@ -163,7 +163,7 @@ export default function InteractiveWhiteboard({
       isEraser: tool === 'eraser',
     };
 
-    fetch(`http://localhost:4000/api/live-classes/${classId}/whiteboard-stroke`, {
+    fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/whiteboard-stroke`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stroke: strokeData }),

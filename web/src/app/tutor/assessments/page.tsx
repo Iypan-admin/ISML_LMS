@@ -145,8 +145,8 @@ export default function TutorAssessmentsPage() {
       setIsLoading(true);
       try {
         const [cRes, bRes] = await Promise.all([
-          fetch('http://localhost:4000/api/portals/courses'),
-          fetch('http://localhost:4000/api/portals/batches'),
+          fetch('https://ismllms-production.up.railway.app/api/portals/courses'),
+          fetch('https://ismllms-production.up.railway.app/api/portals/batches'),
         ]);
         const cJson = await cRes.json();
         const bJson = await bRes.json();
@@ -262,7 +262,7 @@ export default function TutorAssessmentsPage() {
         for (const crs of groups) {
           for (const b of crs.batches) {
             try {
-              const sRes = await fetch(`http://localhost:4000/api/portals/batch-students?batchId=${encodeURIComponent(b.batchId)}`);
+              const sRes = await fetch(`https://ismllms-production.up.railway.app/api/portals/batch-students?batchId=${encodeURIComponent(b.batchId)}`);
               if (sRes.ok) {
                 const sJson = await sRes.json();
                 const students = sJson.data || [];

@@ -90,7 +90,7 @@ export default function RealLiveKitStage({
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`http://localhost:4000/api/live-classes/${classId}/join`, {
+        const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/join`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

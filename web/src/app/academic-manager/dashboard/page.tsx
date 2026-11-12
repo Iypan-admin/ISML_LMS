@@ -69,34 +69,34 @@ export default function AcademicManagerDashboardPage() {
   const [dbLiveClasses, setDbLiveClasses] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    fastFetch('http://localhost:4000/api/portals/curriculum-matrices/schools', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/schools', (data) => {
       if (data?.status === 'success' && Array.isArray(data.data)) {
         setSchoolMatrices(data.data);
       }
     });
 
-    fastFetch('http://localhost:4000/api/portals/curriculum-matrices/colleges', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/colleges', (data) => {
       if (data?.status === 'success' && Array.isArray(data.data)) {
         setCollegeMatrices(data.data);
       }
     });
 
     // Fetch live courses from DB
-    fastFetch('http://localhost:4000/api/portals/courses', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/courses', (data) => {
       if (data?.status === 'success' && Array.isArray(data.data)) {
         setDbCourses(data.data);
       }
     });
 
     // Fetch live batches from DB
-    fastFetch('http://localhost:4000/api/portals/batches', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/batches', (data) => {
       if (data?.status === 'success' && Array.isArray(data.data)) {
         setDbBatches(data.data);
       }
     });
 
     // Fetch live classes from DB
-    fastFetch('http://localhost:4000/api/live-classes', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/live-classes', (data) => {
       if (data?.data && Array.isArray(data.data)) {
         setDbLiveClasses(data.data);
       }

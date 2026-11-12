@@ -66,7 +66,7 @@ export default function CollegeAdminBulkFeesPage() {
 
   React.useEffect(() => {
     // 1. Fetch live students from backend and map fees dynamically
-    fastFetch('http://localhost:4000/api/portals/students', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/students', (json) => {
       if (json && json.data) {
         const mapped: StudentFeeRecord[] = json.data.map((s: any, idx: number) => {
           const isPending = idx % 2 === 0;
@@ -87,7 +87,7 @@ export default function CollegeAdminBulkFeesPage() {
     });
 
     // 2. Fetch live batches
-    fastFetch('http://localhost:4000/api/portals/batches', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/batches', (json) => {
       if (json && json.data) setCollegeBatches(json.data);
     });
   }, []);

@@ -40,7 +40,7 @@ export default function ProfilePage() {
     } catch {}
 
     // 2. Fetch genuine profile from DB API
-    fetch('http://localhost:4000/api/portals/student/profile')
+    fetch('https://ismllms-production.up.railway.app/api/portals/student/profile')
       .then((r) => r.json())
       .then((json) => {
         if (json.status === 'success' && json.data) {

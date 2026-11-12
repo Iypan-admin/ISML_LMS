@@ -24,7 +24,7 @@ const getBaseUrl = (): string => {
     const host = window.location.hostname;
     return 'http://' + host + ':4000/api/live-classes';
   }
-  return 'http://localhost:4000/api/live-classes';
+  return 'https://ismllms-production.up.railway.app/api/live-classes';
 };
 
 export async function requestJoinLiveClass(

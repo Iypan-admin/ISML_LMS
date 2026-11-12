@@ -98,7 +98,7 @@ export default function AcademicManagerFacultyUnifiedPage({
   const handleDeleteFaculty = async (facultyId: string, facultyName: string) => {
     if (!confirm(`Are you sure you want to remove tutor ${facultyName}?`)) return;
     try {
-      await fetch(`http://localhost:4000/api/portals/faculty/${facultyId}/delete`, { method: 'POST' });
+      await fetch(`https://ismllms-production.up.railway.app/api/portals/faculty/${facultyId}/delete`, { method: 'POST' });
       setFacultyList((prev) => prev.filter((f) => f.id !== facultyId));
       showSuccess(`Tutor ${facultyName} removed.`);
     } catch (e) {

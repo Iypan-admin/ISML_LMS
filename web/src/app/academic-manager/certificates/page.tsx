@@ -48,7 +48,7 @@ export default function AcademicManagerCertificatesPage() {
     async function loadCerts() {
       try {
         setIsLoading(true);
-        const res = await fetch('http://localhost:4000/api/portals/certificates');
+        const res = await fetch('https://ismllms-production.up.railway.app/api/portals/certificates');
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {

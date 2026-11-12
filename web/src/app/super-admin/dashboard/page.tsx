@@ -95,13 +95,13 @@ export default function SuperAdminDashboardPage() {
   } | null>(null);
 
   React.useEffect(() => {
-    fastFetch('http://localhost:4000/api/portals/approvals', (appJson) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/approvals', (appJson) => {
       if (appJson?.data) setDbApprovals(appJson.data);
     });
-    fastFetch('http://localhost:4000/api/portals/courses', (courseJson) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/courses', (courseJson) => {
       if (courseJson?.data) setDbCourses(courseJson.data);
     });
-    fastFetch('http://localhost:4000/api/portals/executive-metrics', (metricJson) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/executive-metrics', (metricJson) => {
       if (metricJson?.data) setDbMetrics(metricJson.data);
     });
   }, []);

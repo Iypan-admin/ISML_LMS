@@ -46,7 +46,7 @@ export default function SalesManagerOnboardInstitutionPage() {
 
   // Fetch only genuine institutions from Backend API / Database (Zero Mock Data)
   useEffect(() => {
-    fetch('http://localhost:4000/api/portals/institutions')
+    fetch('https://ismllms-production.up.railway.app/api/portals/institutions')
       .then((res) => res.json())
       .then((json) => {
         setIsLoading(false);
@@ -97,7 +97,7 @@ export default function SalesManagerOnboardInstitutionPage() {
     showSuccess(`Institution "${updatedInst.name}" updated successfully.`);
     setEditingInst(null);
 
-    fetch(`http://localhost:4000/api/portals/institutions/${updatedInst.id}/update`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/institutions/${updatedInst.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedInst),
@@ -111,7 +111,7 @@ export default function SalesManagerOnboardInstitutionPage() {
     showSuccess(`Institution "${deleteTarget.name}" deleted.`);
     setDeleteTarget(null);
 
-    fetch(`http://localhost:4000/api/portals/institutions/${targetId}/delete`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/institutions/${targetId}/delete`, {
       method: 'POST',
     }).catch(() => null);
   };
@@ -124,7 +124,7 @@ export default function SalesManagerOnboardInstitutionPage() {
       )
     );
 
-    fetch(`http://localhost:4000/api/portals/institutions/${inst.id}/update`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/institutions/${inst.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: nextStatus }),

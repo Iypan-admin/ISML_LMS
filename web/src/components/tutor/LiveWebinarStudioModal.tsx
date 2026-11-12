@@ -76,7 +76,7 @@ export default function LiveWebinarStudioModal({
   // Synchronize initial permissions
   useEffect(() => {
     if (!isOpen) return;
-    fetch(`http://localhost:4000/api/live-classes/${classId}/interactive-state`)
+    fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/interactive-state`)
       .then((r) => r.json())
       .then((res) => {
         if (res?.data?.permissions) {
@@ -91,7 +91,7 @@ export default function LiveWebinarStudioModal({
     const nextVal = !allowStudentMic;
     setAllowStudentMic(nextVal);
     try {
-      await fetch(`http://localhost:4000/api/live-classes/${classId}/media-permissions`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/media-permissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ allowStudentMic: nextVal }),
@@ -108,7 +108,7 @@ export default function LiveWebinarStudioModal({
     const nextVal = !allowStudentVideo;
     setAllowStudentVideo(nextVal);
     try {
-      await fetch(`http://localhost:4000/api/live-classes/${classId}/media-permissions`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/media-permissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ allowStudentVideo: nextVal }),
@@ -315,7 +315,7 @@ export default function LiveWebinarStudioModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    fetch(`http://localhost:4000/api/live-classes/${classId}/interactive-state`)
+    fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/interactive-state`)
       .then((r) => r.json())
       .then((res) => {
         if (res.data) {
@@ -409,7 +409,7 @@ export default function LiveWebinarStudioModal({
     const text = chatInput;
     setChatInput('');
     try {
-      await fetch(`http://localhost:4000/api/live-classes/${classId}/chat`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -428,7 +428,7 @@ export default function LiveWebinarStudioModal({
 
   const handleShareMedia = async (type: 'DOCUMENT' | 'AUDIO' | 'VIDEO' | 'WHITEBOARD' | 'NONE', title: string, url?: string) => {
     try {
-      await fetch(`http://localhost:4000/api/live-classes/${classId}/share-content`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/share-content`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -652,7 +652,7 @@ export default function LiveWebinarStudioModal({
 
     const checkRequests = async () => {
       try {
-        const res = await fetch(`http://localhost:4000/api/live-classes/${classId}/join-requests`);
+        const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/join-requests`);
         const json = await res.json();
         if (json.data && Array.isArray(json.data)) {
           const pendings = json.data.filter((r: any) => r.status === 'PENDING');
@@ -720,7 +720,7 @@ export default function LiveWebinarStudioModal({
 
   const handleAdmit = async (studentId: string) => {
     try {
-      await fetch(`http://localhost:4000/api/live-classes/${classId}/admit-student`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/admit-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId }),
@@ -732,7 +732,7 @@ export default function LiveWebinarStudioModal({
 
   const handleReject = async (studentId: string) => {
     try {
-      await fetch(`http://localhost:4000/api/live-classes/${classId}/reject-student`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/reject-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId }),
@@ -1518,7 +1518,7 @@ export default function LiveWebinarStudioModal({
           reader.readAsDataURL(recordedBlob!);
         });
 
-        const uploadRes = await fetch(`http://localhost:4000/api/live-classes/${classId}/upload-recording`, {
+        const uploadRes = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/upload-recording`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1545,7 +1545,7 @@ export default function LiveWebinarStudioModal({
     try {
       const realDurationMins = Math.max(1, Math.round(elapsedSecs / 60));
       const finalTitle = customRecordingTitle?.trim() || sessionTitle;
-      const endRes = await fetch(`http://localhost:4000/api/live-classes/${classId}/end`, {
+      const endRes = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/end`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

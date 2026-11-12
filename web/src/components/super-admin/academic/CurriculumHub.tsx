@@ -463,7 +463,7 @@ export default function CurriculumHub({ portalRole = 'super-admin' }: Curriculum
     async function fetchCourses() {
       try {
         setIsLoadingCourses(true);
-        const res = await fetch('http://localhost:4000/api/portals/courses');
+        const res = await fetch('https://ismllms-production.up.railway.app/api/portals/courses');
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {

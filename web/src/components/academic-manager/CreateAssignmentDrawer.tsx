@@ -62,7 +62,7 @@ export default function CreateAssignmentDrawer({
   useEffect(() => {
     if (!isOpen) return;
     setLoadingBatches(true);
-    fetch('http://localhost:4000/api/portals/batches')
+    fetch('https://ismllms-production.up.railway.app/api/portals/batches')
       .then((res) => res.json())
       .then((json) => {
         if (json?.data && Array.isArray(json.data)) {

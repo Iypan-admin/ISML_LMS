@@ -81,7 +81,7 @@ export default function TutorRecordingsPage() {
       localSaved = JSON.parse(localStorage.getItem('isml_archived_live_recordings') || '[]');
     } catch {}
 
-    fetch('http://localhost:4000/api/live-classes/recordings/all')
+    fetch('https://ismllms-production.up.railway.app/api/live-classes/recordings/all')
       .then((r) => r.json())
       .then((res) => {
         if (res.data && Array.isArray(res.data)) {
@@ -228,7 +228,7 @@ export default function TutorRecordingsPage() {
                 if (confirm('Are you sure you want to delete and clear all recorded live sessions?')) {
                   try {
                     localStorage.removeItem('isml_archived_live_recordings');
-                    await fetch('http://localhost:4000/api/live-classes/recordings/clear', { method: 'POST' });
+                    await fetch('https://ismllms-production.up.railway.app/api/live-classes/recordings/clear', { method: 'POST' });
                   } catch {}
                   setAutoCloudRecordings([]);
                 }
@@ -368,7 +368,7 @@ export default function TutorRecordingsPage() {
                                 const saved = JSON.parse(localStorage.getItem(key) || '[]');
                                 const filtered = saved.filter((s: any) => s.id !== rec.id);
                                 localStorage.setItem(key, JSON.stringify(filtered));
-                                await fetch(`http://localhost:4000/api/live-classes/recordings/${rec.id}/delete`, { method: 'POST' });
+                                await fetch(`https://ismllms-production.up.railway.app/api/live-classes/recordings/${rec.id}/delete`, { method: 'POST' });
                               } catch {}
                               setAutoCloudRecordings((prev) => prev.filter((r) => r.id !== rec.id));
                             }

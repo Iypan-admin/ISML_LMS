@@ -77,7 +77,7 @@ export class EmailNotificationService {
     batchName?: string;
     collegeName?: string;
   }): { subject: string; html: string; text: string } {
-    const loginUrl = params.loginUrl || 'http://localhost:3000/auth/login';
+    const loginUrl = params.loginUrl || 'https://isml-lms.vercel.app/auth/login';
     const institution = params.collegeName || 'Indian School of Modern Languages';
     const subject = `Official Account Credentials: ${params.studentName} - ISML Learning Portal`;
 
@@ -219,7 +219,7 @@ ISML Academic Governance Desk
     department?: string;
     designation?: string;
   }): { subject: string; html: string; text: string } {
-    const loginUrl = params.loginUrl || 'http://localhost:3000/auth/login';
+    const loginUrl = params.loginUrl || 'https://isml-lms.vercel.app/auth/login';
     const subject = `Faculty Appointment & Portal Credentials: ${params.tutorName} - ISML Foreign Language Faculty`;
 
     const html = `
@@ -346,7 +346,7 @@ ISML Faculty Governance Committee
     password: string;
     loginUrl?: string;
   }): { subject: string; html: string; text: string } {
-    const loginUrl = params.loginUrl || 'http://localhost:3000/auth/login';
+    const loginUrl = params.loginUrl || 'https://isml-lms.vercel.app/auth/login';
     const typeLabel = params.institutionType === 'SCHOOL' ? 'School' : 'College';
     const roleLabel = params.institutionType === 'SCHOOL' ? 'School Principal / Head' : 'Campus Executive Administrator';
     const subject = `Official ${typeLabel} Administration Credentials: ${params.institutionName} - ISML Institutional Desk`;
@@ -469,7 +469,7 @@ ISML Institutional Governance Board
     password: string;
     loginUrl?: string;
   }): { subject: string; html: string; text: string } {
-    const loginUrl = params.loginUrl || 'http://localhost:3000/auth/login';
+    const loginUrl = params.loginUrl || 'https://isml-lms.vercel.app/auth/login';
     const subject = `Parent Portal Access: ${params.studentName} - ISML Guardian Desk`;
 
     const html = `

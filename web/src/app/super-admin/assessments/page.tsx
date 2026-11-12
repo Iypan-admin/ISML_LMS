@@ -74,7 +74,7 @@ export default function SuperAdminAssessmentsPage() {
     async function loadData() {
       try {
         setIsLoading(true);
-        const res = await fetch('http://localhost:4000/api/portals/assessments');
+        const res = await fetch('https://ismllms-production.up.railway.app/api/portals/assessments');
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {

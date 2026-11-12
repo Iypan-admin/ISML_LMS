@@ -111,7 +111,7 @@ export default function SchoolAdminAppShell({ children }: { children: React.Reac
     } catch { }
 
     // Fetch genuine schools from backend
-    fetch('http://localhost:4000/api/portals/institutions')
+    fetch('https://ismllms-production.up.railway.app/api/portals/institutions')
       .then((res) => res.json())
       .then((json) => {
         if (json && json.data) {

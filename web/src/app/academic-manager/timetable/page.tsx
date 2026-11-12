@@ -677,7 +677,7 @@ export default function AcademicManagerTimetablePage() {
         } catch { }
 
         try {
-          await fetch('http://localhost:4000/api/portals/approvals/submit', {
+          await fetch('https://ismllms-production.up.railway.app/api/portals/approvals/submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(approvalItem),
@@ -1057,7 +1057,7 @@ export default function AcademicManagerTimetablePage() {
                                   onClick={async () => {
                                     // Check if the live class session has been started by tutor
                                     try {
-                                      const res = await fetch(`http://localhost:4000/api/live-classes/${slot.id}`);
+                                      const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${slot.id}`);
                                       const json = await res.json();
                                       const isLive = json?.data?.status === 'LIVE' || json?.data?.tutorJoined === true;
                                       if (!isLive) {

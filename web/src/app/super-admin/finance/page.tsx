@@ -43,18 +43,18 @@ export default function FinanceDashboardPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchFinanceMetrics = useCallback(async () => {
-    fastFetch('http://localhost:4000/api/portals/finance/fee-structures', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/finance/fee-structures', (data) => {
       if (data) setFeeStructures(Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []));
     });
 
-    fastFetch('http://localhost:4000/api/portals/approvals', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/approvals', (data) => {
       if (data) {
         const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
         setApprovals(list.filter((a: any) => a.entityType === 'FEE' || a.module === 'Finance'));
       }
     });
 
-    fastFetch('http://localhost:4000/api/portals/college/bulk-payments', (data) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/college/bulk-payments', (data) => {
       if (data) setBulkPayments(Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []));
       setIsLoading(false);
     });

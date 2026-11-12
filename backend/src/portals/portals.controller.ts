@@ -415,7 +415,7 @@ export class PortalsDataController {
                   institutionType: isSchool ? 'SCHOOL' : 'COLLEGE',
                   username: adminEmail,
                   password: defaultPassword,
-                  loginUrl: 'http://localhost:3000/auth/login',
+                  loginUrl: 'https://isml-lms.vercel.app/auth/login',
                 });
                 EmailNotificationService.sendEmail({
                   to: adminEmail,
@@ -488,7 +488,7 @@ export class PortalsDataController {
                     name: payload.fullName || `${adm.firstName} ${adm.lastName}`,
                     email: stuCreds.username,
                     credentials: {
-                      loginUrl: 'http://localhost:3000/auth/login',
+                      loginUrl: 'https://isml-lms.vercel.app/auth/login',
                       username: stuCreds.username,
                       password: stuCreds.password,
                     },
@@ -500,7 +500,7 @@ export class PortalsDataController {
                     name: payload.parentName || 'Parent / Guardian',
                     email: parCreds.username,
                     credentials: {
-                      loginUrl: 'http://localhost:3000/auth/login',
+                      loginUrl: 'https://isml-lms.vercel.app/auth/login',
                       username: parCreds.username,
                       password: parCreds.password,
                     },
@@ -519,7 +519,7 @@ export class PortalsDataController {
                     studentName: payload.fullName || `${adm.firstName} ${adm.lastName}`,
                     username: stuCreds.username,
                     password: stuCreds.password,
-                    loginUrl: 'http://localhost:3000/auth/login',
+                    loginUrl: 'https://isml-lms.vercel.app/auth/login',
                     courseName: payload.courseName,
                     batchName: payload.batchName,
                     collegeName: payload.collegeName,
@@ -547,7 +547,7 @@ export class PortalsDataController {
                     studentName: payload.fullName || `${adm.firstName} ${adm.lastName}`,
                     username: parCreds.username,
                     password: parCreds.password,
-                    loginUrl: 'http://localhost:3000/auth/login',
+                    loginUrl: 'https://isml-lms.vercel.app/auth/login',
                   });
                   EmailNotificationService.sendEmail({
                     to: parCreds.username,
@@ -600,7 +600,7 @@ export class PortalsDataController {
                       email: r.studentCredentials.username,
                       username: r.studentCredentials.username,
                       password: r.studentCredentials.password,
-                      loginUrl: 'http://localhost:3000/auth/login',
+                      loginUrl: 'https://isml-lms.vercel.app/auth/login',
                     });
                   }
                   if (r.parentCredentials?.username) {
@@ -610,7 +610,7 @@ export class PortalsDataController {
                       email: r.parentCredentials.username,
                       username: r.parentCredentials.username,
                       password: r.parentCredentials.password,
-                      loginUrl: 'http://localhost:3000/auth/login',
+                      loginUrl: 'https://isml-lms.vercel.app/auth/login',
                     });
                   }
                 });
@@ -737,7 +737,7 @@ export class PortalsDataController {
               const tutorCreds = {
                 username: tutorEmail,
                 password: rawPass,
-                loginUrl: 'http://localhost:3000/auth/login',
+                loginUrl: 'https://isml-lms.vercel.app/auth/login',
                 portalRoute: '/tutor/dashboard',
                 name: payload.name || fac?.name || 'Tutor Faculty',
               };
@@ -767,7 +767,7 @@ export class PortalsDataController {
                   tutorName: tutorCreds.name,
                   username: tutorCreds.username,
                   password: tutorCreds.password,
-                  loginUrl: 'http://localhost:3000/auth/login',
+                  loginUrl: 'https://isml-lms.vercel.app/auth/login',
                   department: payload.department,
                   designation: payload.designation,
                 });
@@ -1872,7 +1872,7 @@ export class PortalsDataController {
           institutionType: isSchool ? 'SCHOOL' : 'COLLEGE',
           username: adminEmail,
           password: defaultPassword,
-          loginUrl: 'http://localhost:3000/auth/login',
+          loginUrl: 'https://isml-lms.vercel.app/auth/login',
         });
         EmailNotificationService.sendEmail({
           to: adminEmail,
@@ -2995,7 +2995,7 @@ export class PortalsDataController {
         email,
         password: rawPass,
         portalRoute: '/tutor/dashboard',
-        loginUrl: 'http://localhost:3000/login',
+        loginUrl: 'https://isml-lms.vercel.app/login',
         name,
         role: 'TUTOR',
       },

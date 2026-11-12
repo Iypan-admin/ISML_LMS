@@ -49,7 +49,7 @@ export default function UploadPreRecordedDrawer({
   const [liveCoursesList, setLiveCoursesList] = useState<any[]>(mockCourses);
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/portals/courses')
+    fetch('https://ismllms-production.up.railway.app/api/portals/courses')
       .then((res) => res.json())
       .then((json) => {
         if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
@@ -205,7 +205,7 @@ export default function UploadPreRecordedDrawer({
       window.dispatchEvent(new CustomEvent('isml-realtime-event', { detail: { type: 'RECORDINGS_UPDATED' } }));
     } catch {}
 
-    fetch('http://localhost:4000/api/portals/recordings', {
+    fetch('https://ismllms-production.up.railway.app/api/portals/recordings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

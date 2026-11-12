@@ -236,7 +236,7 @@ export default function SalesRegisterCollegePage() {
 
     // Direct database persistence via API
     try {
-      await fetch('http://localhost:4000/api/portals/admissions/register', {
+      await fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -342,7 +342,7 @@ export default function SalesRegisterCollegePage() {
 
     // Direct database bulk persistence via API
     try {
-      await fetch('http://localhost:4000/api/portals/admissions/bulk-register', {
+      await fetch('https://ismllms-production.up.railway.app/api/portals/admissions/bulk-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

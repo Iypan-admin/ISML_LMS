@@ -278,7 +278,7 @@ export default function PublicRegistrationPage() {
         });
 
         // Dispatch Institutional Onboarding Request to Super Admin
-        fetch('http://localhost:4000/api/portals/institutions/request', {
+        fetch('https://ismllms-production.up.railway.app/api/portals/institutions/request', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -374,7 +374,7 @@ export default function PublicRegistrationPage() {
         });
 
         // Dispatch student registration request to Super Admin
-        fetch('http://localhost:4000/api/portals/admissions/register', {
+        fetch('https://ismllms-production.up.railway.app/api/portals/admissions/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

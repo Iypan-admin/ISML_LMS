@@ -76,7 +76,7 @@ export default function AcademicManagerRecordedSessionsPage() {
       } catch {}
 
       try {
-        const res = await fetch('http://localhost:4000/api/live-classes/recordings/all', { cache: 'no-store' });
+        const res = await fetch('https://ismllms-production.up.railway.app/api/live-classes/recordings/all', { cache: 'no-store' });
         const json = await res.json();
         const list = Array.isArray(json) ? json : json?.data;
         const bannedIds = new Set([
@@ -281,7 +281,7 @@ export default function AcademicManagerRecordedSessionsPage() {
       setSessions((prev) =>
         prev.map((s) => (s.id === session.id ? { ...s, viewsCount: nextViews } : s))
       );
-      fetch(`http://localhost:4000/api/live-classes/recordings/${session.id}/view`, { method: 'POST' }).catch(() => {});
+      fetch(`https://ismllms-production.up.railway.app/api/live-classes/recordings/${session.id}/view`, { method: 'POST' }).catch(() => {});
       setPreviewSession({ ...session, viewsCount: nextViews });
     } catch {
       setPreviewSession(session);

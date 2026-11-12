@@ -94,7 +94,7 @@ export default function Sidebar() {
       }
     } catch { }
 
-    fetch('http://localhost:4000/api/portals/student/profile')
+    fetch('https://ismllms-production.up.railway.app/api/portals/student/profile')
       .then((r) => r.json())
       .then((json) => {
         if (json.status === 'success' && json.data && !hasLocalUser) {

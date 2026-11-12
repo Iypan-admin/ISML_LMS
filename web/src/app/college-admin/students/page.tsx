@@ -87,12 +87,12 @@ export default function CollegeAdminStudentsPage() {
     });
 
     // 2. Fetch live courses
-    fastFetch('http://localhost:4000/api/portals/courses', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/courses', (json) => {
       if (json && json.data) setCollegeCourses(json.data);
     });
 
     // 3. Fetch live batches
-    fastFetch('http://localhost:4000/api/portals/batches', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/batches', (json) => {
       if (json && json.data) setCollegeBatches(json.data);
     });
   }, []);

@@ -87,7 +87,7 @@ export default function SubmitAcademicRequestDrawer({
         },
       };
 
-      const res = await fetch('http://localhost:4000/api/portals/approvals/submit', {
+      const res = await fetch('https://ismllms-production.up.railway.app/api/portals/approvals/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

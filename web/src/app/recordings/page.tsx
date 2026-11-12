@@ -54,7 +54,7 @@ export default function RecordingsPage() {
   const fetchLiveRecordings = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:4000/api/live-classes/recordings/all');
+      const res = await fetch('https://ismllms-production.up.railway.app/api/live-classes/recordings/all');
       const json = await res.json();
       if (json.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
         setRecordings(json.data);

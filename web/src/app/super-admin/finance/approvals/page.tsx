@@ -48,7 +48,7 @@ export default function FinanceApprovalsPage() {
 
   // Fetch real approval requests from backend API with 0ms fast cache
   const fetchApprovals = useCallback(async () => {
-    fastFetch('http://localhost:4000/api/portals/approvals', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/approvals', (json) => {
       if (json) {
         const list = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
         const filtered = list.filter((r: any) => 
@@ -99,7 +99,7 @@ export default function FinanceApprovalsPage() {
   const handleConfirmApprove = async () => {
     if (!targetActionRequest) return;
     try {
-      await fetch('http://localhost:4000/api/portals/approvals/action', {
+      await fetch('https://ismllms-production.up.railway.app/api/portals/approvals/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId: targetActionRequest.id, action: 'APPROVED' }),

@@ -74,7 +74,7 @@ export default function ApprovalCenterPage() {
         res = await fetch('/api/portals/approvals', { cache: 'no-store' });
         if (!res.ok) throw new Error('Local route error');
       } catch {
-        res = await fetch('http://localhost:4000/api/portals/approvals', { cache: 'no-store' });
+        res = await fetch('https://ismllms-production.up.railway.app/api/portals/approvals', { cache: 'no-store' });
       }
       const json = await res.json();
       const serverData = (json && json.data) ? json.data : [];
@@ -193,7 +193,7 @@ export default function ApprovalCenterPage() {
 
     setRequests((prev) => prev.filter((r) => r.id !== reqId));
     try {
-      await fetch(`http://localhost:4000/api/portals/approvals/${reqId}/delete`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/portals/approvals/${reqId}/delete`, {
         method: 'POST',
       });
     } catch {}
@@ -415,7 +415,7 @@ export default function ApprovalCenterPage() {
         }
       })
       .catch(() => {
-        fetch(`http://localhost:4000/api/portals/approvals/${reqId}/action`, {
+        fetch(`https://ismllms-production.up.railway.app/api/portals/approvals/${reqId}/action`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'APPROVED', remarks: comment || 'Executive authorization granted.' }),
@@ -459,7 +459,7 @@ export default function ApprovalCenterPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'REJECTED', remarks: reason }),
     }).catch(() => {
-      fetch(`http://localhost:4000/api/portals/approvals/${reqId}/action`, {
+      fetch(`https://ismllms-production.up.railway.app/api/portals/approvals/${reqId}/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'REJECTED', remarks: reason }),

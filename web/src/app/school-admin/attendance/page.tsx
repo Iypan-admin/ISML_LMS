@@ -33,7 +33,7 @@ export default function SchoolAdminAttendancePage() {
       }
     } catch {}
 
-    fastFetch(`http://localhost:4000/api/portals/students?collegeId=${encodeURIComponent(schId)}`, (json) => {
+    fastFetch(`https://ismllms-production.up.railway.app/api/portals/students?collegeId=${encodeURIComponent(schId)}`, (json) => {
       if (json && json.data) setStudents(json.data);
     });
   }, []);

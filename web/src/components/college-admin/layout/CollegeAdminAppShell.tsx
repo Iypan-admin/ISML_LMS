@@ -111,7 +111,7 @@ export default function CollegeAdminAppShell({ children }: { children: React.Rea
     }
 
     // Fetch live institutions from backend (zero mock)
-    fetch('http://localhost:4000/api/portals/institutions')
+    fetch('https://ismllms-production.up.railway.app/api/portals/institutions')
       .then((res) => res.json())
       .then((json) => {
         if (json && json.data && json.data.length > 0) {

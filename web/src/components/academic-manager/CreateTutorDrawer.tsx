@@ -164,7 +164,7 @@ export default function CreateTutorDrawer({
     };
 
     try {
-      const res = await fetch('http://localhost:4000/api/portals/faculty', {
+      const res = await fetch('https://ismllms-production.up.railway.app/api/portals/faculty', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -189,7 +189,7 @@ export default function CreateTutorDrawer({
         email: payload.email,
         role: 'TUTOR',
         portalRoute: '/tutor/dashboard',
-        loginUrl: 'http://localhost:3000/auth/login',
+        loginUrl: 'https://isml-lms.vercel.app/auth/login',
         status: 'PENDING_APPROVAL',
         approvalId: data.approvalId,
       });

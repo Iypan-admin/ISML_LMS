@@ -33,7 +33,7 @@ export default function AcademicManagerLiveClassesPage() {
   // Fetch live classes from backend API (live status always fresh without stale cache)
   const fetchLiveClasses = React.useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:4000/api/live-classes', { cache: 'no-store' });
+      const res = await fetch('https://ismllms-production.up.railway.app/api/live-classes', { cache: 'no-store' });
       const json = await res.json();
       if (json?.data && Array.isArray(json.data)) {
         const mapped: ClassSessionItem[] = json.data.map((c: any) => ({
@@ -218,7 +218,7 @@ export default function AcademicManagerLiveClassesPage() {
               onClick={async () => {
                 // Realtime check from backend API if tutor has actually started and is broadcasting
                 try {
-                  const checkRes = await fetch(`http://localhost:4000/api/live-classes/${row.id}`);
+                  const checkRes = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${row.id}`);
                   const checkData = await checkRes.json();
                   const trulyLive = checkData?.data?.status === 'LIVE' || checkData?.data?.tutorJoined === true;
 

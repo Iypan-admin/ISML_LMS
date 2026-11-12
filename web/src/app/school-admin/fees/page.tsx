@@ -37,7 +37,7 @@ export default function SchoolAdminFeesPage() {
       }
     } catch {}
 
-    fastFetch(`http://localhost:4000/api/portals/students?collegeId=${encodeURIComponent(schId)}`, (json) => {
+    fastFetch(`https://ismllms-production.up.railway.app/api/portals/students?collegeId=${encodeURIComponent(schId)}`, (json) => {
       if (json && json.data) {
         const mapped = json.data.map((s: any, idx: number) => {
           const isPending = idx % 2 === 0;

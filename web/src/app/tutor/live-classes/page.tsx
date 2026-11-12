@@ -35,7 +35,7 @@ export default function TutorLiveClassesPage() {
   const [classes, setClasses] = useState<LiveClass[]>([]);
   useEffect(() => {
     // 1. Fetch live classes from backend
-    fastFetch('http://localhost:4000/api/live-classes', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/live-classes', (json) => {
       if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
         const mapped: LiveClass[] = json.data.map((item: any) => {
           // Check if tutor allocation overrides slot timing

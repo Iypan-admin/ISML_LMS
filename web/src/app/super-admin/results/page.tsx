@@ -23,7 +23,7 @@ export default function ResultsPage() {
   const fetchResults = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('http://localhost:4000/api/portals/results');
+      const res = await fetch('https://ismllms-production.up.railway.app/api/portals/results');
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.data || []);

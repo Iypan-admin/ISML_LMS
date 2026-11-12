@@ -32,7 +32,7 @@ export default function CoursesPage() {
 
   // Fetch live courses from backend with 0ms fast cache
   const fetchLiveCourses = React.useCallback(() => {
-    fastFetch('http://localhost:4000/api/portals/courses', (res) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/courses', (res) => {
       if (res?.status === 'success' && Array.isArray(res.data)) {
         const live: CourseSummary[] = res.data.map((c: any) => ({
           id: c.id,
@@ -69,7 +69,7 @@ export default function CoursesPage() {
   const handleDeleteCourse = async () => {
     if (!deleteCourse) return;
     try {
-      await fetch(`http://localhost:4000/api/portals/courses/${deleteCourse.id}/delete`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/portals/courses/${deleteCourse.id}/delete`, {
         method: 'POST',
       });
       setCourses((prev) => prev.filter((c) => c.id !== deleteCourse.id));

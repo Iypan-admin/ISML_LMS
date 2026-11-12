@@ -243,7 +243,7 @@ export default function OnboardCollegeDrawer({
         adminPassword: `${finalCode.replace(/[^A-Z0-9]/g, '')}@2026!`,
       };
 
-      const res = await fetch('http://localhost:4000/api/portals/institutions', {
+      const res = await fetch('https://ismllms-production.up.railway.app/api/portals/institutions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -672,7 +672,7 @@ export default function OnboardCollegeDrawer({
                         type="button"
                         onClick={() => {
                           navigator.clipboard.writeText(
-                            `Administrator: ${adminCredentials.name}\nEmail: ${adminCredentials.email}\nPortal URL: http://localhost:3000${adminCredentials.portalRoute}`
+                            `Administrator: ${adminCredentials.name}\nEmail: ${adminCredentials.email}\nPortal URL: https://isml-lms.vercel.app${adminCredentials.portalRoute}`
                           );
                           alert('Administrator profile reference copied to clipboard.');
                         }}

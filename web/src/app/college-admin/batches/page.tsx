@@ -53,7 +53,7 @@ export default function CollegeAdminBatchesPage() {
       }
     } catch {}
 
-    fastFetch('http://localhost:4000/api/portals/batches', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/batches', (json) => {
       if (json && json.data) {
         // Filter out school cohorts if any, keep college cohorts
         const collegeBatches = json.data.filter((b: any) =>

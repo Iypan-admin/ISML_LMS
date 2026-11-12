@@ -60,7 +60,7 @@ export default function CourseDetailDrawer({
     let isMounted = true;
     setLoadingStudents(true);
 
-    const targetUrl = `http://localhost:4000/api/portals/students?courseId=${encodeURIComponent(course.id || '')}&courseCode=${encodeURIComponent(course.code || '')}&collegeId=${encodeURIComponent(course.collegeId || '')}&collegeName=${encodeURIComponent(course.collegeName || '')}`;
+    const targetUrl = `https://ismllms-production.up.railway.app/api/portals/students?courseId=${encodeURIComponent(course.id || '')}&courseCode=${encodeURIComponent(course.code || '')}&collegeId=${encodeURIComponent(course.collegeId || '')}&collegeName=${encodeURIComponent(course.collegeName || '')}`;
 
     fetch(targetUrl)
       .then((res) => res.json())

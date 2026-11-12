@@ -204,7 +204,7 @@ export default function SharedContentStage({
       const now = Date.now();
       if (now - broadcastThrottleRef.current > 40) {
         broadcastThrottleRef.current = now;
-        fetch(`http://localhost:4000/api/live-classes/${classId}/whiteboard-stroke`, {
+        fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/whiteboard-stroke`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(strokeData),

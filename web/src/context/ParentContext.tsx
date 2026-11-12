@@ -133,7 +133,7 @@ export function ParentProvider({ children }: { children: React.ReactNode }) {
                   duration: slot.timeSlot?.includes('11:00') ? '3h 30m' : '2h 30m',
                   tutorName: `${slot.facultyName || 'Joy JK'} (Lead Native Trainer)`,
                   status: sessionStatus,
-                  meetingUrl: slot.meetingUrl || 'http://localhost:3000/live-classes',
+                  meetingUrl: slot.meetingUrl || 'https://isml-lms.vercel.app/live-classes',
                 };
               })
             : liveList.length > 0
@@ -146,7 +146,7 @@ export function ParentProvider({ children }: { children: React.ReactNode }) {
                 duration: '2h 30m',
                 tutorName: `${item.tutorName || 'Joy JK'} (Lead Native Trainer)`,
                 status: item.status === 'LIVE' ? 'LIVE NOW' : item.status === 'ENDED' ? 'COMPLETED' : 'UPCOMING',
-                meetingUrl: item.meetingUrl || 'http://localhost:3000/live-classes',
+                meetingUrl: item.meetingUrl || 'https://isml-lms.vercel.app/live-classes',
               }))
             : [];
 

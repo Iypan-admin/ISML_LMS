@@ -48,7 +48,7 @@ export default function FeeStructuresPage() {
       setIsLoading(true);
       // 1. Fetch fee structures
       try {
-        const resFees = await fetch('http://localhost:4000/api/portals/finance/fee-structures');
+        const resFees = await fetch('https://ismllms-production.up.railway.app/api/portals/finance/fee-structures');
         if (resFees.ok) {
           const data = await resFees.json();
           const list = Array.isArray(data.data) ? data.data : (Array.isArray(data) ? data : []);
@@ -62,7 +62,7 @@ export default function FeeStructuresPage() {
 
       // 2. Fetch live courses
       try {
-        const resCourses = await fetch('http://localhost:4000/api/portals/courses');
+        const resCourses = await fetch('https://ismllms-production.up.railway.app/api/portals/courses');
         if (resCourses.ok) {
           const data = await resCourses.json();
           const list = Array.isArray(data) ? data : (data.courses || []);

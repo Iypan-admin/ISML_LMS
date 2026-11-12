@@ -96,7 +96,7 @@ export default function LiveMeetingInspectionModal({
   // Safety check: verify live status on mount. If tutor is NOT live, immediately close modal and show toast!
   useEffect(() => {
     if (!isOpen || !session?.id) return;
-    fetch('http://localhost:4000/api/live-classes/' + session.id)
+    fetch('https://ismllms-production.up.railway.app/api/live-classes/' + session.id)
       .then((r) => r.json())
       .then((json) => {
         const isLive = json?.data?.status === 'LIVE' || json?.data?.tutorJoined === true;
@@ -137,7 +137,7 @@ export default function LiveMeetingInspectionModal({
     // Load real students from database
     const loadRealStudents = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/portals/students');
+        const res = await fetch('https://ismllms-production.up.railway.app/api/portals/students');
         const json = await res.json();
         if (json?.data && Array.isArray(json.data) && isSubscribed) {
           const mapped: StudentAttendee[] = json.data.map((stu: any, idx: number) => ({
@@ -164,7 +164,7 @@ export default function LiveMeetingInspectionModal({
     // Load interactive state (chats & shared materials)
     const loadInteractiveState = async () => {
       try {
-        const res = await fetch('http://localhost:4000/api/live-classes/' + session.id + '/interactive-state');
+        const res = await fetch('https://ismllms-production.up.railway.app/api/live-classes/' + session.id + '/interactive-state');
         const json = await res.json();
         if (json?.data && isSubscribed) {
           if (Array.isArray(json.data.messages) && json.data.messages.length > 0) {

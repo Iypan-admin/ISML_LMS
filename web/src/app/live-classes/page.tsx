@@ -204,7 +204,7 @@ export default function LiveClassesPage() {
     // Broadcast through backend interactive chat API so tutor and other students see it instantly
     if (activeRoom) {
       try {
-        await fetch(`http://localhost:4000/api/live-classes/${activeRoom.id}/chat`, {
+        await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${activeRoom.id}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -227,7 +227,7 @@ export default function LiveClassesPage() {
     setHandRaised(nextState);
     if (activeRoom) {
       try {
-        await fetch(`http://localhost:4000/api/live-classes/${activeRoom.id}/interaction`, {
+        await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${activeRoom.id}/interaction`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -247,7 +247,7 @@ export default function LiveClassesPage() {
 
     if (activeRoom) {
       try {
-        await fetch(`http://localhost:4000/api/live-classes/${activeRoom.id}/interaction`, {
+        await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${activeRoom.id}/interaction`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -267,7 +267,7 @@ export default function LiveClassesPage() {
   };
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/live-classes')
+    fetch('https://ismllms-production.up.railway.app/api/live-classes')
       .then((r) => r.json())
       .then((json) => {
         if (json.data && Array.isArray(json.data) && json.data.length > 0) {
@@ -322,7 +322,7 @@ export default function LiveClassesPage() {
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:4000/api/live-classes/${requestingClass.id}/join-status?studentId=${studentId}`);
+        const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${requestingClass.id}/join-status?studentId=${studentId}`);
         const json = await res.json();
         if (json.data?.status === 'APPROVED') {
           handleEnterRoom(requestingClass);
@@ -344,7 +344,7 @@ export default function LiveClassesPage() {
     const classId = activeRoom.id;
 
     // 1. Initial fetch of interactive state from backend
-    fetch(`http://localhost:4000/api/live-classes/${classId}/interactive-state`)
+    fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/interactive-state`)
       .then((r) => r.json())
       .then((res) => {
         if (res.data) {
@@ -419,7 +419,7 @@ export default function LiveClassesPage() {
     } catch {}
 
     const attendanceTimer = setInterval(() => {
-      fetch(`http://localhost:4000/api/live-classes/${classId}/attendance-ping`, {
+      fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/attendance-ping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -431,7 +431,7 @@ export default function LiveClassesPage() {
     }, 30000);
 
     // Initial ping on entry
-    fetch(`http://localhost:4000/api/live-classes/${classId}/attendance-ping`, {
+    fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/attendance-ping`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -599,7 +599,7 @@ export default function LiveClassesPage() {
     } catch { }
 
     try {
-      const res = await fetch(`http://localhost:4000/api/live-classes/${item.id}/request-join`, {
+      const res = await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${item.id}/request-join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -637,7 +637,7 @@ export default function LiveClassesPage() {
     setRequestingClass(null);
 
     try {
-      await fetch(`http://localhost:4000/api/live-classes/${classId}/cancel-join`, {
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/cancel-join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId, studentName }),

@@ -61,7 +61,7 @@ export default function UsersPage() {
   
   // Fetch users from Supabase backend on mount with 0ms fast cache
   React.useEffect(() => {
-    fastFetch('http://localhost:4000/api/portals/users', (json) => {
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/users', (json) => {
       if (json?.data && json.data.length > 0) {
         const mapped: SuperAdminUser[] = json.data.map((u: any) => ({
           id: u.id,
@@ -101,7 +101,7 @@ export default function UsersPage() {
     setDeleteUserTarget(null);
 
     // Sync deletion to Supabase
-    fetch(`http://localhost:4000/api/portals/users/${targetId}/delete`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/users/${targetId}/delete`, {
       method: 'POST',
     }).catch(() => null);
   };
@@ -150,7 +150,7 @@ export default function UsersPage() {
     showSuccess(`Account for ${newUser.name} created. Credentials dispatched.`);
 
     // Persist to Supabase backend API
-    fetch('http://localhost:4000/api/portals/users', {
+    fetch('https://ismllms-production.up.railway.app/api/portals/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newUser),
@@ -173,7 +173,7 @@ export default function UsersPage() {
     showSuccess(`Assigned new role "${newRoleName}" successfully.`);
 
     // Persist role assignment in Supabase
-    fetch(`http://localhost:4000/api/portals/users/${userId}/update`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/users/${userId}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roleId: newRoleId }),
@@ -187,7 +187,7 @@ export default function UsersPage() {
     showSuccess(`User account status updated to ${newStatus}.`);
 
     // Sync status update with Supabase
-    fetch(`http://localhost:4000/api/portals/users/${userId}/update`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/users/${userId}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
@@ -201,7 +201,7 @@ export default function UsersPage() {
     );
 
     // Sync toggle status with Supabase
-    fetch(`http://localhost:4000/api/portals/users/${user.id}/update`, {
+    fetch(`https://ismllms-production.up.railway.app/api/portals/users/${user.id}/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: nextStatus }),

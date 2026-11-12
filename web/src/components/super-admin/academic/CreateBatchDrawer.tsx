@@ -154,7 +154,7 @@ export default function CreateBatchDrawer({
           res = await fetch(`/api/portals/students${instParam}`);
           if (!res.ok) throw new Error();
         } catch {
-          res = await fetch(`http://localhost:4000/api/portals/students${instParam}`);
+          res = await fetch(`https://ismllms-production.up.railway.app/api/portals/students${instParam}`);
         }
         const json = await res.json();
         let list = (json && json.status === 'success' && Array.isArray(json.data)) ? json.data : [];
@@ -238,7 +238,7 @@ export default function CreateBatchDrawer({
           res = await fetch(`/api/portals/faculty${instParam}`);
           if (!res.ok) throw new Error();
         } catch {
-          res = await fetch(`http://localhost:4000/api/portals/faculty${instParam}`);
+          res = await fetch(`https://ismllms-production.up.railway.app/api/portals/faculty${instParam}`);
         }
         const json = await res.json();
         if (json && json.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
@@ -312,7 +312,7 @@ export default function CreateBatchDrawer({
           res = await fetch('/api/portals/courses');
           if (!res.ok) throw new Error();
         } catch {
-          res = await fetch('http://localhost:4000/api/portals/courses');
+          res = await fetch('https://ismllms-production.up.railway.app/api/portals/courses');
         }
         const json = await res.json();
         if (json?.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
@@ -629,7 +629,7 @@ export default function CreateBatchDrawer({
       body: JSON.stringify(batchPayload),
     }).catch(() => null);
 
-    fetch('http://localhost:4000/api/portals/batches', {
+    fetch('https://ismllms-production.up.railway.app/api/portals/batches', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(batchPayload),
