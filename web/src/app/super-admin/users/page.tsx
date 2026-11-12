@@ -57,22 +57,31 @@ export default function UsersPage() {
   const { showSuccess, showInfo } = useToast();
   const { selectedCollegeId, setSelectedCollegeId, isOverall } = useCollege();
 
-  const [users, setUsers] = useState<SuperAdminUser[]>(mockUsers);
+  const [users, setUsers] = useState<SuperAdminUser[]>([]);
   
   // Fetch users from Supabase backend on mount with 0ms fast cache
   React.useEffect(() => {
     fastFetch('https://ismllms-production.up.railway.app/api/portals/users', (json) => {
       if (json?.data && json.data.length > 0) {
-        const mapped: SuperAdminUser[] = json.data.map((u: any) => ({
+        // Exclude learners and parents from Administrators & Staff directory
+        const staffOnly = json.data.filter((u: any) => {
+          const type = (u.userType || '').toUpperCase();
+          const email = (u.email || '').toLowerCase();
+          const isStudent = type === 'STUDENT' || email.includes('student') || email.includes('pupil');
+          const isParent = type === 'PARENT' || email.includes('parent');
+          return !isStudent && !isParent;
+        });
+
+        const mapped: SuperAdminUser[] = staffOnly.map((u: any) => ({
           id: u.id,
           name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Admin User',
           email: u.email,
           avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
           roleId: u.userRoles?.[0]?.roleId || 'role-super-admin',
-          roleName: u.userRoles?.[0]?.role?.name || (u.isSuperAdmin ? 'Super Administrator' : 'Staff'),
-          roleCode: u.userRoles?.[0]?.role?.code || (u.isSuperAdmin ? 'SUPER_ADMIN' : 'STAFF'),
-          collegeId: u.tenantId || 'inst-01',
-          collegeName: u.tenant?.displayName || u.tenant?.name || 'Main Campus',
+          roleName: u.userRoles?.[0]?.role?.name || (u.isSuperAdmin ? 'Super Administrator' : u.userType === 'TUTOR' ? 'Senior Faculty / Teacher' : 'Campus Operations Manager'),
+          roleCode: u.userRoles?.[0]?.role?.code || (u.isSuperAdmin ? 'SUPER_ADMIN' : u.userType === 'TUTOR' ? 'FACULTY' : 'STAFF'),
+          collegeId: u.tenantId || '521323cd-00da-49a6-98ed-6b7918d181b4',
+          collegeName: u.tenant?.displayName || u.tenant?.name || 'The American College',
           status: u.status || 'ACTIVE',
           permissions: [],
           lastLoginAt: u.lastLoginAt || new Date().toISOString(),

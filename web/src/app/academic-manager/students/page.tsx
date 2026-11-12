@@ -33,21 +33,23 @@ import {
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
+import { useCollege } from '@/context/CollegeContext';
 import StatusBadge from '@/components/common/StatusBadge';
 import StatusToggleSwitch from '@/components/common/StatusToggleSwitch';
 import { useToast } from '@/context/ToastContext';
 import { StudentUser, UserStatus } from '@/types/rbac';
 import {
-  mockStudents,
   mockInstitutions,
   mockDepartments,
   mockPrograms,
   mockBatches
 } from '@/mock/superAdminData';
+import realDbStudents from '@/lib/realDbStudents.json';
 
 export default function AcademicManagerStudentsPage() {
   const { showSuccess, showInfo } = useToast();
-  const [students, setStudents] = useState<StudentUser[]>(mockStudents);
+  const { selectedCollegeId, isOverall, isSchoolMode } = useCollege();
+  const [students, setStudents] = useState<StudentUser[]>(() => (realDbStudents as unknown as StudentUser[]) || []);
 
   // Filters
   const [selectedBatch, setSelectedBatch] = useState<string>('ALL');
@@ -70,9 +72,25 @@ export default function AcademicManagerStudentsPage() {
     }
   };
 
-  // Filtered dataset
+  // Filtered dataset adhering to College / School scope
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
+      // 1. College vs School Mode Filter
+      const isStudentSchool =
+        s.studentId?.startsWith('SLS') ||
+        s.collegeName?.toLowerCase().includes('school') ||
+        s.departmentName?.toLowerCase().includes('school') ||
+        s.collegeId === 'c37b62d5-6ca4-47cb-bed7-899ad75a3144';
+
+      if (isSchoolMode && !isStudentSchool) return false;
+      if (!isSchoolMode && isStudentSchool) return false;
+
+      // 2. Specific Institution Filter (if not Overall)
+      if (!isOverall && s.collegeId !== selectedCollegeId) {
+        return false;
+      }
+
+      // 3. User Dropdown Filters
       if (selectedBatch !== 'ALL' && s.batchId !== selectedBatch) return false;
       if (selectedProgram !== 'ALL' && s.programId !== selectedProgram) return false;
       if (selectedStatus !== 'ALL' && s.status !== selectedStatus) return false;
@@ -90,13 +108,15 @@ export default function AcademicManagerStudentsPage() {
       }
       return true;
     });
-  }, [students, selectedBatch, selectedProgram, selectedStatus, searchQuery]);
+  }, [students, isSchoolMode, isOverall, selectedCollegeId, selectedBatch, selectedProgram, selectedStatus, searchQuery]);
 
-  // Summary Metrics
-  const totalEnrolled = students.length;
-  const activeCount = students.filter(s => s.status === 'ACTIVE').length;
-  const avgAttendance = (students.reduce((acc, s) => acc + s.attendancePercentage, 0) / (students.length || 1)).toFixed(1);
-  const totalParentsLinked = students.filter(s => s.parentName).length;
+  // Summary Metrics based on filtered scope
+  const totalEnrolled = filteredStudents.length;
+  const activeCount = filteredStudents.filter(s => s.status === 'ACTIVE').length;
+  const avgAttendance = filteredStudents.length > 0
+    ? (filteredStudents.reduce((acc, s) => acc + s.attendancePercentage, 0) / filteredStudents.length).toFixed(1)
+    : '0.0';
+  const totalParentsLinked = filteredStudents.filter(s => s.parentName).length;
 
   return (
     <div className="space-y-6 pb-12 font-sans">

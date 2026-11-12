@@ -27,21 +27,24 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import StatusBadge from '@/components/common/StatusBadge';
 import { useCollege } from '@/context/CollegeContext';
-import { mockStudentFees, StudentFeeRecord } from '@/mock/financeManagerData';
+import { StudentFeeRecord } from '@/mock/financeManagerData';
 import { useToast } from '@/context/ToastContext';
+import realDbStudentFees from '@/lib/realDbStudentFees.json';
 
 export default function StudentFeesPage() {
-  const { selectedCollegeId, isOverall } = useCollege();
+  const { selectedCollegeId, selectedCollege, isOverall } = useCollege();
   const { showSuccess, showInfo } = useToast();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PAID' | 'PARTIAL' | 'OVERDUE'>('ALL');
-  const [expandedStudentId, setExpandedStudentId] = useState<string | null>('sf-02');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PAID' | 'PARTIAL' | 'OVERDUE' | 'PENDING'>('ALL');
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
+
+  const allDbStudents = (realDbStudentFees as any[]);
 
   // Filter based on college and inputs
   const collegeScoped = isOverall
-    ? mockStudentFees
-    : mockStudentFees.filter((s) => s.collegeId === selectedCollegeId);
+    ? allDbStudents
+    : allDbStudents.filter((s) => s.collegeId === selectedCollegeId || s.collegeName?.toLowerCase().includes(selectedCollege?.name?.toLowerCase() || ''));
 
   const filteredStudents = collegeScoped.filter((s) => {
     const matchesSearch =

@@ -161,7 +161,9 @@ class EnterpriseNotificationStore {
               this.notify();
             } else if (event.data?.type === 'PLAY_SOUND') {
               try {
-                soundNotification.playHighChime();
+                if (typeof window !== 'undefined' && window.location.pathname.startsWith('/super-admin')) {
+                  soundNotification.playHighChime();
+                }
               } catch {}
             }
           };
@@ -243,10 +245,13 @@ class EnterpriseNotificationStore {
     this.notifications = [newNotif, ...this.notifications];
     this.persist();
 
-    // 🔔 Live Audio Chime Sound Trigger
+    // 🔔 Live Audio Chime Sound Trigger (Super Admin only for approval requests)
     if (options?.playSound !== false && typeof window !== 'undefined') {
       try {
-        soundNotification.playHighChime();
+        const isSuperAdmin = window.location.pathname.startsWith('/super-admin');
+        if (isSuperAdmin) {
+          soundNotification.playHighChime();
+        }
         if (this.broadcastChannel) {
           this.broadcastChannel.postMessage({ type: 'PLAY_SOUND' });
         }

@@ -5,7 +5,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Receipt,
@@ -16,29 +16,73 @@ import {
   FileText,
   ShieldCheck,
   Calendar,
+  Lock,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import { useParent } from '@/context/ParentContext';
+import { useToast } from '@/context/ToastContext';
+import { initiateRazorpayPayment } from '@/lib/razorpayClient';
+import realDbStudentFees from '@/lib/realDbStudentFees.json';
 
 export default function ParentFeesPage() {
   const { selectedChild, selectChild, allChildren } = useParent();
-  const fee = selectedChild.feeStatus || {
-    totalTermFee: 12000,
-    paidAmount: 12000,
-    dueAmount: 0,
-    isFullyPaid: true,
-    dueDate: '2026-11-30',
-    lastPaymentRef: 'TXN-DB-9901',
-    status: 'PAID',
-    totalFee: 12000,
-    pendingAmount: 0,
-    lastReceiptNo: 'RCP-2026-081',
-  };
+  const { showSuccess, showError, showInfo } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const totalFeeVal = fee.totalFee ?? fee.totalTermFee ?? 12000;
-  const paidVal = fee.paidAmount ?? 12000;
-  const pendingVal = (fee as any).pendingAmount ?? fee.dueAmount ?? 0;
-  const isPaid = fee.isFullyPaid || pendingVal === 0;
+  // Match real DB ledger for this student if available
+  const dbMatch = (realDbStudentFees as any[]).find(
+    (s) =>
+      s.studentId === selectedChild.id ||
+      s.rollNo === selectedChild.rollNo ||
+      s.name.toLowerCase().includes(selectedChild.name.toLowerCase())
+  );
+
+  const [paidOverride, setPaidOverride] = useState<number | null>(null);
+  const [receiptOverride, setReceiptOverride] = useState<string | null>(null);
+
+  const totalFeeVal = dbMatch?.totalFees ?? 18500;
+  const paidVal = paidOverride !== null ? paidOverride : (dbMatch?.paidAmount ?? 7500);
+  const pendingVal = Math.max(0, totalFeeVal - paidVal);
+  const isPaid = pendingVal === 0;
+
+  const handlePayViaRazorpay = () => {
+    if (pendingVal <= 0) {
+      showInfo('All prescribed dues for this term are already cleared!');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    initiateRazorpayPayment({
+      amount: pendingVal,
+      studentId: selectedChild.id || 'std-amer-01',
+      studentName: selectedChild.name,
+      studentEmail: `${selectedChild.name.toLowerCase().replace(/\s+/g, '.')}@americancollege.edu.in`,
+      studentPhone: '+91 97890 12345',
+      studentFeeLedgerId: dbMatch?.id,
+      paymentFor: `Term Fee Clearance • ${selectedChild.primaryCourse?.name || 'French A1 Certification'}`,
+      onSuccess: (receipt) => {
+        setIsProcessing(false);
+        setPaidOverride(totalFeeVal);
+        setReceiptOverride(receipt.receiptNo);
+        showSuccess(
+          `Payment Successful! Receipt #${receipt.receiptNo} generated. Balance is now ₹0 and course study materials are unlocked.`
+        );
+      },
+      onFailure: (err) => {
+        setIsProcessing(false);
+        showError(
+          `Payment not completed: ${err.description || 'Transaction declined'}. Telemetry logged safely.`
+        );
+      },
+      onDismiss: () => {
+        setIsProcessing(false);
+        showInfo('Payment window closed. You can retry anytime.');
+      },
+    });
+  };
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -87,6 +131,16 @@ export default function ParentFeesPage() {
               {isPaid ? 'Full Cleared ✓' : 'Partial Due'}
             </p>
           </div>
+          {!isPaid && (
+            <button
+              onClick={handlePayViaRazorpay}
+              disabled={isProcessing}
+              className="px-4 py-2.5 bg-[#0052CC] hover:bg-blue-700 active:scale-95 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>{isProcessing ? 'Connecting...' : `Pay ₹${pendingVal.toLocaleString()} (Razorpay)`}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -101,15 +155,28 @@ export default function ParentFeesPage() {
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
           <p className="text-[11px] font-bold text-slate-500 uppercase">Amount Disbursed</p>
           <p className="text-2xl font-black text-emerald-700 mt-1">₹{paidVal.toLocaleString()}</p>
-          <p className="text-[11px] text-emerald-600 font-semibold mt-1">Bank Receipt: {fee.lastReceiptNo || 'RCP-2026-081'}</p>
+          <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+            Bank Receipt: {receiptOverride || (dbMatch?.installments?.[0]?.receiptNo) || 'RCP-20289935'}
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-          <p className="text-[11px] font-bold text-slate-500 uppercase">Outstanding Balance</p>
-          <p className={`text-2xl font-black mt-1 ${pendingVal === 0 ? 'text-slate-400' : 'text-rose-600'}`}>
-            ₹{pendingVal.toLocaleString()}
-          </p>
-          <p className="text-[11px] text-slate-400 mt-1">{fee.dueDate}</p>
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs flex flex-col justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase">Outstanding Balance</p>
+            <p className={`text-2xl font-black mt-1 ${pendingVal === 0 ? 'text-slate-400' : 'text-rose-600'}`}>
+              ₹{pendingVal.toLocaleString()}
+            </p>
+          </div>
+          {!isPaid && (
+            <button
+              onClick={handlePayViaRazorpay}
+              disabled={isProcessing}
+              className="mt-2 text-xs font-bold text-[#0052CC] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>Instant Clearance with UPI/Card</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

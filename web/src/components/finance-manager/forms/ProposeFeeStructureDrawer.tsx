@@ -30,10 +30,13 @@ import {
   Languages,
   Check,
 } from 'lucide-react';
-import { mockInstitutions, mockPrograms, mockBatches, mockCourses } from '@/mock/superAdminData';
+import { mockInstitutions, mockPrograms, mockBatches } from '@/mock/superAdminData';
+import realDbCourses from '@/lib/realDbCourses.json';
 import { financeProposalStore } from '@/services/financeProposalStore';
 import { useToast } from '@/context/ToastContext';
 import { useCollege, OVERALL_COLLEGE_ID } from '@/context/CollegeContext';
+
+const mockCourses = (realDbCourses as any[]);
 
 export interface ProposeFeeStructureDrawerProps {
   isOpen: boolean;

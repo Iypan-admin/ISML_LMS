@@ -55,6 +55,20 @@ export default function ScheduleOnlineMeetingDrawer({
   const [coursesList, setCoursesList] = useState<CourseSummary[]>([]);
   const [batchesList, setBatchesList] = useState<Batch[]>([]);
 
+  const [institutionId, setInstitutionId] = useState(selectedCollege?.id || institutions[0]?.id || 'inst-01');
+  const [subjectName, setSubjectName] = useState('');
+  const [facultyName, setFacultyName] = useState('Joy Jk');
+  const [programName, setProgramName] = useState('Language Certification');
+  const [batchName, setBatchName] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [timeSlot, setTimeSlot] = useState(
+    isSchoolMode ? '08:30 AM – 09:15 AM (Period 1 • 45m)' : '09:00 AM – 10:30 AM (90m Intensive)'
+  );
+  const [attendeesCount, setAttendeesCount] = useState(isSchoolMode ? 35 : 45);
+  const [status, setStatus] = useState<'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED' | 'DRAFT'>('UPCOMING');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [roomSlugSeed, setRoomSlugSeed] = useState(() => Math.random().toString(36).substring(2, 7));
+
   // Dynamic filtered batches matching selected course/curriculum
   const availableBatches = useMemo(() => {
     if (!batchesList || batchesList.length === 0) return [];
@@ -73,20 +87,6 @@ export default function ScheduleOnlineMeetingDrawer({
     // If specific filter matches, return them, else return all live batches
     return matched.length > 0 ? matched : batchesList;
   }, [batchesList, subjectName]);
-
-  const [institutionId, setInstitutionId] = useState(selectedCollege?.id || institutions[0]?.id || 'inst-01');
-  const [subjectName, setSubjectName] = useState('');
-  const [facultyName, setFacultyName] = useState('Joy Jk');
-  const [programName, setProgramName] = useState('Language Certification');
-  const [batchName, setBatchName] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [timeSlot, setTimeSlot] = useState(
-    isSchoolMode ? '08:30 AM – 09:15 AM (Period 1 • 45m)' : '09:00 AM – 10:30 AM (90m Intensive)'
-  );
-  const [attendeesCount, setAttendeesCount] = useState(isSchoolMode ? 35 : 45);
-  const [status, setStatus] = useState<'UPCOMING' | 'LIVE_NOW' | 'COMPLETED' | 'CANCELLED' | 'DRAFT'>('UPCOMING');
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [roomSlugSeed, setRoomSlugSeed] = useState(() => Math.random().toString(36).substring(2, 7));
 
   // Fetch live courses and batches when drawer opens
   useEffect(() => {

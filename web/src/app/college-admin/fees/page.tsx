@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { fastFetch } from '@/lib/fastCache';
+import { initiateRazorpayPayment } from '@/lib/razorpayClient';
 
 interface StudentFeeRecord {
   id: string;
@@ -140,6 +141,45 @@ export default function CollegeAdminBulkFeesPage() {
   const handleProcessBulkPayment = () => {
     if (selectedStudentIds.length === 0) {
       showInfo('Please select at least one student to process bulk fees.');
+      return;
+    }
+
+    if (paymentMode === 'ONLINE') {
+      setIsProcessing(true);
+      initiateRazorpayPayment({
+        amount: totalPayableAmount,
+        studentId: currentCollege.id,
+        studentName: `${currentCollege.name} (Bursar)`,
+        studentEmail: currentCollege.email,
+        studentPhone: currentCollege.phone,
+        paymentFor: `Institutional Bulk Tuition Clearance for ${selectedRecords.length} Students`,
+        onSuccess: (receipt) => {
+          setIsProcessing(false);
+          setFeeRecords((prev) =>
+            prev.map((r) =>
+              selectedStudentIds.includes(r.id)
+                ? {
+                    ...r,
+                    paidAmount: r.tuitionFee,
+                    dueAmount: 0,
+                    accessStatus: 'UNLOCKED',
+                  }
+                : r
+            )
+          );
+          setSelectedStudentIds([]);
+          showSuccess(
+            `Razorpay Payment Confirmed! Receipt #${receipt.receiptNo} generated. Cleared ₹${totalPayableAmount.toLocaleString()} for ${selectedRecords.length} students. LMS portals INSTANTLY UNLOCKED!`
+          );
+        },
+        onFailure: (err) => {
+          setIsProcessing(false);
+          showInfo(`Payment not finalized: ${err.description || 'Action cancelled'}`);
+        },
+        onDismiss: () => {
+          setIsProcessing(false);
+        },
+      });
       return;
     }
 

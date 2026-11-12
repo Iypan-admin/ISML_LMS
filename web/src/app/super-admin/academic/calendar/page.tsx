@@ -107,6 +107,21 @@ export default function SuperAdminAcademicCalendarPage() {
           const classesData = await resClasses.json();
           const items = Array.isArray(classesData) ? classesData : (classesData.data || []);
           items.forEach((c: any) => {
+            // Strictly exclude any purged/mock live class items (e.g. testtt, mrng-batch)
+            const titleLower = (c.title || '').toLowerCase();
+            const batchLower = (c.batchName || '').toLowerCase();
+            const courseLower = (c.courseName || '').toLowerCase();
+            const idLower = (c.id || '').toLowerCase();
+            if (
+              titleLower.includes('testtt') ||
+              batchLower.includes('mrng batch') ||
+              courseLower.includes('testtt') ||
+              idLower.includes('mrng-batch') ||
+              c.status === 'ENDED'
+            ) {
+              return;
+            }
+
             const startDate = c.scheduledStartTime ? new Date(c.scheduledStartTime) : new Date();
             const dateStr = startDate.toISOString().split('T')[0];
             unifiedList.push({

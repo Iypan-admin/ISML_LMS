@@ -4,9 +4,44 @@
 // ============================================================================
 
 import { ApprovalRequest, RequestStatus } from '@/types/rbac';
+import realDbFeeStructures from '@/lib/realDbFeeStructures.json';
+
+// Initialize with real database pending fee structures that require Super Admin approval
+const initialDbProposals: ApprovalRequest[] = (realDbFeeStructures as any[])
+  .filter((s: any) => s.approvalStatus === 'PENDING')
+  .map((s: any) => ({
+    id: s.approvalRequestId || `REQ-FIN-${s.code}`,
+    requestType: 'FEE_SCHEDULE_CREATION',
+    module: 'Finance',
+    entityType: 'FeeStructure',
+    entityId: s.id,
+    entityName: `${s.structureName} (${s.code})`,
+    submittedBy: {
+      name: 'Campus Finance Controller',
+      email: 'finance@isml.edu',
+      role: 'Finance Manager',
+    },
+    submittedDate: s.createdAt,
+    status: 'SUBMITTED' as RequestStatus,
+    impactAnalysis: `New tuition & lab studio schedule for ${s.courseName || s.structureName}. Total term fee of ₹${Number(s.totalFeeAmount).toLocaleString()} with 3-term EMI installment facility. Requires Central Super Admin sign-off before student enrollment ledgers are activated.`,
+    diff: (s.components || []).map((c: any) => ({
+      field: c.name,
+      oldValue: '₹0 (Unassigned)',
+      newValue: `₹${c.amount.toLocaleString()}`,
+    })),
+    history: [
+      {
+        step: 'Proposed by Finance Manager',
+        userName: 'Campus Finance Controller',
+        role: 'Finance Manager',
+        timestamp: s.createdAt,
+        comment: 'Proposed course fees & itemized laboratory line items for Super Admin authorization.',
+      },
+    ],
+  }));
 
 // In-memory global store that persists within the user's browser session (strictly DB only, zero mock data)
-let globalFinanceRequests: ApprovalRequest[] = [];
+let globalFinanceRequests: ApprovalRequest[] = [...initialDbProposals];
 
 // Listeners for reactive updates across components
 type Listener = () => void;

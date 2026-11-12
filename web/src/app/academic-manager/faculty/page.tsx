@@ -44,6 +44,7 @@ import {
 } from '@/mock/facultyAssignments';
 import AssignTutorDrawer from '@/components/academic-manager/AssignTutorDrawer';
 import { fastFetch } from '@/lib/fastCache';
+import { useCollege } from '@/context/CollegeContext';
 
 interface FacultyPageProps {
   portalRole?: 'super-admin' | 'academic-manager';
@@ -53,6 +54,7 @@ export default function AcademicManagerFacultyUnifiedPage({
   portalRole = 'academic-manager',
 }: FacultyPageProps = {}) {
   const { showSuccess, showInfo } = useToast();
+  const { selectedCollegeId, isOverall } = useCollege();
   const isSuperAdmin = portalRole === 'super-admin';
 
   // Primary Workspace Tab: Directory vs Batch Allocations
@@ -653,6 +655,7 @@ export default function AcademicManagerFacultyUnifiedPage({
           isOpen={isAssignDrawerOpen}
           onClose={() => setIsAssignDrawerOpen(false)}
           defaultRole={drawerDefaultRole}
+          initialInstitutionId={!isOverall ? selectedCollegeId : undefined}
           onAllocationCreated={handleAllocationCreated}
         />
       )}

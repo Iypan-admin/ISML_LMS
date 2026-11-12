@@ -33,39 +33,39 @@ import StatusBadge from '@/components/common/StatusBadge';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import { useCollege } from '@/context/CollegeContext';
-import { mockStudentFees, mockTransactions, mockRefunds } from '@/mock/financeManagerData';
-import { mockFeeStructures, mockApprovalRequests } from '@/mock/superAdminData';
+import realDbStudentFees from '@/lib/realDbStudentFees.json';
+import realDbTransactions from '@/lib/realDbTransactions.json';
+import realDbFeeStructures from '@/lib/realDbFeeStructures.json';
+import { financeProposalStore } from '@/services/financeProposalStore';
 
 export default function FinanceManagerDashboardPage() {
   const { selectedCollegeId, selectedCollege, isOverall } = useCollege();
 
-  // Filter records based on selected college
+  // Load live DB student fees, transactions & fee structures
+  const allFees = (realDbStudentFees as any[]);
+  const allTransactions = (realDbTransactions as any[]);
+  const allStructures = (realDbFeeStructures as any[]);
+
+  // Filter records based on selected college / campus scope
   const filteredFees = isOverall
-    ? mockStudentFees
-    : mockStudentFees.filter((f) => f.collegeId === selectedCollegeId);
+    ? allFees
+    : allFees.filter((f) => f.collegeId === selectedCollegeId || f.collegeName?.toLowerCase().includes(selectedCollege?.name?.toLowerCase() || ''));
 
   const filteredTransactions = isOverall
-    ? mockTransactions
-    : mockTransactions.filter((t) => t.collegeId === selectedCollegeId);
-
-  const filteredRefunds = isOverall
-    ? mockRefunds
-    : mockRefunds.filter((r) => r.collegeId === selectedCollegeId);
+    ? allTransactions
+    : allTransactions.filter((t) => t.collegeId === selectedCollegeId || t.collegeName?.toLowerCase().includes(selectedCollege?.name?.toLowerCase() || ''));
 
   // Aggregates
-  const totalExpected = filteredFees.reduce((acc, f) => acc + f.netPayable, 0);
-  const totalCollected = filteredFees.reduce((acc, f) => acc + f.paidAmount, 0);
-  const totalOutstanding = filteredFees.reduce((acc, f) => acc + f.outstandingBalance, 0);
-  const totalConcessions = filteredFees.reduce((acc, f) => acc + f.concessionAmount, 0);
+  const totalExpected = filteredFees.reduce((acc, f) => acc + (f.netPayable || f.totalFees || 0), 0);
+  const totalCollected = filteredFees.reduce((acc, f) => acc + (f.paidAmount || 0), 0);
+  const totalOutstanding = filteredFees.reduce((acc, f) => acc + (f.outstandingBalance || 0), 0);
+  const totalConcessions = filteredFees.reduce((acc, f) => acc + (f.concessionAmount || 0), 0);
   const collectionPercentage = totalExpected > 0 ? ((totalCollected / totalExpected) * 100).toFixed(1) : '0';
 
-  const pendingApprovalsCount = mockApprovalRequests.filter(
-    (r) => r.module === 'Finance' && (r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW')
-  ).length;
-
-  const pendingRefundsCount = filteredRefunds.filter(
-    (r) => r.status === 'SUBMITTED' || r.status === 'UNDER_VERIFICATION'
-  ).length;
+  // Real Super Admin pending proposals
+  const dynamicProposals = financeProposalStore.getFinanceOnlyRequests();
+  const dbPendingFeeStructures = allStructures.filter((s: any) => s.approvalStatus === 'PENDING');
+  const pendingApprovalsCount = dbPendingFeeStructures.length + dynamicProposals.filter((r) => r.status === 'SUBMITTED' || r.status === 'UNDER_REVIEW').length;
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -293,10 +293,33 @@ export default function FinanceManagerDashboardPage() {
             </div>
 
             <div className="space-y-2.5">
-              {mockApprovalRequests
-                .filter((r) => r.module === 'Finance')
-                .slice(0, 3)
-                .map((req) => (
+              {(() => {
+                const combinedQueue = [
+                  ...allStructures
+                    .filter((s: any) => s.approvalStatus === 'PENDING')
+                    .map((s: any) => ({
+                      id: s.approvalRequestId || `REQ-${s.code}`,
+                      entityName: `${s.structureName} (${s.code})`,
+                      status: 'SUBMITTED',
+                      submittedDate: s.createdAt,
+                    })),
+                  ...dynamicProposals.map((r) => ({
+                    id: r.id,
+                    entityName: r.entityName,
+                    status: r.status,
+                    submittedDate: r.submittedDate,
+                  }))
+                ];
+
+                if (combinedQueue.length === 0) {
+                  return (
+                    <div className="text-center p-6 text-slate-400 text-xs">
+                      No pending fee proposals. All active fee schedules are approved.
+                    </div>
+                  );
+                }
+
+                return combinedQueue.slice(0, 3).map((req) => (
                   <div
                     key={req.id}
                     className="p-3 rounded-xl border border-amber-200/70 bg-amber-50/40 space-y-1.5 text-xs"
@@ -305,14 +328,15 @@ export default function FinanceManagerDashboardPage() {
                       <span className="font-mono text-[10px] font-bold text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded">
                         {req.id}
                       </span>
-                      <StatusBadge status={req.status} />
+                      <StatusBadge status={req.status as any} />
                     </div>
                     <p className="font-bold text-slate-900 truncate">{req.entityName}</p>
                     <p className="text-[11px] text-slate-500 truncate">
                       Submitted on {new Date(req.submittedDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                     </p>
                   </div>
-                ))}
+                ));
+              })()}
             </div>
           </div>
 

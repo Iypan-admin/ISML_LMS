@@ -1,4 +1,5 @@
 // ============================================================================
+// ============================================================================
 // ISML COLLEGE LMS — SUPER ADMIN: PARENTS & GUARDIANS DIRECTORY
 // (/super-admin/parents)
 // Dedicated Central Parent & Guardian Portal: Multi-Student Linkages, Family Accounts,
@@ -51,33 +52,341 @@ import { mockCourses, mockBatches, mockInstitutions } from '@/mock/superAdminDat
 import AddUserDrawer from '@/components/super-admin/users/AddUserDrawer';
 import { SuperAdminUser } from '@/types/rbac';
 
-// High-fidelity enriched Parent Dataset with Course & Batch linkages
-export const superAdminMockParents: ParentUser[] = [];
+// High-fidelity enriched Parent Dataset strictly scoped to The American College and Sivakasi Lions School
+export const superAdminMockParents: ParentUser[] = [
+  // ─── THE AMERICAN COLLEGE PARENTS ───
+  {
+    id: 'amer-prt-1',
+    name: 'Dr. S. Sundararajan',
+    email: 'parent1@americancollege.edu.in',
+    mobile: '+91 98421 11001',
+    relationship: 'FATHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-10T14:30:00Z',
+    createdAt: '2026-06-15T10:00:00Z',
+    linkedStudents: [
+      {
+        studentId: 'AMER-COL-STD-23',
+        studentName: 'Muthu Pandian',
+        programName: 'French A1 Intensive Certification Program',
+        courseId: 'crs-amer-01',
+        courseName: 'French Language Certification (CEFR A1)',
+        batchId: 'batch-amer-01',
+        batchName: 'MRNG BATCH',
+        collegeName: 'The American College',
+        attendancePercentage: 96,
+        feePendingAmount: 0,
+      },
+      {
+        studentId: 'AMER-COL-STD-24',
+        studentName: 'Jeyashree Rajan',
+        programName: 'German A1 Professional Career Track',
+        courseId: 'crs-amer-02',
+        courseName: 'German A1 Professional Career Track',
+        batchId: 'batch-amer-01',
+        batchName: 'MRNG BATCH',
+        collegeName: 'The American College',
+        attendancePercentage: 97,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'amer-prt-2',
+    name: 'Mrs. Lakshmi Narayanan',
+    email: 'parent2@americancollege.edu.in',
+    mobile: '+91 98421 11002',
+    relationship: 'MOTHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-10T11:20:00Z',
+    createdAt: '2026-06-16T11:20:00Z',
+    linkedStudents: [
+      {
+        studentId: 'AMER-COL-STD-25',
+        studentName: 'Saravanan Karthik',
+        programName: 'French A1 Intensive Certification Program',
+        courseId: 'crs-amer-01',
+        courseName: 'French Language Certification (CEFR A1)',
+        batchId: 'batch-amer-01',
+        batchName: 'MRNG BATCH',
+        collegeName: 'The American College',
+        attendancePercentage: 90,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'amer-prt-3',
+    name: 'Mr. R. Vijayakumar',
+    email: 'parent3@americancollege.edu.in',
+    mobile: '+91 98421 11003',
+    relationship: 'FATHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-09T16:00:00Z',
+    createdAt: '2026-06-18T14:00:00Z',
+    linkedStudents: [
+      {
+        studentId: 'AMER-COL-STD-26',
+        studentName: 'Divya Bharathi',
+        programName: 'French A1 Intensive Certification Program',
+        courseId: 'crs-amer-01',
+        courseName: 'French Language Certification (CEFR A1)',
+        batchId: 'batch-amer-01',
+        batchName: 'MRNG BATCH',
+        collegeName: 'The American College',
+        attendancePercentage: 94,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'amer-prt-4',
+    name: 'Mrs. Meenakshi Sankar',
+    email: 'parent4@americancollege.edu.in',
+    mobile: '+91 98421 11004',
+    relationship: 'MOTHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-08T10:15:00Z',
+    createdAt: '2026-06-20T09:30:00Z',
+    linkedStudents: [
+      {
+        studentId: 'AMER-COL-STD-27',
+        studentName: 'Vijay Anand',
+        programName: 'French A1 Intensive Certification Program',
+        courseId: 'crs-amer-01',
+        courseName: 'French Language Certification (CEFR A1)',
+        batchId: 'batch-amer-01',
+        batchName: 'MRNG BATCH',
+        collegeName: 'The American College',
+        attendancePercentage: 92,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'amer-prt-5',
+    name: 'Prof. K. Anand',
+    email: 'parent5@americancollege.edu.in',
+    mobile: '+91 98421 11005',
+    relationship: 'FATHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-07T12:00:00Z',
+    createdAt: '2026-06-22T10:00:00Z',
+    linkedStudents: [
+      {
+        studentId: 'AMER-COL-STD-28',
+        studentName: 'Abinaya Sundaram',
+        programName: 'French A1 Intensive Certification Program',
+        courseId: 'crs-amer-01',
+        courseName: 'French Language Certification (CEFR A1)',
+        batchId: 'batch-amer-01',
+        batchName: 'MRNG BATCH',
+        collegeName: 'The American College',
+        attendancePercentage: 95,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+
+  // ─── SIVAKASI LIONS MATRICULATION HIGHER SECONDARY SCHOOL PARENTS ───
+  {
+    id: 'siva-prt-1',
+    name: 'Thiru. K. Marimuthu',
+    email: 'parent1@sivakasilions.edu.in',
+    mobile: '+91 94431 22001',
+    relationship: 'FATHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-10T15:10:00Z',
+    createdAt: '2026-06-15T09:00:00Z',
+    linkedStudents: [
+      {
+        studentId: 'SLMHSS-PUPIL-01',
+        studentName: 'Gokul Nath',
+        programName: 'Junior French Discovery (Grades 9-10)',
+        courseId: 'crs-siva-01',
+        courseName: 'Junior French Discovery',
+        batchId: 'batch-siva-01',
+        batchName: 'Sivakasi Lions French Cohort A',
+        collegeName: 'Sivakasi Lions Matriculation Higher Secondary School',
+        attendancePercentage: 98,
+        feePendingAmount: 0,
+      },
+      {
+        studentId: 'SLMHSS-PUPIL-02',
+        studentName: 'Haritha Selvam',
+        programName: 'Junior French Discovery (Grades 9-10)',
+        courseId: 'crs-siva-01',
+        courseName: 'Junior French Discovery',
+        batchId: 'batch-siva-01',
+        batchName: 'Sivakasi Lions French Cohort A',
+        collegeName: 'Sivakasi Lions Matriculation Higher Secondary School',
+        attendancePercentage: 96,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'siva-prt-2',
+    name: 'Tmt. Revathi Shenbagam',
+    email: 'parent2@sivakasilions.edu.in',
+    mobile: '+91 94431 22002',
+    relationship: 'MOTHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-09T18:30:00Z',
+    createdAt: '2026-06-16T10:00:00Z',
+    linkedStudents: [
+      {
+        studentId: 'SLMHSS-PUPIL-03',
+        studentName: 'Siva Balaji',
+        programName: 'Junior French Discovery (Grades 9-10)',
+        courseId: 'crs-siva-01',
+        courseName: 'Junior French Discovery',
+        batchId: 'batch-siva-01',
+        batchName: 'Sivakasi Lions French Cohort A',
+        collegeName: 'Sivakasi Lions Matriculation Higher Secondary School',
+        attendancePercentage: 93,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'siva-prt-3',
+    name: 'Thiru. S. Ganesan',
+    email: 'parent3@sivakasilions.edu.in',
+    mobile: '+91 94431 22003',
+    relationship: 'FATHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-08T14:45:00Z',
+    createdAt: '2026-06-18T11:00:00Z',
+    linkedStudents: [
+      {
+        studentId: 'SLMHSS-PUPIL-04',
+        studentName: 'Pavithra Ramesh',
+        programName: 'Junior French Discovery (Grades 9-10)',
+        courseId: 'crs-siva-01',
+        courseName: 'Junior French Discovery',
+        batchId: 'batch-siva-01',
+        batchName: 'Sivakasi Lions French Cohort A',
+        collegeName: 'Sivakasi Lions Matriculation Higher Secondary School',
+        attendancePercentage: 95,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'siva-prt-4',
+    name: 'Tmt. Karpagam Murugan',
+    email: 'parent4@sivakasilions.edu.in',
+    mobile: '+91 94431 22004',
+    relationship: 'MOTHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-07T09:20:00Z',
+    createdAt: '2026-06-20T12:00:00Z',
+    linkedStudents: [
+      {
+        studentId: 'SLMHSS-PUPIL-05',
+        studentName: 'Karthikeyan Vetrivel',
+        programName: 'Junior French Discovery (Grades 9-10)',
+        courseId: 'crs-siva-01',
+        courseName: 'Junior French Discovery',
+        batchId: 'batch-siva-01',
+        batchName: 'Sivakasi Lions French Cohort A',
+        collegeName: 'Sivakasi Lions Matriculation Higher Secondary School',
+        attendancePercentage: 91,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+  {
+    id: 'siva-prt-5',
+    name: 'Thiru. V. Shanmugavel',
+    email: 'parent5@sivakasilions.edu.in',
+    mobile: '+91 94431 22005',
+    relationship: 'FATHER',
+    status: 'ACTIVE',
+    credentialsDelivered: true,
+    portalLastLogin: '2026-11-06T17:15:00Z',
+    createdAt: '2026-06-22T14:30:00Z',
+    linkedStudents: [
+      {
+        studentId: 'SLMHSS-PUPIL-06',
+        studentName: 'Swetha Narayanan',
+        programName: 'Junior French Discovery (Grades 9-10)',
+        courseId: 'crs-siva-01',
+        courseName: 'Junior French Discovery',
+        batchId: 'batch-siva-01',
+        batchName: 'Sivakasi Lions French Cohort A',
+        collegeName: 'Sivakasi Lions Matriculation Higher Secondary School',
+        attendancePercentage: 97,
+        feePendingAmount: 0,
+      },
+    ],
+  },
+];
 
 export default function SuperAdminParentsDirectoryPage() {
   const { showSuccess, showInfo } = useToast();
   const { selectedCollegeId, isOverall, getCollegeName } = useCollege();
   const [parents, setParents] = useState<ParentUser[]>(superAdminMockParents);
 
-  // 1. Available Courses filtered by selected College context
+  // 1. Available Courses filtered by selected College context (The American College & Sivakasi Lions School)
   const filteredCourses = useMemo(() => {
-    if (isOverall || !selectedCollegeId) return mockCourses;
-    return mockCourses.filter((c) => !c.collegeId || c.collegeId === selectedCollegeId);
+    return [
+      {
+        id: 'crs-amer-01',
+        name: 'French Language Certification (CEFR A1)',
+        collegeId: '521323cd-00da-49a6-98ed-6b7918d181b4',
+      },
+      {
+        id: 'crs-amer-02',
+        name: 'German A1 Professional Career Track',
+        collegeId: '521323cd-00da-49a6-98ed-6b7918d181b4',
+      },
+      {
+        id: 'crs-siva-01',
+        name: 'Junior French Discovery',
+        collegeId: 'c37b62d5-6ca4-47cb-bed7-899ad75a3144',
+      },
+    ].filter((c) => isOverall || !selectedCollegeId || c.collegeId === selectedCollegeId);
   }, [selectedCollegeId, isOverall]);
 
   // Selected Course Filter State ('ALL' or specific courseId)
   const [selectedCourseId, setSelectedCourseId] = useState<string>('ALL');
 
-  // Batches belonging to the Active Course Filter
+  // Batches belonging to The American College & Sivakasi Lions School
   const availableBatches = useMemo(() => {
-    if (selectedCourseId === 'ALL') {
-      if (isOverall || !selectedCollegeId) return mockBatches;
-      return mockBatches.filter((b) => !b.institutionId || b.institutionId === selectedCollegeId);
-    }
-    return mockBatches.filter((b) => {
-      const matchCourseId = b.courseIds?.includes(selectedCourseId);
-      const matchCollege = isOverall || !selectedCollegeId || !b.institutionId || b.institutionId === selectedCollegeId;
-      return matchCourseId && matchCollege;
+    const validBatches = [
+      {
+        id: 'batch-amer-01',
+        name: 'MRNG BATCH',
+        courseIds: ['crs-amer-01', 'crs-amer-02'],
+        institutionId: '521323cd-00da-49a6-98ed-6b7918d181b4',
+        facultyName: 'Joy JK',
+        studentCount: 5,
+      },
+      {
+        id: 'batch-siva-01',
+        name: 'Sivakasi Lions French Cohort A',
+        courseIds: ['crs-siva-01'],
+        institutionId: 'c37b62d5-6ca4-47cb-bed7-899ad75a3144',
+        facultyName: 'Rev. Sister Mary Vasanthi',
+        studentCount: 5,
+      },
+    ];
+
+    return validBatches.filter((b) => {
+      const matchCollege = isOverall || !selectedCollegeId || b.institutionId === selectedCollegeId;
+      const matchCourse = selectedCourseId === 'ALL' || b.courseIds.includes(selectedCourseId);
+      return matchCollege && matchCourse;
     });
   }, [selectedCourseId, selectedCollegeId, isOverall]);
 
@@ -131,6 +440,12 @@ export default function SuperAdminParentsDirectoryPage() {
       // 1. College Scope Filter
       if (!isOverall && selectedCollegeId) {
         const matchesCollege = p.linkedStudents.some((s) => {
+          if (selectedCollegeId === '521323cd-00da-49a6-98ed-6b7918d181b4') {
+            return s.collegeName.toLowerCase().includes('american');
+          }
+          if (selectedCollegeId === 'c37b62d5-6ca4-47cb-bed7-899ad75a3144') {
+            return s.collegeName.toLowerCase().includes('sivakasi') || s.collegeName.toLowerCase().includes('lions');
+          }
           const inst = mockInstitutions.find((i) => i.id === selectedCollegeId);
           return inst && s.collegeName.toLowerCase().includes(inst.name.toLowerCase());
         });
@@ -141,7 +456,7 @@ export default function SuperAdminParentsDirectoryPage() {
       if (selectedCourseId !== 'ALL') {
         const matchesCourse = p.linkedStudents.some(
           (s) => s.courseId === selectedCourseId || s.programName.toLowerCase().includes(
-            (mockCourses.find((c) => c.id === selectedCourseId)?.name || '').toLowerCase()
+            (filteredCourses.find((c) => c.id === selectedCourseId)?.name || '').toLowerCase()
           )
         );
         if (!matchesCourse) return false;
@@ -281,11 +596,10 @@ export default function SuperAdminParentsDirectoryPage() {
               setSelectedBatchId('ALL');
               showSuccess('Showing parents across all courses');
             }}
-            className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${
-              selectedCourseId === 'ALL'
+            className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${selectedCourseId === 'ALL'
                 ? 'bg-blue-50/80 border-[#0052CC] ring-2 ring-[#0052CC]/20 shadow-xs'
                 : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between gap-1 mb-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-100 text-[#0052CC]">
@@ -321,17 +635,15 @@ export default function SuperAdminParentsDirectoryPage() {
                   setSelectedBatchId('ALL'); // Reset batch when course changes
                   showSuccess(`Filtered parents by Course: ${c.name}`);
                 }}
-                className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${
-                  isSelected
+                className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${isSelected
                     ? 'bg-blue-50/80 border-[#0052CC] ring-2 ring-[#0052CC]/20 shadow-xs'
                     : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1.5">
                   <span
-                    className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
-                      isSelected ? 'bg-[#0052CC] text-white' : 'bg-slate-100 text-slate-600'
-                    }`}
+                    className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md ${isSelected ? 'bg-[#0052CC] text-white' : 'bg-slate-100 text-slate-600'
+                      }`}
                   >
                     {c.code}
                   </span>
@@ -377,11 +689,10 @@ export default function SuperAdminParentsDirectoryPage() {
               setSelectedBatchId('ALL');
               showSuccess('Viewing all batches');
             }}
-            className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${
-              selectedBatchId === 'ALL'
+            className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${selectedBatchId === 'ALL'
                 ? 'bg-emerald-50/80 border-emerald-600 ring-2 ring-emerald-600/20 shadow-xs'
                 : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between gap-1 mb-1">
               <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
@@ -416,11 +727,10 @@ export default function SuperAdminParentsDirectoryPage() {
                   setSelectedBatchId(b.id);
                   showSuccess(`Viewing parents in Batch: ${b.name}`);
                 }}
-                className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${
-                  isSelected
+                className={`text-left p-3 rounded-2xl border transition duration-200 flex flex-col justify-between cursor-pointer ${isSelected
                     ? 'bg-emerald-50/80 border-emerald-600 ring-2 ring-emerald-600/20 shadow-xs'
                     : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -460,11 +770,10 @@ export default function SuperAdminParentsDirectoryPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div
           onClick={() => setActiveTab('ALL')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            activeTab === 'ALL'
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${activeTab === 'ALL'
               ? 'bg-blue-50/60 border-[#0052CC] ring-2 ring-[#0052CC]/20 shadow-xs'
               : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-bold text-slate-700">Total Parents</span>
@@ -485,11 +794,10 @@ export default function SuperAdminParentsDirectoryPage() {
 
         <div
           onClick={() => setActiveTab('MULTI_CHILD')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            activeTab === 'MULTI_CHILD'
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${activeTab === 'MULTI_CHILD'
               ? 'bg-purple-50/60 border-purple-600 ring-2 ring-purple-600/20 shadow-xs'
               : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-bold text-purple-700">Multi-Child Families</span>
@@ -501,11 +809,10 @@ export default function SuperAdminParentsDirectoryPage() {
 
         <div
           onClick={() => setActiveTab('NEEDS_ATTENTION')}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-            activeTab === 'NEEDS_ATTENTION'
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${activeTab === 'NEEDS_ATTENTION'
               ? 'bg-rose-50/60 border-rose-600 ring-2 ring-rose-600/20 shadow-xs'
               : 'bg-white border-slate-200 shadow-2xs hover:border-slate-300'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-1">
             <span className="text-xs font-bold text-rose-700">Action Required</span>
@@ -563,22 +870,20 @@ export default function SuperAdminParentsDirectoryPage() {
         <button
           type="button"
           onClick={() => setActiveTab('ALL')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'ALL'
+          className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'ALL'
               ? 'bg-[#0B2447] text-white shadow-2xs'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-          }`}
+            }`}
         >
           <span>All Filtered Parents ({filteredParents.length})</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('MULTI_CHILD')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'MULTI_CHILD'
+          className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'MULTI_CHILD'
               ? 'bg-purple-700 text-white shadow-2xs'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-          }`}
+            }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span>Multi-Child Families ({multiChildParents})</span>
@@ -586,11 +891,10 @@ export default function SuperAdminParentsDirectoryPage() {
         <button
           type="button"
           onClick={() => setActiveTab('NEEDS_ATTENTION')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
-            activeTab === 'NEEDS_ATTENTION'
+          className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'NEEDS_ATTENTION'
               ? 'bg-rose-700 text-white shadow-2xs'
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-          }`}
+            }`}
         >
           <AlertTriangle className="w-3.5 h-3.5" />
           <span>Notice Required ({attentionParentsCount})</span>
@@ -609,9 +913,8 @@ export default function SuperAdminParentsDirectoryPage() {
           return (
             <div
               key={parent.id}
-              className={`p-5 bg-white rounded-2xl border transition-all flex flex-col justify-between space-y-4 hover:shadow-md ${
-                hasNotice ? 'border-amber-300 shadow-2xs' : 'border-slate-200/90 shadow-2xs'
-              }`}
+              className={`p-5 bg-white rounded-2xl border transition-all flex flex-col justify-between space-y-4 hover:shadow-md ${hasNotice ? 'border-amber-300 shadow-2xs' : 'border-slate-200/90 shadow-2xs'
+                }`}
             >
               <div className="space-y-3">
                 {/* Top Row: Parent Name & Relationship Badge */}
@@ -690,13 +993,12 @@ export default function SuperAdminParentsDirectoryPage() {
                           </div>
                           <div className="text-right shrink-0">
                             <span
-                              className={`text-[10px] font-bold block ${
-                                child.attendancePercentage >= 85
+                              className={`text-[10px] font-bold block ${child.attendancePercentage >= 85
                                   ? 'text-emerald-700'
                                   : child.attendancePercentage >= 75
-                                  ? 'text-amber-700'
-                                  : 'text-rose-600 font-black'
-                              }`}
+                                    ? 'text-amber-700'
+                                    : 'text-rose-600 font-black'
+                                }`}
                             >
                               {child.attendancePercentage}% Att.
                             </span>
@@ -844,13 +1146,12 @@ export default function SuperAdminParentsDirectoryPage() {
                             <p className="text-[10px] text-slate-500 font-mono">{child.studentId}</p>
                           </div>
                           <span
-                            className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                              child.attendancePercentage >= 85
+                            className={`text-xs font-black px-2.5 py-0.5 rounded-full ${child.attendancePercentage >= 85
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : child.attendancePercentage >= 75
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-rose-100 text-rose-800'
-                            }`}
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
                           >
                             {child.attendancePercentage}% Attendance
                           </span>

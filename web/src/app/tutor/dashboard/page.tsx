@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   CalendarDays,
   ExternalLink,
+  GraduationCap,
 } from 'lucide-react';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
 import StatCard from '@/components/common/StatCard';
@@ -45,7 +46,7 @@ import LiveWebinarStudioModal from '@/components/tutor/LiveWebinarStudioModal';
 
 export default function MasterTutorDashboardPage() {
   const { showSuccess, showInfo } = useToast();
-  const [activeWebinar, setActiveWebinar] = useState<{ batchName: string; subjectName: string; id?: string } | null>(() => {
+  const [activeWebinar, setActiveWebinar] = useState<{ batchName: string; subjectName: string; id?: string; tutorRole?: string } | null>(() => {
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem('isml_tutor_active_webinar') || sessionStorage.getItem('isml_tutor_active_webinar');
@@ -194,8 +195,8 @@ export default function MasterTutorDashboardPage() {
   const pendingDoubtsCount = mockDoubtThreads.filter((d) => d.status === 'OPEN').length;
   const pendingAssignmentsCount = mockAssignments.length;
 
-  const handleStartClass = (batchName: string, subjectName: string) => {
-    handleOpenWebinar({ batchName, subjectName, id: 'live-class-french-01' });
+  const handleStartClass = (batchName: string, subjectName: string, tutorRole: string = 'LEAD_TRAINER') => {
+    handleOpenWebinar({ batchName, subjectName, id: 'live-class-french-01', tutorRole });
   };
 
   const handleDeniedAccess = (roleName: string) => {
@@ -205,6 +206,7 @@ export default function MasterTutorDashboardPage() {
   // If Tutor is inside active webinar studio, render ONLY the full-screen Studio Classroom Modal!
   // This completely eliminates any background dashboard flash during page refresh.
   if (activeWebinar) {
+    const isHost = activeWebinar.tutorRole !== 'DOUBT_SOLVING_TUTOR' && activeWebinar.tutorRole !== 'ASSISTANT_TUTOR';
     return (
       <LiveWebinarStudioModal
         isOpen={true}
@@ -214,7 +216,8 @@ export default function MasterTutorDashboardPage() {
         batchName={activeWebinar.batchName}
         subjectCode="LIVE-WEBINAR-STUDIO"
         tutorName={currentFaculty.name}
-        isHost={true}
+        isHost={isHost}
+        tutorRole={activeWebinar.tutorRole || 'LEAD_TRAINER'}
         onEndSession={handleCloseWebinar}
       />
     );
@@ -318,74 +321,97 @@ export default function MasterTutorDashboardPage() {
               const isLead = alloc.tutorRole === 'LEAD_TRAINER';
               const isSub = alloc.tutorRole === 'SUBSTITUTE_TUTOR';
               const isDoubt = alloc.tutorRole === 'DOUBT_SOLVING_TUTOR';
+              const isTA = alloc.tutorRole === 'ASSISTANT_TUTOR';
 
               const roleBadgeColor = isLead
-                ? 'bg-[#0052CC] text-white'
+                ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
                 : isSub
-                ? 'bg-amber-500 text-slate-950 font-black'
+                ? 'bg-amber-500 text-slate-950 font-black border-amber-600 shadow-xs'
                 : isDoubt
-                ? 'bg-emerald-600 text-white'
-                : 'bg-purple-600 text-white';
+                ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                : 'bg-purple-600 text-white border-purple-700 shadow-xs';
 
               const roleLabel =
                 alloc.tutorRole === 'LEAD_TRAINER'
-                  ? 'LEAD TRAINER'
+                  ? 'LEAD NATIVE TRAINER'
                   : alloc.tutorRole === 'SUBSTITUTE_TUTOR'
                   ? 'SUBSTITUTE TUTOR'
                   : alloc.tutorRole === 'DOUBT_SOLVING_TUTOR'
                   ? 'DOUBT SOLVING TUTOR'
                   : alloc.tutorRole === 'ASSISTANT_TUTOR'
-                  ? 'ASSISTANT TUTOR'
+                  ? 'ASSISTANT TUTOR (TA)'
                   : alloc.tutorRole === 'ORAL_EXAMINER'
                   ? 'HUMAN 1:1 TUTOR'
                   : alloc.tutorRole.replace(/_/g, ' ');
 
+              const roleDescription =
+                isLead
+                  ? 'Primary syllabus teacher & live lecture conductor'
+                  : isSub
+                  ? 'Standby backup tutor for leave & emergency coverage'
+                  : isDoubt
+                  ? '1-on-1 Q&A desk, chat clearance & remedial clinics'
+                  : 'Worksheet grading, LSRW drill evaluation & records';
+
               return (
                 <div
                   key={alloc.id}
-                  className="p-4 rounded-xl border-2 border-slate-200/90 hover:border-blue-300 bg-gradient-to-b from-slate-50/50 to-white flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-sm transition-all"
+                  className="p-4 sm:p-5 rounded-2xl border-2 border-slate-200/90 hover:border-blue-400 bg-gradient-to-b from-white to-slate-50/40 flex flex-col justify-between space-y-3.5 shadow-xs hover:shadow-md transition-all"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-slate-900 text-white tracking-wide">
-                        {alloc.subjectCode || 'CRS'}
+                  <div className="space-y-3">
+                    {/* Role Header Banner */}
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-900 text-white font-mono tracking-wider">
+                        {alloc.courseCode || alloc.subjectCode || 'CRS'}
                       </span>
-                      <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider ${roleBadgeColor}`}>
-                        {roleLabel}
+                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider border flex items-center gap-1.5 ${roleBadgeColor}`}>
+                        {isLead && <GraduationCap className="w-3.5 h-3.5" />}
+                        {isSub && <ShieldCheck className="w-3.5 h-3.5" />}
+                        {isDoubt && <MessageSquare className="w-3.5 h-3.5" />}
+                        {isTA && <ClipboardList className="w-3.5 h-3.5" />}
+                        <span>{roleLabel}</span>
                       </span>
                     </div>
 
-                    <h3 className="text-xs font-extrabold text-slate-900 leading-snug">
-                      {alloc.courseName || alloc.subjectName}
-                    </h3>
+                    {/* Role Duty Subtitle */}
+                    <p className="text-[11px] font-semibold text-slate-500 italic">
+                      ✨ {roleDescription}
+                    </p>
 
-                    <div className="p-3 rounded-xl bg-slate-100/80 border border-slate-200/80 text-[11px] space-y-2">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 leading-snug">
+                        {alloc.courseName || alloc.subjectName}
+                      </h3>
+                      <p className="text-xs font-bold text-blue-700 mt-0.5">
+                        Batch: <span className="underline decoration-blue-300">{alloc.batchName}</span>
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-slate-100/90 border border-slate-200 text-xs space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Assigned Duty:</span>
+                        <span className="text-slate-500 font-medium">Assigned Role:</span>
                         <span className="font-extrabold text-slate-900">{roleLabel}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Course Track:</span>
-                        <strong className="text-blue-700 font-bold">{alloc.courseName || alloc.subjectName}</strong>
+                        <span className="text-slate-500 font-medium">Target Campus:</span>
+                        <span className="text-slate-800 font-bold bg-white px-2 py-0.5 rounded border border-slate-200">
+                          {alloc.institutionName || 'The American College'}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Batch Cohort:</span>
-                        <span className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200">{alloc.batchName}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Campus:</span>
-                        <span className="text-slate-700 font-semibold">{alloc.institutionName || 'Affiliated Campus'}</span>
+                        <span className="text-slate-500 font-medium">Allocated Batch:</span>
+                        <strong className="text-blue-800 font-bold">{alloc.batchName}</strong>
                       </div>
 
                       {/* 🗓️ User-Friendly Date & Live Timing Breakdown */}
-                      <div className="pt-2 border-t border-slate-200/90 space-y-1.5">
+                      <div className="pt-2 border-t border-slate-200 space-y-1.5">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500 font-medium flex items-center gap-1">
                             <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
                             <span>Schedule Days:</span>
                           </span>
                           <span className="font-bold text-slate-800">
-                            {alloc.scheduleSlots?.[0]?.split(/\d/)[0]?.replace(/,\s*$/, '').trim() || 'Mon, Wed, Fri'}
+                            {alloc.scheduleSlots?.[0]?.split(/\d/)[0]?.replace(/,\s*$/, '').trim() || 'Mon & Wed'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
@@ -394,7 +420,7 @@ export default function MasterTutorDashboardPage() {
                             <span>Slot Timing:</span>
                           </span>
                           <span className="font-mono font-bold text-indigo-700 bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200/60">
-                            {alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)\s*[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || '07:30 PM - 09:00 PM'}
+                            {alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)\s*[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || '10:00 AM - 11:30 AM'}
                           </span>
                         </div>
                         {alloc.effectiveFrom && (
@@ -404,7 +430,7 @@ export default function MasterTutorDashboardPage() {
                           </div>
                         )}
                         <div className="pt-1 flex items-center justify-between">
-                          <span className="text-slate-500 font-medium">Current Status:</span>
+                          <span className="text-slate-500 font-medium">Status:</span>
                           {(() => {
                             const timing = getSlotTimingStatus(alloc.scheduleSlots);
                             return (
@@ -422,16 +448,17 @@ export default function MasterTutorDashboardPage() {
                     {(() => {
                       const timing = getSlotTimingStatus(alloc.scheduleSlots);
 
-                      if (isLead || isSub) {
+                      // STRICT RULE: ONLY Lead Native Trainer has permission to start and broadcast live classes!
+                      if (isLead) {
                         if (timing.isLive) {
                           return (
                             <button
                               onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName)}
                               className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer animate-pulse"
-                              title="Session Live! Click to broadcast"
+                              title="Lead Native Trainer Exclusive: Enter Live Studio Broadcast"
                             >
                               <Radio className="w-3.5 h-3.5" />
-                              <span>🔴 Enter Live Studio Now</span>
+                              <span>🔴 Start Live Studio (Host)</span>
                             </button>
                           );
                         }
@@ -447,19 +474,53 @@ export default function MasterTutorDashboardPage() {
                             title={`Locked until slot time: ${alloc.scheduleSlots.join(', ')}`}
                           >
                             <Lock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>🔒 Class Locked ({alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || 'Scheduled'})</span>
+                            <span>🔒 Live Class ({alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || 'Scheduled'})</span>
                           </button>
                         );
                       }
 
+                      if (isSub) {
+                        return (
+                          <div
+                            className="flex-1 py-2 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
+                            title="Substitute standby duty - activated only if Lead Trainer is absent"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Standby Emergency Cover</span>
+                          </div>
+                        );
+                      }
+
+                      if (isTA) {
+                        return (
+                          <Link
+                            href="/tutor/assessments"
+                            className="flex-1 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5" />
+                            <span>Evaluate Homework & Drill</span>
+                          </Link>
+                        );
+                      }
+
                       return (
-                        <Link
-                          href="/tutor/doubts"
-                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>Open Doubt Desk</span>
-                        </Link>
+                        <div className="flex-1 flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName, 'DOUBT_SOLVING_TUTOR')}
+                            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                            title="Join live session as Doubt Solving Moderator"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Join Doubt Desk Studio</span>
+                          </button>
+                          <Link
+                            href="/tutor/doubts"
+                            className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all"
+                            title="Offline Q&A Threads"
+                          >
+                            Desk
+                          </Link>
+                        </div>
                       );
                     })()}
                   </div>

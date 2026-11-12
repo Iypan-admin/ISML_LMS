@@ -38,20 +38,53 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import StatusBadge from '@/components/common/StatusBadge';
 import { useCollege } from '@/context/CollegeContext';
-import { mockFeeStructures, mockPrograms, mockDepartments, mockCourses } from '@/mock/superAdminData';
 import { FeeStructure, CourseSummary } from '@/types/rbac';
 import { useToast } from '@/context/ToastContext';
 import { Modal } from '@/components/common/Modal';
 import ProposeFeeStructureDrawer from '@/components/finance-manager/forms/ProposeFeeStructureDrawer';
+import realDbFeeStructures from '@/lib/realDbFeeStructures.json';
+import realDbCourses from '@/lib/realDbCourses.json';
+
+// Map real DB fee structures to frontend FeeStructure model
+const dbMappedStructures: FeeStructure[] = (realDbFeeStructures as any[]).map((s: any) => ({
+  id: s.id,
+  code: s.code || `FEESTR-${s.id.slice(0, 6)}`,
+  programId: s.courseId || 'prog-foreign-lang',
+  programName: s.courseName || s.structureName,
+  departmentName: 'Department of Foreign Languages',
+  batchId: 'batch-2026',
+  batchName: 'MRNG BATCH',
+  semesterNumber: 1,
+  academicYear: s.academicYear || '2026–2027',
+  version: 1,
+  totalAmount: s.totalFeeAmount,
+  components: (s.components || []).map((c: any) => ({
+    componentCode: c.type || 'TUITION',
+    componentName: c.name,
+    amount: c.amount,
+    isOptional: !c.isMandatory,
+  })),
+  effectiveFrom: '2026-06-01',
+  effectiveTo: '2027-05-31',
+  status: (s.approvalStatus === 'APPROVED' ? 'APPROVED' : 'SUBMITTED') as any,
+  submittedBy: 'Finance Controller',
+  submittedAt: s.createdAt,
+  approvedBy: s.approvalStatus === 'APPROVED' ? 'Super Administrator' : undefined,
+  approvedAt: s.approvalStatus === 'APPROVED' ? s.createdAt : undefined,
+  courseStructureType: s.structureType || 'DURATION_BASED',
+  durationType: '3_MONTHS',
+  durationMonths: 3,
+  courseTrackName: s.courseName,
+}));
 
 export default function FinanceManagerFeeStructuresPage() {
-  const { selectedCollegeId, isOverall } = useCollege();
+  const { selectedCollegeId, selectedCollege, isOverall } = useCollege();
   const { showSuccess, showInfo } = useToast();
 
-  const [structures, setStructures] = useState<FeeStructure[]>(mockFeeStructures);
+  const [structures, setStructures] = useState<FeeStructure[]>(dbMappedStructures);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedCourseForDrawer, setSelectedCourseForDrawer] = useState<string | undefined>(undefined);
-  const [expandedId, setExpandedId] = useState<string | null>('fee-bsc-s1');
+  const [expandedId, setExpandedId] = useState<string | null>(dbMappedStructures[0]?.id || null);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,38 +120,35 @@ export default function FinanceManagerFeeStructuresPage() {
         selectedStatus === 'ALL' || item.status === selectedStatus;
 
       if (!isOverall) {
-        const prog = mockPrograms.find(
-          (p) => p.name.toLowerCase() === item.programName.toLowerCase()
-        );
-        const dept = mockDepartments.find((d) => d.id === prog?.departmentId);
-        if (dept?.institutionId && dept.institutionId !== selectedCollegeId) {
-          return false;
+        const rawDbItem = (realDbFeeStructures as any[]).find((s) => s.id === item.id);
+        if (rawDbItem?.institutionId && rawDbItem.institutionId !== selectedCollegeId) {
+          if (!rawDbItem.institutionName?.toLowerCase().includes(selectedCollege?.name?.toLowerCase() || '')) {
+            return false;
+          }
         }
       }
 
       return matchesSearch && matchesSemester && matchesStatus;
     });
-  }, [structures, searchQuery, selectedSemester, selectedStatus, isOverall, selectedCollegeId]);
+  }, [structures, searchQuery, selectedSemester, selectedStatus, isOverall, selectedCollegeId, selectedCollege]);
 
   // Scoped Courses & their Fee Assignment Status
   const scopedCourses = useMemo(() => {
-    return mockCourses.filter((c) => {
-      if (isOverall) return true;
-      if (c.collegeId) return c.collegeId === selectedCollegeId;
-      const dept = mockDepartments.find((d) => d.name.toLowerCase() === c.department.toLowerCase());
-      return !dept?.institutionId || dept.institutionId === selectedCollegeId;
+    const realCourses = (realDbCourses as any[]);
+    if (isOverall) return realCourses;
+    return realCourses.filter((c: any) => {
+      return c.collegeId === selectedCollegeId || c.collegeName?.toLowerCase().includes(selectedCollege?.name?.toLowerCase() || '');
     });
-  }, [isOverall, selectedCollegeId]);
+  }, [isOverall, selectedCollegeId, selectedCollege]);
 
   // Combine Courses with their Fee Assignment Status
   const courseCards = useMemo(() => {
-    return scopedCourses.map((course) => {
+    return scopedCourses.map((course: any) => {
       // Find matching fee structure by course code/name or batch
       const matchingFee = structures.find((s) => {
         const matchesName = s.programName.toLowerCase().includes(course.name.toLowerCase()) ||
           course.name.toLowerCase().includes(s.programName.toLowerCase());
-        const matchesDept = s.departmentName.toLowerCase().includes(course.department.toLowerCase());
-        return matchesName || matchesDept;
+        return matchesName;
       });
 
       const hasFeeAssigned = Boolean(course.courseFee && course.courseFee > 0) || Boolean(matchingFee);

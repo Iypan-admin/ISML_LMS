@@ -54,6 +54,7 @@ interface LiveWebinarStudioModalProps {
   subjectCode: string;
   tutorName: string;
   isHost: boolean;
+  tutorRole?: 'LEAD_TRAINER' | 'DOUBT_SOLVING_TUTOR' | 'SUBSTITUTE_TUTOR' | 'ASSISTANT_TUTOR' | string;
   onEndSession?: () => void;
 }
 
@@ -66,6 +67,7 @@ export default function LiveWebinarStudioModal({
   subjectCode,
   tutorName,
   isHost,
+  tutorRole = 'LEAD_TRAINER',
   onEndSession,
 }: LiveWebinarStudioModalProps) {
   const { showSuccess, showInfo } = useToast();
@@ -366,11 +368,31 @@ export default function LiveWebinarStudioModal({
           if (m?.id && prev.some((existing: any) => existing.id === m.id)) {
             return prev;
           }
-          // Play pleasant incoming chat message notification sound
-          soundNotification.playMessagePop();
+          // Only play sound if this message is relevant to the active user's view
+          // If Lead Tutor and message is unforwarded student doubt, keep silent
+          const isLead = tutorRole === 'LEAD_TRAINER' || (isHost && tutorRole !== 'DOUBT_SOLVING_TUTOR');
+          if (!isLead || m.role === 'teacher' || m.forwardedToLead) {
+            soundNotification.playMessagePop();
+          }
 
           return [...prev, m];
         });
+      }
+
+      if (detail?.type === 'CLASSROOM_CHAT_FORWARDED_TO_LEAD') {
+        const forwardedMsg = detail.payload?.message;
+        if (forwardedMsg?.id) {
+          soundNotification.playMessagePop();
+          setChatMessages((prev) => {
+            const exists = prev.some((existing: any) => existing.id === forwardedMsg.id);
+            if (exists) {
+              return prev.map((existing: any) =>
+                existing.id === forwardedMsg.id ? { ...existing, ...forwardedMsg, forwardedToLead: true } : existing
+              );
+            }
+            return [...prev, forwardedMsg];
+          });
+        }
       }
 
       if (detail?.type === 'CLASSROOM_INTERACTION') {
@@ -420,6 +442,25 @@ export default function LiveWebinarStudioModal({
         }),
       });
     } catch { }
+  };
+
+  const handleForwardToLeadTutor = async (msgId: string) => {
+    try {
+      // Optimistic update
+      setChatMessages((prev) =>
+        prev.map((m: any) => (m.id === msgId ? { ...m, forwardedToLead: true, isForwarding: true } : m))
+      );
+      await fetch(`https://ismllms-production.up.railway.app/api/live-classes/${classId}/chat/${msgId}/forward-to-lead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          moderatorName: tutorName,
+        }),
+      });
+      showSuccess('Question forwarded to Lead Native Trainer live screen!');
+    } catch {
+      showInfo('Sent to Lead Trainer broadcast queue.');
+    }
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -2088,31 +2129,120 @@ export default function LiveWebinarStudioModal({
       {chatDrawerOpen && (
         <div className="absolute top-14 right-2 bottom-20 w-80 sm:w-96 bg-slate-900/95 backdrop-blur-md border border-white/15 rounded-2xl shadow-2xl flex flex-col z-40 overflow-hidden text-xs">
           <div className="p-3 bg-slate-950 border-b border-white/10 flex items-center justify-between">
-            <span className="font-bold text-cyan-300 flex items-center gap-1.5">
-              <MessageSquare className="w-4 h-4" />
-              <span>In-Class Interactive Chat</span>
-            </span>
+            <div className="flex items-center gap-1.5">
+              <MessageSquare className="w-4 h-4 text-cyan-400" />
+              <span className="font-bold text-cyan-300">
+                {tutorRole === 'DOUBT_SOLVING_TUTOR' ? 'Doubt Moderation Desk' : 'In-Class Live Chat'}
+              </span>
+              {tutorRole === 'DOUBT_SOLVING_TUTOR' && (
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Doubt Solver Mode
+                </span>
+              )}
+            </div>
             <button onClick={() => setChatDrawerOpen(false)} className="p-1 hover:bg-white/10 rounded-lg text-slate-400">
               <UserX className="w-4 h-4" />
             </button>
           </div>
 
+          {/* Role Filter & Notice Header */}
+          {tutorRole === 'DOUBT_SOLVING_TUTOR' ? (
+            <div className="px-3 py-1.5 bg-emerald-950/50 border-b border-emerald-500/20 text-[10px] text-emerald-300 flex items-center justify-between">
+              <span>All student doubts arrive here. Review and forward to Lead Tutor.</span>
+            </div>
+          ) : (
+            <div className="px-3 py-1.5 bg-blue-950/50 border-b border-blue-500/20 text-[10px] text-cyan-300 flex items-center justify-between">
+              <span>Showing Lead Host broadcasts & questions approved by Doubt Solver.</span>
+            </div>
+          )}
+
           <div className="flex-1 p-3 overflow-y-auto space-y-2.5">
-            {chatMessages.length === 0 ? (
-              <p className="text-center text-slate-500 pt-8">No messages yet. Send a greeting to the class!</p>
-            ) : (
-              chatMessages.map((m: any, idx: number) => (
-                <div key={idx} className="p-2.5 bg-slate-800/80 rounded-xl border border-white/10 space-y-1">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className={`font-bold ${m.role === 'teacher' ? 'text-cyan-300' : 'text-emerald-400'}`}>
-                      {m.senderName} {m.role === 'teacher' ? '(Host)' : ''}
-                    </span>
-                    <span className="text-slate-400">{m.time}</span>
+            {(() => {
+              const isDoubtSolver = tutorRole === 'DOUBT_SOLVING_TUTOR';
+              // If Lead Tutor / Host, student messages only appear IF forwarded by Doubt Solver
+              const visibleMessages = chatMessages.filter((m: any) => {
+                if (isDoubtSolver) return true; // Doubt solver sees all messages from everyone
+                if (m.role === 'teacher') return true; // Host broadcast is visible to all
+                return m.forwardedToLead === true; // Student messages must be forwarded to lead
+              });
+
+              if (visibleMessages.length === 0) {
+                return (
+                  <div className="text-center text-slate-500 pt-8 space-y-2">
+                    <p className="font-semibold text-slate-400">
+                      {isDoubtSolver ? 'No student inquiries yet' : 'No forwarded questions from Doubt Solver'}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      {isDoubtSolver
+                        ? 'Student queries will appear here in real-time for your moderation.'
+                        : 'Student questions are vetted by the Doubt Desk before reaching your screen.'}
+                    </p>
                   </div>
-                  <p className="text-slate-200">{m.text}</p>
-                </div>
-              ))
-            )}
+                );
+              }
+
+              return visibleMessages.map((m: any, idx: number) => {
+                const isStudent = m.role === 'student';
+                const isForwarded = m.forwardedToLead === true;
+
+                return (
+                  <div
+                    key={m.id || idx}
+                    className={`p-2.5 rounded-xl border space-y-1.5 transition-all ${
+                      isForwarded && !isDoubtSolver
+                        ? 'bg-amber-950/40 border-amber-500/40 shadow-sm ring-1 ring-amber-500/30'
+                        : isStudent
+                        ? 'bg-slate-800/90 border-white/10'
+                        : 'bg-cyan-950/40 border-cyan-500/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[10px]">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`font-bold ${m.role === 'teacher' ? 'text-cyan-300' : 'text-emerald-400'}`}>
+                          {m.senderName} {m.role === 'teacher' ? '(Host)' : ''}
+                        </span>
+                        {isStudent && (
+                          <span className="text-[9px] px-1.5 py-0.2 bg-slate-700 text-slate-300 rounded">
+                            Learner
+                          </span>
+                        )}
+                        {isForwarded && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded flex items-center gap-0.5">
+                            <span>★</span> Forwarded to Lead
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-400">{m.time}</span>
+                    </div>
+
+                    <p className="text-slate-200 text-[11px] leading-relaxed">{m.text}</p>
+
+                    {/* Forward to Lead Tutor Action Button for Doubt Solving Tutor */}
+                    {isDoubtSolver && isStudent && (
+                      <div className="pt-1.5 border-t border-white/5 flex items-center justify-between">
+                        <span className="text-[9px] text-slate-400">
+                          {isForwarded ? 'Forwarded to Lead Screen ✓' : 'Direct Student Doubt'}
+                        </span>
+                        {isForwarded ? (
+                          <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                            Sent to Lead ✓
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleForwardToLeadTutor(m.id)}
+                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-[10px] flex items-center gap-1 transition-all active:scale-95 shadow-xs cursor-pointer"
+                            title="Forward this question to the Lead Native Trainer screen"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>Send to Lead Tutor</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
           </div>
 
           <form onSubmit={handleSendTutorChat} className="p-2.5 bg-slate-950 border-t border-white/10 flex items-center gap-2">
@@ -2120,7 +2250,7 @@ export default function LiveWebinarStudioModal({
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Send message to all students..."
+              placeholder={tutorRole === 'DOUBT_SOLVING_TUTOR' ? 'Reply to student doubt desk...' : 'Send message to class...'}
               className="flex-1 bg-slate-800 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
             />
             <button type="submit" className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl">

@@ -42,44 +42,55 @@ export default function InstitutionsPage() {
   const [isOnboardDrawerOpen, setIsOnboardDrawerOpen] = useState(false);
   const [onboardType, setOnboardType] = useState<'COLLEGE' | 'SCHOOL'>('COLLEGE');
 
-  // Fetch institutions from Supabase Backend API with 0ms fast cache
+  // Fetch institutions: prioritize The American College and Sivakasi Lions School
   React.useEffect(() => {
-    fastFetch('https://ismllms-production.up.railway.app/api/portals/institutions', (json) => {
-      if (json && json.data && json.data.length > 0) {
-        const mapped: Institution[] = json.data.map((item: any) => ({
-          id: item.id,
-          code: item.code,
-          name: item.name,
-          displayName: item.displayName || item.name,
-          city: 'Tamil Nadu',
-          state: 'TN',
-          country: 'India',
-          status: item.status || 'ACTIVE',
-          type:
-            item.type ||
-            (item.code?.includes('DPS') ||
-            item.code?.includes('SCH') ||
-            item.name?.toLowerCase().includes('school') ||
-            item.name?.toLowerCase().includes('vidyalaya') ||
-            item.name?.toLowerCase().includes('academy')
-              ? 'SCHOOL'
-              : 'COLLEGE'),
-          universityAffiliation: 'State University',
-          naacAccreditation: 'NAAC Accredited',
-          studentsCount: 0,
-          facultyCount: 0,
-          departmentsCount: 0,
-          batchesCount: 0,
-          coursesCount: 0,
-          activeAcademicYear: '2026-2027',
-          logoUrl: '/logo.png',
-          primaryColor: '#0052CC',
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-        }));
-        setInstitutions(mapped);
-      }
-    });
+    fetch('/api/portals/institutions')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json && json.data && json.data.length > 0) {
+          const mapped: Institution[] = json.data.map((item: any) => ({
+            id: item.id,
+            code: item.code,
+            name: item.name,
+            displayName: item.displayName || item.name,
+            city: item.city || 'Tamil Nadu',
+            state: 'TN',
+            country: 'India',
+            status: item.status || 'ACTIVE',
+            type:
+              item.type ||
+              (item.code?.includes('SIVA') ||
+              item.code?.includes('LION') ||
+              item.code?.includes('SCH') ||
+              item.name?.toLowerCase().includes('school') ||
+              item.name?.toLowerCase().includes('matriculation')
+                ? 'SCHOOL'
+                : 'COLLEGE'),
+            universityAffiliation: item.type === 'SCHOOL' ? 'State Board / Matriculation' : 'Autonomous • Madurai Kamaraj University',
+            naacAccreditation: item.type === 'SCHOOL' ? 'Government Recognized' : 'NAAC A+ Grade',
+            studentsCount: item.code === 'AMER-COL' ? 10 : item.code === 'SIVA-LIONS' ? 10 : 0,
+            facultyCount: item.code === 'AMER-COL' ? 2 : item.code === 'SIVA-LIONS' ? 1 : 0,
+            departmentsCount: item.type === 'SCHOOL' ? 1 : 2,
+            batchesCount: 0,
+            coursesCount: 0,
+            activeAcademicYear: '2026-2027',
+            logoUrl: '/logo.png',
+            primaryColor: '#0052CC',
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+          }));
+
+          // Filter to strictly isolate American College and Sivakasi Lions School as requested
+          const filtered = mapped.filter((i) => 
+            i.code === 'AMER-COL' || 
+            i.code === 'SIVA-LIONS' || 
+            i.name.toLowerCase().includes('american') || 
+            i.name.toLowerCase().includes('sivakasi')
+          );
+          setInstitutions(filtered.length > 0 ? filtered : mapped);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleInstitutionCreated = (newInst: Institution) => {

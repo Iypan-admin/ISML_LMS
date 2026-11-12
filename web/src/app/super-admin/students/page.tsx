@@ -40,12 +40,12 @@ import DeleteConfirmDrawer from '@/components/common/DeleteConfirmDrawer';
 import { Can, useRbac } from '@/context/AuthRbacContext';
 import { StudentUser, UserStatus, SuperAdminUser } from '@/types/rbac';
 import {
-  mockStudents,
   mockInstitutions,
   mockDepartments,
   mockPrograms,
   mockBatches,
 } from '@/mock/superAdminData';
+import realDbStudents from '@/lib/realDbStudents.json';
 import { useToast } from '@/context/ToastContext';
 import AddUserDrawer from '@/components/super-admin/users/AddUserDrawer';
 import BulkStudentUploadDrawer from '@/components/super-admin/students/BulkStudentUploadDrawer';
@@ -56,9 +56,9 @@ import { useCollege, OVERALL_COLLEGE_ID } from '@/context/CollegeContext';
 export default function StudentsPage() {
   const { hasPermission } = useRbac();
   const { showSuccess, showInfo } = useToast();
-  const { selectedCollegeId, setSelectedCollegeId } = useCollege();
+  const { selectedCollegeId, setSelectedCollegeId, isOverall, isSchoolMode } = useCollege();
 
-  const [students, setStudents] = useState<StudentUser[]>(mockStudents);
+  const [students, setStudents] = useState<StudentUser[]>(() => (realDbStudents as unknown as StudentUser[]) || []);
 
   // Cascading Hierarchy Filter States
   const [selectedDeptId, setSelectedDeptId] = useState<string>('ALL');
@@ -135,29 +135,38 @@ export default function StudentsPage() {
 
   // ─── COLLEGE-WISE METRICS ───
   const collegeMetrics = useMemo(() => {
-    const collegeStudents =
-      selectedCollegeId === 'ALL'
-        ? students
-        : students.filter((s) => s.collegeId === selectedCollegeId);
-
-    const total = collegeStudents.length;
-    const active = collegeStudents.filter((s) => s.status === 'ACTIVE').length;
-    const programsCount = new Set(collegeStudents.map((s) => s.programId)).size;
-    const batchesCount = new Set(collegeStudents.map((s) => s.batchId)).size;
+    const total = filteredStudents.length;
+    const active = filteredStudents.filter((s) => s.status === 'ACTIVE').length;
+    const programsCount = new Set(filteredStudents.map((s) => s.programId)).size;
+    const batchesCount = new Set(filteredStudents.map((s) => s.batchId)).size;
     const avgAttendance =
       total > 0
         ? Math.round(
-            (collegeStudents.reduce((acc, s) => acc + s.attendancePercentage, 0) / total) * 10
+            (filteredStudents.reduce((acc, s) => acc + s.attendancePercentage, 0) / total) * 10
           ) / 10
         : 0;
 
     return { total, active, programsCount, batchesCount, avgAttendance };
-  }, [students, selectedCollegeId]);
+  }, [filteredStudents]);
 
   // ─── FILTERED STUDENT LIST ───
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
-      if (selectedCollegeId !== 'ALL' && s.collegeId !== selectedCollegeId) return false;
+      // 1. College vs School Mode Filter
+      const isStudentSchool =
+        s.studentId?.startsWith('SLS') ||
+        s.collegeName?.toLowerCase().includes('school') ||
+        s.departmentName?.toLowerCase().includes('school') ||
+        s.collegeId === 'c37b62d5-6ca4-47cb-bed7-899ad75a3144';
+
+      if (isSchoolMode && !isStudentSchool) return false;
+      if (!isSchoolMode && isStudentSchool) return false;
+
+      // 2. Specific Institution Filter (if not Overall/ALL)
+      if (selectedCollegeId !== 'ALL' && !isOverall && s.collegeId !== selectedCollegeId) {
+        return false;
+      }
+
       if (selectedDeptId !== 'ALL' && s.departmentId !== selectedDeptId) return false;
       if (selectedProgramId !== 'ALL' && s.programId !== selectedProgramId) return false;
       if (selectedBatchId !== 'ALL' && s.batchId !== selectedBatchId) return false;
@@ -178,6 +187,8 @@ export default function StudentsPage() {
     });
   }, [
     students,
+    isSchoolMode,
+    isOverall,
     selectedCollegeId,
     selectedDeptId,
     selectedProgramId,

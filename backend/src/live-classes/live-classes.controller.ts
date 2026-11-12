@@ -72,32 +72,7 @@ interface JoinRequestEntry {
 @Controller('api/live-classes')
 export class LiveClassesController {
   // In-memory roster for active live classes
-  public static liveClassRoster: any[] = [
-    {
-      id: 'live-class-mrng-batch',
-      title: 'Interactive Live Webinar • testtt',
-      language: 'FRENCH',
-      level: 'A1',
-      courseName: 'testtt',
-      batchName: 'MRNG BATCH',
-      batchCode: 'BAT-ET-168',
-      batchId: 'batch-4168',
-      tutorName: 'Joy JK',
-      tutorId: 'fac-201834',
-      scheduledStartTime: '2026-11-11T14:00:00.000Z', // 07:30 PM IST
-      scheduledEndTime: '2026-11-11T16:30:00.000Z',   // 10:00 PM IST
-      durationMinutes: 150,
-      periodCategory: 'CORE_SYLLABUS',
-      meetingUrl: 'https://meet.isml.edu/live-class-mrng-batch',
-      roomName: 'isml-room-mrng-batch',
-      status: 'SCHEDULED',
-      tutorJoined: false,
-      enrolledStudentsCount: 10,
-      attendedStudentsCount: 0,
-      institutionId: '521323cd-00da-49a6-98ed-6b7918d181b4',
-      campusName: 'The American College',
-    },
-  ];
+  public static liveClassRoster: any[] = [];
 
   // Waiting Room Session Store: Map<classId, Map<studentId, JoinRequestEntry>>
   private static waitingRoomSessions: Map<string, Map<string, JoinRequestEntry>> = new Map();
@@ -191,12 +166,18 @@ export class LiveClassesController {
       const endMs = item.scheduledEndTime ? new Date(item.scheduledEndTime).getTime() : (startMs + (item.durationMinutes || 60) * 60 * 1000);
 
       let effectiveStatus = item.status || 'SCHEDULED';
-      if (startMs && endMs && nowMs >= endMs) {
-        effectiveStatus = 'ENDED';
-      } else if (item.status === 'LIVE' || item.tutorJoined === true) {
+      if (item.status === 'LIVE' || item.tutorJoined === true) {
         effectiveStatus = 'LIVE';
+      } else if (item.status === 'DRAFT') {
+        effectiveStatus = 'DRAFT';
+      } else if (item.status === 'ENDED') {
+        effectiveStatus = 'ENDED';
+      } else if (startMs && endMs && nowMs >= endMs) {
+        // If scheduled for today or ongoing cycle, keep available to launch/join unless explicitly ended
+        const isPastDay = new Date(endMs).toDateString() !== new Date().toDateString() && nowMs > endMs + 86400000;
+        effectiveStatus = isPastDay ? 'ENDED' : 'SCHEDULED';
       } else {
-        effectiveStatus = item.status === 'DRAFT' ? 'DRAFT' : 'SCHEDULED';
+        effectiveStatus = 'SCHEDULED';
       }
 
       return {
@@ -256,6 +237,28 @@ export class LiveClassesController {
     } catch { }
 
     throw new NotFoundException('Live Class not found');
+  }
+
+  @Post('clear-all')
+  async clearAllLiveClasses() {
+    LiveClassesController.liveClassRoster = [];
+    BackendCacheService.invalidate('live_classes_list_');
+    try {
+      await (this.prisma as any).liveClasses.deleteMany({});
+    } catch {}
+    PortalsDataController.broadcastEvent('LIVE_CLASSES_CLEARED');
+    return { status: 'success', message: 'All live classes cleared from memory and DB' };
+  }
+
+  @Post(':id/delete')
+  async deleteLiveClass(@Param('id') id: string) {
+    LiveClassesController.liveClassRoster = LiveClassesController.liveClassRoster.filter((c) => c.id !== id);
+    BackendCacheService.invalidate('live_classes_list_');
+    try {
+      await (this.prisma as any).liveClasses.deleteMany({ where: { id } });
+    } catch {}
+    PortalsDataController.broadcastEvent('LIVE_CLASS_DELETED', { id });
+    return { status: 'success', message: `Live class ${id} deleted` };
   }
 
   @Post('schedule')
@@ -1073,6 +1076,7 @@ export class LiveClassesController {
       LiveClassesController.classroomChatMap.set(id, []);
     }
     const msgs = LiveClassesController.classroomChatMap.get(id)!;
+    const isStudent = body.role === 'student';
     const msg = {
       id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       classId: id,
@@ -1082,6 +1086,10 @@ export class LiveClassesController {
       text: body.text,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
+      // Moderation flags: student messages are routed to doubt solver first
+      forwardedToLead: !isStudent,
+      moderatedBy: null,
+      moderatedAt: null,
     };
     msgs.push(msg);
 
@@ -1091,6 +1099,33 @@ export class LiveClassesController {
     });
 
     return { status: 'success', data: msg };
+  }
+
+  @Post(':id/chat/:msgId/forward-to-lead')
+  async forwardChatMessageToLead(
+    @Param('id') id: string,
+    @Param('msgId') msgId: string,
+    @Body() body: { moderatorName?: string; note?: string }
+  ) {
+    const msgs = LiveClassesController.classroomChatMap.get(id) || [];
+    const targetMsg = msgs.find((m: any) => m.id === msgId);
+    if (!targetMsg) {
+      return { status: 'error', message: 'Message not found' };
+    }
+
+    targetMsg.forwardedToLead = true;
+    targetMsg.moderatedBy = body.moderatorName || 'Doubt Solver Tutor';
+    targetMsg.moderatedAt = Date.now();
+    if (body.note) {
+      targetMsg.moderatorNote = body.note;
+    }
+
+    PortalsDataController.broadcastEvent('CLASSROOM_CHAT_FORWARDED_TO_LEAD', {
+      classId: id,
+      message: targetMsg,
+    });
+
+    return { status: 'success', data: targetMsg };
   }
 
   @Post(':id/attendance-ping')

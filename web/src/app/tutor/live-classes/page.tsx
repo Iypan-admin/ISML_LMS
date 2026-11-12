@@ -222,6 +222,12 @@ export default function TutorLiveClassesPage() {
   // If Tutor is inside active webinar studio, render ONLY the full-screen Studio Classroom Modal!
   // This completely eliminates any background dashboard/timetable flash during page refresh.
   if (activeWebinar) {
+    const matchingAlloc = myAllocations.find(
+      (a) => a.batchName?.toLowerCase().trim() === activeWebinar.batchName?.toLowerCase().trim()
+    );
+    const tutorRole = matchingAlloc?.tutorRole || (currentFaculty.assignedRoles.includes('LEAD_TRAINER') ? 'LEAD_TRAINER' : 'DOUBT_SOLVING_TUTOR');
+    const isLeadHost = tutorRole === 'LEAD_TRAINER' || (!matchingAlloc && currentFaculty.assignedRoles.includes('LEAD_TRAINER'));
+
     return (
       <LiveWebinarStudioModal
         isOpen={true}
@@ -231,7 +237,8 @@ export default function TutorLiveClassesPage() {
         batchName={activeWebinar.batchName}
         subjectCode={activeWebinar.batchCode}
         tutorName={currentFaculty.name}
-        isHost={currentFaculty.assignedRoles.includes('LEAD_TRAINER')}
+        isHost={isLeadHost}
+        tutorRole={tutorRole}
         onEndSession={handleCloseWebinar}
       />
     );

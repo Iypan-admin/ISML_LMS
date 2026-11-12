@@ -1,0 +1,558 @@
+[
+  {
+    "id": "56472f35-4f4e-4c58-b94b-58d88a707da2",
+    "studentId": "74ffa5c0-b523-4c7d-b6b1-1be4b0ad7c92",
+    "rollNo": "AMER-2026-001",
+    "name": "Muthu Pandian",
+    "email": "muthu.pandian@americancollege.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "program": "French A1 / L1 Higher Education Program",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 18500,
+    "concessionAmount": 0,
+    "netPayable": 18500,
+    "paidAmount": 7500,
+    "outstandingBalance": 11000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDate": "2026-11-27",
+        "status": "PAID",
+        "paidDate": "2026-11-07",
+        "receiptNo": "RCP-20289935"
+      },
+      {
+        "number": 2,
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6000,
+        "dueDate": "2026-12-27",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDate": "2027-01-26",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PARTIAL",
+    "lastPaymentDate": "2026-11-12"
+  },
+  {
+    "id": "fb26f0a1-a8a9-4b91-b8aa-4e3b4928f2ad",
+    "studentId": "4415cbb5-b77d-41e8-9b16-02cf142dbb85",
+    "rollNo": "AMER-2026-002",
+    "name": "Jeyashree Rajan",
+    "email": "jeyashree.rajan@americancollege.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "program": "French A1 / L1 Higher Education Program",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 18500,
+    "concessionAmount": 2500,
+    "netPayable": 16000,
+    "paidAmount": 0,
+    "outstandingBalance": 16000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDate": "2026-11-27",
+        "status": "OVERDUE"
+      },
+      {
+        "number": 2,
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6000,
+        "dueDate": "2026-12-27",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDate": "2027-01-26",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PENDING"
+  },
+  {
+    "id": "4122639f-34c1-47d0-b802-b355e468ca5e",
+    "studentId": "d0a789ad-1b7d-4d6a-a77b-d14cf62163d3",
+    "rollNo": "AMER-2026-003",
+    "name": "Saravanan Karthik",
+    "email": "saravanan.k@americancollege.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "program": "French A1 / L1 Higher Education Program",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 18500,
+    "concessionAmount": 0,
+    "netPayable": 18500,
+    "paidAmount": 18500,
+    "outstandingBalance": 0,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDate": "2026-11-27",
+        "status": "PAID",
+        "paidDate": "2026-11-10",
+        "receiptNo": "RCP-20346494"
+      },
+      {
+        "number": 2,
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6000,
+        "dueDate": "2026-12-27",
+        "status": "PAID",
+        "paidDate": "2026-10-21",
+        "receiptNo": "RCP-20318282"
+      },
+      {
+        "number": 3,
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDate": "2027-01-26",
+        "status": "PAID",
+        "paidDate": "2026-10-01",
+        "receiptNo": "RCP-20290069"
+      }
+    ],
+    "paymentStatus": "PAID",
+    "lastPaymentDate": "2026-11-12"
+  },
+  {
+    "id": "d6d97655-dff4-46b3-8829-86727494f90d",
+    "studentId": "b66bbd0c-c4e9-4b37-a373-378ea50b55be",
+    "rollNo": "AMER-2026-004",
+    "name": "Divya Bharathi",
+    "email": "divya.b@americancollege.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "program": "French A1 / L1 Higher Education Program",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 18500,
+    "concessionAmount": 0,
+    "netPayable": 18500,
+    "paidAmount": 7500,
+    "outstandingBalance": 11000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDate": "2026-11-27",
+        "status": "PAID",
+        "paidDate": "2026-11-07",
+        "receiptNo": "RCP-20265479"
+      },
+      {
+        "number": 2,
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6000,
+        "dueDate": "2026-12-27",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDate": "2027-01-26",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PARTIAL",
+    "lastPaymentDate": "2026-11-12"
+  },
+  {
+    "id": "37a54531-41e8-4b6a-8495-4fdfc31bc184",
+    "studentId": "84f6ae66-b473-4530-a682-22a5df0c08ad",
+    "rollNo": "AMER-2026-005",
+    "name": "Vijay Anand",
+    "email": "vijay.anand@americancollege.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "program": "French A1 / L1 Higher Education Program",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 18500,
+    "concessionAmount": 2500,
+    "netPayable": 16000,
+    "paidAmount": 0,
+    "outstandingBalance": 16000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDate": "2026-11-27",
+        "status": "OVERDUE"
+      },
+      {
+        "number": 2,
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6000,
+        "dueDate": "2026-12-27",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDate": "2027-01-26",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PENDING"
+  },
+  {
+    "id": "7244c6f5-31a8-4d8f-9dbd-47c27b72d3bb",
+    "studentId": "246cbca0-1275-41d3-abbd-b106d5285fe2",
+    "rollNo": "AMER-2026-006",
+    "name": "Abinaya Sundaram",
+    "email": "abinaya.s@americancollege.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "521323cd-00da-49a6-98ed-6b7918d181b4",
+    "collegeName": "The American College",
+    "program": "French A1 / L1 Higher Education Program",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 18500,
+    "concessionAmount": 0,
+    "netPayable": 18500,
+    "paidAmount": 18500,
+    "outstandingBalance": 0,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDate": "2026-11-27",
+        "status": "PAID",
+        "paidDate": "2026-11-10",
+        "receiptNo": "RCP-20302839"
+      },
+      {
+        "number": 2,
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6000,
+        "dueDate": "2026-12-27",
+        "status": "PAID",
+        "paidDate": "2026-10-21",
+        "receiptNo": "RCP-20333910"
+      },
+      {
+        "number": 3,
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDate": "2027-01-26",
+        "status": "PAID",
+        "paidDate": "2026-10-01",
+        "receiptNo": "RCP-20290798"
+      }
+    ],
+    "paymentStatus": "PAID",
+    "lastPaymentDate": "2026-11-12"
+  },
+  {
+    "id": "1f9391c7-96b1-4121-890b-65c89cee4206",
+    "studentId": "1954253b-3360-49da-90cc-2e9dc0390cdb",
+    "rollNo": "SLS-2026-001",
+    "name": "Gokul Nath",
+    "email": "gokul.nath@sivakasilions.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "collegeName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "program": "French A1.1 School Foundation Course",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 9500,
+    "concessionAmount": 0,
+    "netPayable": 9500,
+    "paidAmount": 4500,
+    "outstandingBalance": 5000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Term 1 Installment (June)",
+        "amount": 4500,
+        "dueDate": "2026-11-22",
+        "status": "PAID",
+        "paidDate": "2026-11-07",
+        "receiptNo": "RCP-20318962"
+      },
+      {
+        "number": 2,
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDate": "2027-01-11",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDate": "2027-03-12",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PARTIAL",
+    "lastPaymentDate": "2026-11-12"
+  },
+  {
+    "id": "2dab8c1b-d6e7-41fa-ac8f-5dd8876a081b",
+    "studentId": "4605f10c-996c-45f6-879d-0765118d90ac",
+    "rollNo": "SLS-2026-002",
+    "name": "Haritha Selvam",
+    "email": "haritha.s@sivakasilions.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "collegeName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "program": "French A1.1 School Foundation Course",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 9500,
+    "concessionAmount": 2500,
+    "netPayable": 7000,
+    "paidAmount": 0,
+    "outstandingBalance": 7000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Term 1 Installment (June)",
+        "amount": 4500,
+        "dueDate": "2026-11-22",
+        "status": "OVERDUE"
+      },
+      {
+        "number": 2,
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDate": "2027-01-11",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDate": "2027-03-12",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PENDING"
+  },
+  {
+    "id": "811fb125-ac2d-48b9-bb0c-2fdfa54f776b",
+    "studentId": "19604273-1b7d-491c-8462-fe2a240a86ea",
+    "rollNo": "SLS-2026-003",
+    "name": "Siva Balaji",
+    "email": "siva.balaji@sivakasilions.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "collegeName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "program": "French A1.1 School Foundation Course",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 9500,
+    "concessionAmount": 0,
+    "netPayable": 9500,
+    "paidAmount": 9500,
+    "outstandingBalance": 0,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Term 1 Installment (June)",
+        "amount": 4500,
+        "dueDate": "2026-11-22",
+        "status": "PAID",
+        "paidDate": "2026-11-10",
+        "receiptNo": "RCP-20314478"
+      },
+      {
+        "number": 2,
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDate": "2027-01-11",
+        "status": "PAID",
+        "paidDate": "2026-10-21",
+        "receiptNo": "RCP-20346447"
+      },
+      {
+        "number": 3,
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDate": "2027-03-12",
+        "status": "PAID",
+        "paidDate": "2026-10-01",
+        "receiptNo": "RCP-20274348"
+      }
+    ],
+    "paymentStatus": "PAID",
+    "lastPaymentDate": "2026-11-12"
+  },
+  {
+    "id": "5cdfad24-1d14-4fda-bf24-c0480cf3a11a",
+    "studentId": "259d1f08-a871-400a-a078-be4cf3878bb9",
+    "rollNo": "SLS-2026-004",
+    "name": "Pavithra Ramesh",
+    "email": "pavithra.r@sivakasilions.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "collegeName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "program": "French A1.1 School Foundation Course",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 9500,
+    "concessionAmount": 0,
+    "netPayable": 9500,
+    "paidAmount": 4500,
+    "outstandingBalance": 5000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Term 1 Installment (June)",
+        "amount": 4500,
+        "dueDate": "2026-11-22",
+        "status": "PAID",
+        "paidDate": "2026-11-07",
+        "receiptNo": "RCP-20323164"
+      },
+      {
+        "number": 2,
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDate": "2027-01-11",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDate": "2027-03-12",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PARTIAL",
+    "lastPaymentDate": "2026-11-12"
+  },
+  {
+    "id": "ebbe4c90-f000-46da-9247-d17875dda4e1",
+    "studentId": "1f8544ae-e75d-4bfa-ab09-9720b0091730",
+    "rollNo": "SLS-2026-005",
+    "name": "Karthikeyan Vetrivel",
+    "email": "karthikeyan.v@sivakasilions.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "collegeName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "program": "French A1.1 School Foundation Course",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 9500,
+    "concessionAmount": 2500,
+    "netPayable": 7000,
+    "paidAmount": 0,
+    "outstandingBalance": 7000,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Term 1 Installment (June)",
+        "amount": 4500,
+        "dueDate": "2026-11-22",
+        "status": "OVERDUE"
+      },
+      {
+        "number": 2,
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDate": "2027-01-11",
+        "status": "PENDING"
+      },
+      {
+        "number": 3,
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDate": "2027-03-12",
+        "status": "PENDING"
+      }
+    ],
+    "paymentStatus": "PENDING"
+  },
+  {
+    "id": "73b63697-0b88-4e5f-8873-b4bfa1665528",
+    "studentId": "229641af-fa1d-41c7-ad6f-9a880d740dbe",
+    "rollNo": "SLS-2026-006",
+    "name": "Swetha Narayanan",
+    "email": "swetha.n@sivakasilions.edu.in",
+    "avatar": "/avatars/default.png",
+    "collegeId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "collegeName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "program": "French A1.1 School Foundation Course",
+    "department": "Foreign Languages Department",
+    "batch": "MRNG BATCH",
+    "currentSemester": 1,
+    "totalFees": 9500,
+    "concessionAmount": 0,
+    "netPayable": 9500,
+    "paidAmount": 9500,
+    "outstandingBalance": 0,
+    "installments": [
+      {
+        "number": 1,
+        "title": "Term 1 Installment (June)",
+        "amount": 4500,
+        "dueDate": "2026-11-22",
+        "status": "PAID",
+        "paidDate": "2026-11-10",
+        "receiptNo": "RCP-20343067"
+      },
+      {
+        "number": 2,
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDate": "2027-01-11",
+        "status": "PAID",
+        "paidDate": "2026-10-21",
+        "receiptNo": "RCP-20278027"
+      },
+      {
+        "number": 3,
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDate": "2027-03-12",
+        "status": "PAID",
+        "paidDate": "2026-10-01",
+        "receiptNo": "RCP-20263645"
+      }
+    ],
+    "paymentStatus": "PAID",
+    "lastPaymentDate": "2026-11-12"
+  }
+]

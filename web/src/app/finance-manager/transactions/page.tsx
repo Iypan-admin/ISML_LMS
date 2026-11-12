@@ -39,17 +39,20 @@ import Breadcrumbs from '@/components/common/Breadcrumbs';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import StatusBadge from '@/components/common/StatusBadge';
 import { useCollege } from '@/context/CollegeContext';
-import { mockTransactions, TransactionRecord, mockStudentFees } from '@/mock/financeManagerData';
+import { TransactionRecord } from '@/mock/financeManagerData';
 import { useToast } from '@/context/ToastContext';
+import realDbTransactions from '@/lib/realDbTransactions.json';
+import realDbStudentFees from '@/lib/realDbStudentFees.json';
 import BulkChallanEntryDrawer from '@/components/finance-manager/forms/BulkChallanEntryDrawer';
 import RecordOfflinePaymentDrawer from '@/components/finance-manager/forms/RecordOfflinePaymentDrawer';
 import SubmitPaymentForApprovalModal from '@/components/finance-manager/forms/SubmitPaymentForApprovalModal';
 
 export default function TransactionsPage() {
-  const { selectedCollegeId, isOverall } = useCollege();
+  const { selectedCollegeId, selectedCollege, isOverall } = useCollege();
   const { showSuccess, showInfo } = useToast();
 
-  const [transactions, setTransactions] = useState<TransactionRecord[]>(mockTransactions);
+  const [transactions, setTransactions] = useState<TransactionRecord[]>(realDbTransactions as any[]);
+  const mockStudentFees = (realDbStudentFees as any[]);
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('ALL');
   const [channelFilter, setChannelFilter] = useState<string>('ALL');

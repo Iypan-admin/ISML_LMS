@@ -55,14 +55,36 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
             if (type && type !== 'PING' && type !== 'CONNECTED') {
               console.log(`📡 [ISML Live Event] Received: ${type}`, payload);
 
-              // 🔊 High-Fidelity 0ms Instant Audio Alert for all users in real time
+              // 🔊 Beep Sound Alert ONLY for Super Admin users on relevant events
               if (
                 type === 'APPROVAL_SUBMITTED' ||
                 type === 'APPROVAL_REVIEWED' ||
                 type === 'ADMISSION_REGISTERED' ||
                 type === 'INSTITUTION_REGISTERED'
               ) {
-                soundNotification.playHighChime();
+                // Check if current user is Super Admin or on Super Admin portal
+                let isSuperAdmin = false;
+                if (typeof window !== 'undefined') {
+                  const path = window.location.pathname;
+                  if (path.startsWith('/super-admin')) {
+                    isSuperAdmin = true;
+                  } else {
+                    try {
+                      const stored = localStorage.getItem('isml_user');
+                      if (stored) {
+                        const u = JSON.parse(stored);
+                        const role = (u.role || u.userType || '').toUpperCase();
+                        if (role === 'SUPER_ADMIN' || role.includes('SUPER')) {
+                          isSuperAdmin = true;
+                        }
+                      }
+                    } catch {}
+                  }
+                }
+
+                if (isSuperAdmin) {
+                  soundNotification.playHighChime();
+                }
 
                 // Record into reactive Notification Store with origin portal details
                 if (type === 'APPROVAL_SUBMITTED') {

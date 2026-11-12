@@ -41,9 +41,8 @@ class SoundNotificationEngine {
   }
 
   /**
-   * ✈️ OFFICIAL LUXURY AIRPORT TERMINAL DING-DONG CHIME
-   * 4-Tone Tubular Bell Gong (D5 -> F#5 -> A5 -> D6)
-   * High-clarity, authoritative, and instantly recognizable (~2.2s)
+   * 🔔 Crisp Minimal Beep Notification Sound (~180ms)
+   * High-clarity subtle professional dual beep tone (880Hz -> 1046Hz)
    */
   public playHighChime() {
     try {
@@ -51,60 +50,24 @@ class SoundNotificationEngine {
       if (!ctx) return;
       const now = ctx.currentTime;
 
-      // Master Compressor to give clean, professional airport PA broadcast punch
-      const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.setValueAtTime(-12, now);
-      compressor.knee.setValueAtTime(25, now);
-      compressor.ratio.setValueAtTime(12, now);
-      compressor.attack.setValueAtTime(0.003, now);
-      compressor.release.setValueAtTime(0.25, now);
-      compressor.connect(ctx.destination);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0.75, now);
-      master.connect(compressor);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now); // A5 note
+      osc.frequency.setValueAtTime(1046.5, now + 0.08); // C6 note (pleasant short beep)
 
-      // Airport Gong Frequencies: D5 (587Hz), F#5 (740Hz), A5 (880Hz), D6 (1174Hz)
-      const gongNotes = [
-        { freq: 587.33, time: 0.00, dur: 1.1 },
-        { freq: 739.99, time: 0.22, dur: 1.2 },
-        { freq: 880.00, time: 0.44, dur: 1.4 },
-        { freq: 1174.66, time: 0.68, dur: 1.8 },
-      ];
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.20, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
 
-      gongNotes.forEach((n) => {
-        const start = now + n.time;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(n.freq, start);
-
-        gain.gain.setValueAtTime(0.001, start);
-        gain.gain.exponentialRampToValueAtTime(0.60, start + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + n.dur);
-
-        osc.connect(gain);
-        gain.connect(master);
-
-        osc.start(start);
-        osc.stop(start + n.dur);
-
-        // +2 Octave tubular bell chime sparkle (metallic shimmer overtone)
-        const bell = ctx.createOscillator();
-        const bellGain = ctx.createGain();
-        bell.type = 'triangle';
-        bell.frequency.setValueAtTime(n.freq * 2, start);
-        bellGain.gain.setValueAtTime(0.001, start);
-        bellGain.gain.exponentialRampToValueAtTime(0.22, start + 0.015);
-        bellGain.gain.exponentialRampToValueAtTime(0.0001, start + n.dur * 0.5);
-        bell.connect(bellGain);
-        bellGain.connect(master);
-        bell.start(start);
-        bell.stop(start + n.dur * 0.5);
-      });
+      osc.start(now);
+      osc.stop(now + 0.18);
     } catch (e) {
-      console.warn('Airport chime error:', e);
+      console.warn('Beep sound error:', e);
     }
   }
 

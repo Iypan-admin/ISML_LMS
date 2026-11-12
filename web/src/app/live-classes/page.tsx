@@ -281,13 +281,23 @@ export default function LiveClassesPage() {
             const formattedTimeSlot = `${formatTime(startDate)} – ${formatTime(endDate)}`;
             const formattedDate = formatDate(startDate);
 
+            const isEnded = item.status === 'ENDED' || item.status === 'COMPLETED' || endDate.getTime() < Date.now();
+            const isLive = item.status === 'LIVE' || item.tutorJoined === true;
+            const isToday = startDate.toDateString() === new Date().toDateString();
+
+            let computedStatus = 'UPCOMING';
+            if (isLive) computedStatus = 'LIVE_NOW';
+            else if (isEnded) computedStatus = 'COMPLETED';
+            else if (isToday) computedStatus = 'TODAY';
+            else computedStatus = 'UPCOMING';
+
             return {
               id: item.id,
               topic: item.title || 'Live Interactive Class',
               tutorName: item.tutorName || 'Lead Trainer',
               tutorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
               tutorTitle: 'Certified Faculty',
-              status: item.status === 'LIVE' ? 'LIVE_NOW' : item.status === 'ENDED' ? 'COMPLETED' : 'TODAY',
+              status: computedStatus,
               date: formattedDate,
               timeSlot: formattedTimeSlot,
               durationMins: item.durationMinutes || 60,
@@ -882,6 +892,10 @@ export default function LiveClassesPage() {
 
             {rightDrawerTab === 'CHAT' && (
               <div className="flex-1 flex flex-col h-full overflow-hidden">
+                <div className="px-3 py-1.5 bg-blue-950/40 border-b border-blue-500/20 text-[10px] text-cyan-300 flex items-center justify-between">
+                  <span>Doubt Solver Moderation Desk Active</span>
+                  <span className="text-emerald-400 font-bold">Live Q&A Desk</span>
+                </div>
                 <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center p-6 text-slate-500 space-y-2">
@@ -889,7 +903,9 @@ export default function LiveClassesPage() {
                         <MessageSquare className="w-5 h-5" />
                       </div>
                       <p className="font-semibold text-slate-400 text-xs">No chat messages yet</p>
-                      <p className="text-[11px] text-slate-500">Live conversation between tutor & classmates will appear here.</p>
+                      <p className="text-[11px] text-slate-500">
+                        Ask any question! Your doubts are answered by the assigned Doubt Solver Tutor or escalated to the Lead Trainer.
+                      </p>
                     </div>
                   ) : (
                     messages.map((m, idx) => (
@@ -904,17 +920,23 @@ export default function LiveClassesPage() {
                   )}
                 </div>
 
-                <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 flex items-center gap-2 bg-[#181818]">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Send a message to everyone..."
-                    className="flex-1 bg-[#252525] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
-                  />
-                  <button type="submit" className="p-2 bg-[#0052CC] text-white rounded-xl">
-                    <Send className="w-4 h-4" />
-                  </button>
+                <form onSubmit={handleSendMessage} className="p-3 border-t border-white/10 flex flex-col gap-1.5 bg-[#181818]">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask a doubt or send a message..."
+                      className="flex-1 bg-[#252525] border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                    />
+                    <button type="submit" className="p-2 bg-[#0052CC] hover:bg-blue-600 text-white rounded-xl">
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <span className="text-[9.5px] text-slate-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                    <span>Student questions are received by the dedicated Doubt Solving Tutor.</span>
+                  </span>
                 </form>
               </div>
             )}

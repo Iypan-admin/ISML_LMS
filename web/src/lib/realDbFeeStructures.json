@@ -1,0 +1,485 @@
+[
+  {
+    "id": "f2992aa2-66f5-498d-b5ef-0adb003b1218",
+    "tenantId": null,
+    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "courseId": "8df60952-2448-4bdf-aa35-ae28351968a1",
+    "academicLevelId": null,
+    "structureName": "Higher Ed French A1 / L1 Term Fee",
+    "structureType": "DURATION_BASED",
+    "durationPattern": "STANDARD_PACING",
+    "totalFeeAmount": 18500,
+    "currency": "INR",
+    "academicYear": "2026–2027",
+    "isDefault": true,
+    "isActive": true,
+    "effectiveFrom": null,
+    "effectiveTo": null,
+    "approvalStatus": "APPROVED",
+    "approvalRequestId": null,
+    "createdById": null,
+    "createdAt": "2026-11-12T08:20:32.370Z",
+    "updatedAt": "2026-11-12T08:20:32.370Z",
+    "code": "FEESTR-COL-FR-A1",
+    "institutionName": "Sri Krishna College of Technology",
+    "courseName": "French A1 / L1 Higher Education Program",
+    "courseCode": "COL-FR-A1L1",
+    "components": [
+      {
+        "name": "DELF A1 Interactive Tuition Fee",
+        "type": "TUITION_FEE",
+        "amount": 11000,
+        "isMandatory": true
+      },
+      {
+        "name": "Phonetics & Audio Lab Studio Access",
+        "type": "LAB_LANGUAGE_STUDIO_FEE",
+        "amount": 3500,
+        "isMandatory": true
+      },
+      {
+        "name": "Semester Assessment & Mock Certification",
+        "type": "EXAMINATION_FEE",
+        "amount": 2500,
+        "isMandatory": true
+      },
+      {
+        "name": "AI LSRW Speaking Platform License",
+        "type": "AI_SPEAKING_PLATFORM_FEE",
+        "amount": 1500,
+        "isMandatory": false
+      }
+    ],
+    "installments": [
+      {
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDays": 15
+      },
+      {
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6000,
+        "dueDays": 45
+      },
+      {
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDays": 75
+      }
+    ]
+  },
+  {
+    "id": "bd4e2c2b-0344-4a4b-9872-7ca9937ce7ed",
+    "tenantId": null,
+    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "courseId": "120fc41b-d543-47c8-acb1-0846eee974a9",
+    "academicLevelId": null,
+    "structureName": "Higher Ed German A1 / L1 Term Fee",
+    "structureType": "DURATION_BASED",
+    "durationPattern": "STANDARD_PACING",
+    "totalFeeAmount": 19500,
+    "currency": "INR",
+    "academicYear": "2026–2027",
+    "isDefault": true,
+    "isActive": true,
+    "effectiveFrom": null,
+    "effectiveTo": null,
+    "approvalStatus": "APPROVED",
+    "approvalRequestId": null,
+    "createdById": null,
+    "createdAt": "2026-11-12T08:20:37.882Z",
+    "updatedAt": "2026-11-12T08:20:37.882Z",
+    "code": "FEESTR-COL-DE-A1",
+    "institutionName": "Sri Krishna College of Technology",
+    "courseName": "German A1 / L1 Higher Education Program",
+    "courseCode": "COL-DE-A1L1",
+    "components": [
+      {
+        "name": "Goethe-Zertifikat A1 Tuition Fee",
+        "type": "TUITION_FEE",
+        "amount": 12000,
+        "isMandatory": true
+      },
+      {
+        "name": "German Oral & Pronunciation Studio",
+        "type": "LAB_LANGUAGE_STUDIO_FEE",
+        "amount": 3500,
+        "isMandatory": true
+      },
+      {
+        "name": "CIA Periodic Assessment & Evaluation",
+        "type": "EXAMINATION_FEE",
+        "amount": 2500,
+        "isMandatory": true
+      },
+      {
+        "name": "Digital Courseware & Vocabulary Deck",
+        "type": "LSRW_COURSE_MATERIAL_FEE",
+        "amount": 1500,
+        "isMandatory": false
+      }
+    ],
+    "installments": [
+      {
+        "title": "Installment 1 (At Admission)",
+        "amount": 8000,
+        "dueDays": 15
+      },
+      {
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 6500,
+        "dueDays": 45
+      },
+      {
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDays": 75
+      }
+    ]
+  },
+  {
+    "id": "74de9753-1fcb-4e97-9f79-d2f385701f52",
+    "tenantId": null,
+    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "courseId": "173a3716-4ffb-4c4b-a587-5e710b31f0ac",
+    "academicLevelId": null,
+    "structureName": "Higher Ed Spanish A1 / L1 Term Fee",
+    "structureType": "DURATION_BASED",
+    "durationPattern": "STANDARD_PACING",
+    "totalFeeAmount": 17500,
+    "currency": "INR",
+    "academicYear": "2026–2027",
+    "isDefault": true,
+    "isActive": true,
+    "effectiveFrom": null,
+    "effectiveTo": null,
+    "approvalStatus": "PENDING",
+    "approvalRequestId": "REQ-FIN-643080",
+    "createdById": null,
+    "createdAt": "2026-11-12T08:20:43.086Z",
+    "updatedAt": "2026-11-12T08:20:43.086Z",
+    "code": "FEESTR-COL-ES-A1",
+    "institutionName": "Sri Krishna College of Technology",
+    "courseName": "Spanish A1 / L1 Higher Education Program",
+    "courseCode": "COL-ES-A1L1",
+    "components": [
+      {
+        "name": "DELE A1 Conversational Tuition",
+        "type": "TUITION_FEE",
+        "amount": 10500,
+        "isMandatory": true
+      },
+      {
+        "name": "Language Studio & Listening Station",
+        "type": "LAB_LANGUAGE_STUDIO_FEE",
+        "amount": 3500,
+        "isMandatory": true
+      },
+      {
+        "name": "End-Term Viva & Certificate Exam",
+        "type": "EXAMINATION_FEE",
+        "amount": 2000,
+        "isMandatory": true
+      },
+      {
+        "name": "Self-Paced Practice App Access",
+        "type": "AI_SPEAKING_PLATFORM_FEE",
+        "amount": 1500,
+        "isMandatory": false
+      }
+    ],
+    "installments": [
+      {
+        "title": "Installment 1 (At Admission)",
+        "amount": 7000,
+        "dueDays": 15
+      },
+      {
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 5500,
+        "dueDays": 45
+      },
+      {
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDays": 75
+      }
+    ]
+  },
+  {
+    "id": "6d2e45e9-4423-4700-bb0d-ad16aba9380c",
+    "tenantId": null,
+    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "courseId": "6c660b35-3800-4f89-a1e2-ddc508376e74",
+    "academicLevelId": null,
+    "structureName": "Higher Ed Japanese N5 Kanji Track Fee",
+    "structureType": "DURATION_BASED",
+    "durationPattern": "STANDARD_PACING",
+    "totalFeeAmount": 22000,
+    "currency": "INR",
+    "academicYear": "2026–2027",
+    "isDefault": true,
+    "isActive": true,
+    "effectiveFrom": null,
+    "effectiveTo": null,
+    "approvalStatus": "PENDING",
+    "approvalRequestId": "REQ-FIN-648235",
+    "createdById": null,
+    "createdAt": "2026-11-12T08:20:48.239Z",
+    "updatedAt": "2026-11-12T08:20:48.239Z",
+    "code": "FEESTR-COL-JA-N5",
+    "institutionName": "Sri Krishna College of Technology",
+    "courseName": "Japanese N5 Higher Education Program",
+    "courseCode": "COL-JA-N5",
+    "components": [
+      {
+        "name": "JLPT N5 Script & Grammar Tuition",
+        "type": "TUITION_FEE",
+        "amount": 13500,
+        "isMandatory": true
+      },
+      {
+        "name": "Kanji Writing Studio & Stroke Lab",
+        "type": "LAB_LANGUAGE_STUDIO_FEE",
+        "amount": 4000,
+        "isMandatory": true
+      },
+      {
+        "name": "JLPT Mock Drill & Evaluation",
+        "type": "EXAMINATION_FEE",
+        "amount": 2500,
+        "isMandatory": true
+      },
+      {
+        "name": "Native Speaker Listening Masterclass",
+        "type": "STUDENT_ACTIVITY_FEE",
+        "amount": 2000,
+        "isMandatory": false
+      }
+    ],
+    "installments": [
+      {
+        "title": "Installment 1 (At Admission)",
+        "amount": 9000,
+        "dueDays": 15
+      },
+      {
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 7000,
+        "dueDays": 45
+      },
+      {
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 6000,
+        "dueDays": 75
+      }
+    ]
+  },
+  {
+    "id": "2354cc92-b624-4acd-b891-e1d4f527f882",
+    "tenantId": null,
+    "institutionId": "25fb35bd-b45a-467e-8309-f0eee0822107",
+    "courseId": "57b4ca4d-04a3-44b0-ae01-2afa039a6736",
+    "academicLevelId": null,
+    "structureName": "Higher Ed Korean A1 / L1 Term Fee",
+    "structureType": "DURATION_BASED",
+    "durationPattern": "STANDARD_PACING",
+    "totalFeeAmount": 18000,
+    "currency": "INR",
+    "academicYear": "2026–2027",
+    "isDefault": true,
+    "isActive": true,
+    "effectiveFrom": null,
+    "effectiveTo": null,
+    "approvalStatus": "APPROVED",
+    "approvalRequestId": null,
+    "createdById": null,
+    "createdAt": "2026-11-12T08:20:55.225Z",
+    "updatedAt": "2026-11-12T08:20:55.225Z",
+    "code": "FEESTR-COL-KO-A1",
+    "institutionName": "Sri Krishna College of Technology",
+    "courseName": "Korean A1 / L1 Higher Education Program",
+    "courseCode": "COL-KO-A1L1",
+    "components": [
+      {
+        "name": "Hangul Script & Spoken Korean Tuition",
+        "type": "TUITION_FEE",
+        "amount": 11000,
+        "isMandatory": true
+      },
+      {
+        "name": "Language Studio Pronunciation Lab",
+        "type": "LAB_LANGUAGE_STUDIO_FEE",
+        "amount": 3500,
+        "isMandatory": true
+      },
+      {
+        "name": "Progress Review & Assessment",
+        "type": "EXAMINATION_FEE",
+        "amount": 2000,
+        "isMandatory": true
+      },
+      {
+        "name": "K-Culture Immersion & LMS Digital Kit",
+        "type": "LSRW_COURSE_MATERIAL_FEE",
+        "amount": 1500,
+        "isMandatory": false
+      }
+    ],
+    "installments": [
+      {
+        "title": "Installment 1 (At Admission)",
+        "amount": 7500,
+        "dueDays": 15
+      },
+      {
+        "title": "Installment 2 (Mid-Term Review)",
+        "amount": 5500,
+        "dueDays": 45
+      },
+      {
+        "title": "Installment 3 (Final Assessment)",
+        "amount": 5000,
+        "dueDays": 75
+      }
+    ]
+  },
+  {
+    "id": "735529a2-5fbe-4cb8-b360-585d51ddaa49",
+    "tenantId": null,
+    "institutionId": "4f81a577-eeee-4088-ae32-d6083977a4af",
+    "courseId": "1192320c-3273-4c8c-b9c7-86b42c1a83e3",
+    "academicLevelId": null,
+    "structureName": "K-12 French A1.1 Foundation Annual Fee",
+    "structureType": "DURATION_BASED",
+    "durationPattern": "STANDARD_PACING",
+    "totalFeeAmount": 9500,
+    "currency": "INR",
+    "academicYear": "2026–2027",
+    "isDefault": true,
+    "isActive": true,
+    "effectiveFrom": null,
+    "effectiveTo": null,
+    "approvalStatus": "APPROVED",
+    "approvalRequestId": null,
+    "createdById": null,
+    "createdAt": "2026-11-12T08:20:59.591Z",
+    "updatedAt": "2026-11-12T08:20:59.591Z",
+    "code": "FEESTR-SCH-FR-A11",
+    "institutionName": "Delhi Public School Coimbatore",
+    "courseName": "French A1.1 School Foundation Course",
+    "courseCode": "SCH-FR-A11",
+    "components": [
+      {
+        "name": "K-12 French Language Instruction",
+        "type": "TUITION_FEE",
+        "amount": 6000,
+        "isMandatory": true
+      },
+      {
+        "name": "Phonetics & Audio Rhymes Studio",
+        "type": "LAB_LANGUAGE_STUDIO_FEE",
+        "amount": 1500,
+        "isMandatory": true
+      },
+      {
+        "name": "Interactive Worksheets & Activity Book",
+        "type": "LSRW_COURSE_MATERIAL_FEE",
+        "amount": 1200,
+        "isMandatory": true
+      },
+      {
+        "name": "Quarterly Diagnostic Assessment",
+        "type": "EXAMINATION_FEE",
+        "amount": 800,
+        "isMandatory": true
+      }
+    ],
+    "installments": [
+      {
+        "title": "Term 1 Installment (June)",
+        "amount": 4500,
+        "dueDays": 10
+      },
+      {
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDays": 60
+      },
+      {
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDays": 120
+      }
+    ]
+  },
+  {
+    "id": "25d821f9-ba24-43dc-9b08-a69b173a912f",
+    "tenantId": null,
+    "institutionId": "4f81a577-eeee-4088-ae32-d6083977a4af",
+    "courseId": "96b655e7-15af-4a0c-b3a5-a3b2565e3de5",
+    "academicLevelId": null,
+    "structureName": "K-12 German A1.1 Foundation Annual Fee",
+    "structureType": "DURATION_BASED",
+    "durationPattern": "STANDARD_PACING",
+    "totalFeeAmount": 9800,
+    "currency": "INR",
+    "academicYear": "2026–2027",
+    "isDefault": true,
+    "isActive": true,
+    "effectiveFrom": null,
+    "effectiveTo": null,
+    "approvalStatus": "PENDING",
+    "approvalRequestId": "REQ-FIN-664072",
+    "createdById": null,
+    "createdAt": "2026-11-12T08:21:04.077Z",
+    "updatedAt": "2026-11-12T08:21:04.077Z",
+    "code": "FEESTR-SCH-DE-A11",
+    "institutionName": "Delhi Public School Coimbatore",
+    "courseName": "German A1.1 School Foundation Course",
+    "courseCode": "SCH-DE-A11",
+    "components": [
+      {
+        "name": "K-12 German Language Instruction",
+        "type": "TUITION_FEE",
+        "amount": 6200,
+        "isMandatory": true
+      },
+      {
+        "name": "Interactive Audio & Listening Lab",
+        "type": "LAB_LANGUAGE_STUDIO_FEE",
+        "amount": 1600,
+        "isMandatory": true
+      },
+      {
+        "name": "Illustrated Workbook & Flashcards",
+        "type": "LSRW_COURSE_MATERIAL_FEE",
+        "amount": 1200,
+        "isMandatory": true
+      },
+      {
+        "name": "Assessment & Progress Report Card",
+        "type": "EXAMINATION_FEE",
+        "amount": 800,
+        "isMandatory": true
+      }
+    ],
+    "installments": [
+      {
+        "title": "Term 1 Installment (June)",
+        "amount": 4800,
+        "dueDays": 10
+      },
+      {
+        "title": "Term 2 Installment (October)",
+        "amount": 3000,
+        "dueDays": 60
+      },
+      {
+        "title": "Term 3 Installment (January)",
+        "amount": 2000,
+        "dueDays": 120
+      }
+    ]
+  }
+]

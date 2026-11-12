@@ -170,10 +170,10 @@ export function TutorProvider({ children }: { children: React.ReactNode }) {
     return alloc ? alloc.tutorRole : null;
   };
 
-  // Rule: ONLY Lead Trainer or active Substitute Standby can start live classes!
+  // Rule: EXCLUSIVELY Lead Native Trainer can start and end live studio broadcasts!
   const canStartLiveClassForBatch = (batchId: string): boolean => {
     const role = getTutorRoleForBatch(batchId);
-    return role === 'LEAD_TRAINER' || role === 'SUBSTITUTE_TUTOR';
+    return role === 'LEAD_TRAINER';
   };
 
   // Rule: Lead Trainer and Substitute can mark formal attendance; Assistant can view/take roll-call if permitted

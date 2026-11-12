@@ -103,18 +103,21 @@ export async function POST(request: Request) {
     let allocationsDatabase = getAllocationsDb();
 
     if (isAssignAction) {
-      // Upsert: If allocation already exists for this batch, update it instead of creating duplicates
+      // Find exact match only (same batch AND same course/subject)
       const existingIdx = allocationsDatabase.findIndex(
         (a: any) =>
           a.batchName &&
           body.batchName &&
-          a.batchName.toLowerCase().trim() === body.batchName.toLowerCase().trim()
+          a.batchName.toLowerCase().trim() === body.batchName.toLowerCase().trim() &&
+          ((!body.courseName && !body.subjectName) ||
+            (a.courseName && body.courseName && a.courseName.toLowerCase().trim() === body.courseName.toLowerCase().trim()) ||
+            (a.subjectName && body.subjectName && a.subjectName.toLowerCase().trim() === body.subjectName.toLowerCase().trim()))
       );
 
       const targetAlloc = existingIdx !== -1 ? allocationsDatabase[existingIdx] : null;
 
       const newAlloc = {
-        id: targetAlloc?.id || `alloc-${Date.now().toString().slice(-4)}`,
+        id: targetAlloc?.id || `alloc-${Date.now().toString().slice(-6)}`,
         facultyId: body.facultyId || targetAlloc?.facultyId || 'fac-201834',
         facultyName: body.facultyName || targetAlloc?.facultyName || 'Joy JK',
         avatarUrl: body.avatarUrl || targetAlloc?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
@@ -122,16 +125,16 @@ export async function POST(request: Request) {
         institutionType: body.institutionType || targetAlloc?.institutionType || 'COLLEGE',
         institutionId: body.institutionId || targetAlloc?.institutionId || '521323cd-00da-49a6-98ed-6b7918d181b4',
         institutionName: body.institutionName || targetAlloc?.institutionName || 'The American College',
-        courseId: body.courseId || targetAlloc?.courseId || '',
-        courseName: body.courseName || targetAlloc?.courseName || '',
-        subjectCode: body.subjectCode || targetAlloc?.subjectCode || 'ET',
-        subjectName: body.subjectName || targetAlloc?.subjectName || body.courseName || 'testtt',
-        batchId: body.batchId || targetAlloc?.batchId || 'batch-4168',
-        batchName: body.batchName || targetAlloc?.batchName || 'MRNG BATCH',
+        courseId: body.courseId || targetAlloc?.courseId || `crs-${Date.now().toString().slice(-4)}`,
+        courseName: body.courseName || targetAlloc?.courseName || body.subjectName || 'Language Course',
+        subjectCode: body.subjectCode || targetAlloc?.subjectCode || 'CRS',
+        subjectName: body.subjectName || targetAlloc?.subjectName || body.courseName || 'Language Session',
+        batchId: body.batchId || targetAlloc?.batchId || `bat-${Date.now().toString().slice(-4)}`,
+        batchName: body.batchName || targetAlloc?.batchName || 'General Batch',
         languageFamily: body.languageFamily || targetAlloc?.languageFamily || 'FRENCH',
-        scheduleSlots: body.scheduleSlots || targetAlloc?.scheduleSlots || ['Mon, Wed, Fri 07:30 PM - 09:00 PM'],
+        scheduleSlots: body.scheduleSlots || targetAlloc?.scheduleSlots || ['Mon, Wed, Fri 10:00 AM - 11:30 AM'],
         status: body.tutorRole === 'SUBSTITUTE_TUTOR' ? 'SUBSTITUTE_STANDBY' : 'ACTIVE',
-        effectiveFrom: targetAlloc?.effectiveFrom || body.effectiveFrom || '2026-10-14',
+        effectiveFrom: targetAlloc?.effectiveFrom || body.effectiveFrom || new Date().toISOString().split('T')[0],
         notes: body.notes || targetAlloc?.notes || `Assigned to ${body.institutionName || 'Campus'}.`,
       };
 

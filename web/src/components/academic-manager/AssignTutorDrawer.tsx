@@ -33,7 +33,10 @@ import {
   mockFacultyAllocations,
   FacultyMember
 } from '@/mock/facultyAssignments';
-import { mockSubjects, mockCourses, mockBatches } from '@/mock/superAdminData';
+import { mockSubjects } from '@/mock/superAdminData';
+import realDbCourses from '@/lib/realDbCourses.json';
+import realDbBatches from '@/lib/realDbBatches.json';
+import realDbInstitutions from '@/lib/realDbInstitutions.json';
 import { useToast } from '@/context/ToastContext';
 
 interface AssignTutorDrawerProps {
@@ -41,6 +44,7 @@ interface AssignTutorDrawerProps {
   onClose: () => void;
   onAllocationCreated: (newAlloc: FacultyAllocationItem) => void;
   defaultRole?: TutorRoleType;
+  initialInstitutionId?: string;
 }
 
 export default function AssignTutorDrawer({
@@ -48,6 +52,7 @@ export default function AssignTutorDrawer({
   onClose,
   onAllocationCreated,
   defaultRole = 'SUBSTITUTE_TUTOR',
+  initialInstitutionId,
 }: AssignTutorDrawerProps) {
   const { showSuccess } = useToast();
 
@@ -72,11 +77,26 @@ export default function AssignTutorDrawer({
   const [institutionId, setInstitutionId] = useState<string>('521323cd-00da-49a6-98ed-6b7918d181b4');
   const [institutionName, setInstitutionName] = useState<string>('The American College');
 
-  const institutionOptions = [
-    { id: '521323cd-00da-49a6-98ed-6b7918d181b4', name: 'The American College', code: 'AMER-COL', type: 'COLLEGE' as const },
-    { id: 'inst-01', name: 'Loyola College of Arts & Science', code: 'LOYOLA-CHE', type: 'COLLEGE' as const },
-    { id: 'c37b62d5-6ca4-47cb-bed7-899ad75a3144', name: 'Sivakasi Lions Matriculation Higher Secondary School', code: 'SLMHSS', type: 'SCHOOL' as const },
-  ];
+  const institutionOptions = useMemo(() => {
+    return (realDbInstitutions as any[]).map((i) => ({
+      id: i.id,
+      name: i.name,
+      code: i.code || i.id.slice(0, 8),
+      type: (i.type === 'SCHOOL' || i.name.toLowerCase().includes('school')) ? 'SCHOOL' as const : 'COLLEGE' as const,
+    }));
+  }, []);
+
+  // Pre-select institution if provided via props
+  React.useEffect(() => {
+    if (initialInstitutionId) {
+      const match = institutionOptions.find(i => i.id === initialInstitutionId);
+      if (match) {
+        setInstitutionId(match.id);
+        setInstitutionName(match.name);
+        setInstitutionType(match.type);
+      }
+    }
+  }, [initialInstitutionId, institutionOptions]);
 
   const [facultyList, setFacultyList] = useState<any[]>([]);
 
@@ -101,18 +121,18 @@ export default function AssignTutorDrawer({
     }
     return [
       {
-        id: 'fac-joy-jk',
-        name: 'Joy Jk (Foreign Language Faculty)',
-        qualification: 'M.A. French Linguistics • Sorbonne CEFR C2 Certified Trainer',
-        nativeCountry: 'India & France Affiliate',
-        allocatedHours: 18,
+        id: 'fac-201834',
+        name: 'Joy JK',
+        qualification: 'Foreign Language Faculty & Master Trainer',
+        nativeCountry: 'India',
+        allocatedHours: 0,
         weeklyHoursLimit: 24,
         avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
       }
     ];
   }, [facultyList, languageFamily]);
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string>('fac-joy-jk');
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>('fac-201834');
   const selectedFaculty = useMemo(() => {
     return eligibleFaculty.find(f => f.id === selectedFacultyId) || eligibleFaculty[0];
   }, [eligibleFaculty, selectedFacultyId]);
@@ -124,15 +144,48 @@ export default function AssignTutorDrawer({
     }
   }, [eligibleFaculty]);
 
-  const [selectedCourseId, setSelectedCourseId] = useState(mockCourses[0]?.id || 'crs-01');
-  const selectedCourse = useMemo(() => {
-    return mockCourses.find(c => c.id === selectedCourseId) || mockCourses[0];
-  }, [selectedCourseId]);
+  // Available real courses based on institution type and selected institution
+  const availableCourses = useMemo(() => {
+    const all = (realDbCourses as any[]) || [];
+    const isSchool = institutionType === 'SCHOOL';
+    return all.filter((c) => {
+      const isCourseSchool = (c.code && c.code.startsWith('SCH')) || (c.name && c.name.toLowerCase().includes('school'));
+      if (isSchool && !isCourseSchool) return false;
+      if (!isSchool && isCourseSchool) return false;
+      if (c.collegeId && c.collegeId === institutionId) return true;
+      return true;
+    });
+  }, [institutionType, institutionId]);
 
-  const [selectedBatchId, setSelectedBatchId] = useState(mockBatches[0]?.id || 'batch-2026-fr');
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  React.useEffect(() => {
+    if (availableCourses.length > 0) {
+      setSelectedCourseId(availableCourses[0].id);
+    } else {
+      setSelectedCourseId('');
+    }
+  }, [availableCourses]);
+
+  const selectedCourse = useMemo(() => {
+    return availableCourses.find(c => c.id === selectedCourseId) || availableCourses[0];
+  }, [availableCourses, selectedCourseId]);
+
+  // Batches
+  const availableBatches = useMemo(() => {
+    const batches = (realDbBatches as any[]) || [];
+    return batches.filter(b => !b.institutionId || b.institutionId === institutionId);
+  }, [institutionId]);
+
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('batch-default-01');
   const selectedBatch = useMemo(() => {
-    return mockBatches.find(b => b.id === selectedBatchId) || mockBatches[0];
-  }, [selectedBatchId]);
+    if (availableBatches.length > 0) {
+      return availableBatches.find(b => b.id === selectedBatchId) || availableBatches[0];
+    }
+    return {
+      id: `batch-${institutionType.toLowerCase()}-01`,
+      name: institutionType === 'COLLEGE' ? 'MRNG BATCH (The American College)' : 'Sivakasi Lions French Cohort A',
+    };
+  }, [availableBatches, selectedBatchId, institutionType]);
 
   // Standard predefined lecture & doubt timetable slots
   const standardTimeSlots = [
@@ -364,11 +417,96 @@ export default function AssignTutorDrawer({
               </div>
             </div>
 
-            {/* Step 2: Language & Faculty Member Selection */}
+            {/* Step 2: Target Institution Selection */}
+            <div className="p-3.5 bg-blue-50/50 rounded-2xl border border-blue-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#0052CC] uppercase tracking-wider block">
+                  Step 2: Target Institution (College or School Scope) <span className="text-rose-500">*</span>
+                </span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-900">
+                  {institutionType} SCOPE
+                </span>
+              </div>
+
+              {/* Quick Institution Selection Pills */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-700">
+                  Select Specific Campus:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {institutionOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setInstitutionId(opt.id);
+                        setInstitutionName(opt.name);
+                        setInstitutionType(opt.type);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-1.5 ${
+                        institutionId === opt.id
+                          ? opt.type === 'COLLEGE'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm ring-2 ring-blue-300'
+                            : 'bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-300'
+                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {opt.type === 'COLLEGE' ? (
+                            <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                          ) : (
+                            <Users className="w-3.5 h-3.5 shrink-0" />
+                          )}
+                          <span className="text-xs font-bold truncate block">{opt.name}</span>
+                        </div>
+                        <span className={`text-[10px] block mt-0.5 ${institutionId === opt.id ? 'text-white/80' : 'text-slate-400'}`}>
+                          [{opt.code}] • {opt.type}
+                        </span>
+                      </div>
+                      {institutionId === opt.id && (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Or Choose from All Campuses ({institutionOptions.length}) <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={institutionId}
+                  onChange={(e) => {
+                    const inst = institutionOptions.find((i) => i.id === e.target.value);
+                    if (inst) {
+                      setInstitutionId(inst.id);
+                      setInstitutionName(inst.name);
+                      setInstitutionType(inst.type);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+                >
+                  {institutionOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.type === 'COLLEGE' ? '🎓 [College]' : '🏫 [School]'} {opt.name} ({opt.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Step 3: Assigned Faculty Staff for Selected Campus */}
             <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                Step 2: Language & Faculty Staff Selection
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                  Step 3: Assign Staff Member to {institutionName} <span className="text-rose-500">*</span>
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md">
+                  ASSIGNED STAFF
+                </span>
+              </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -406,82 +544,14 @@ export default function AssignTutorDrawer({
                     ))
                   )}
                 </select>
-                <span className="text-[10px] text-slate-500 mt-1 block">
-                  Weekly Allocated Load: <strong>{selectedFaculty?.allocatedHours || 0} hrs</strong> / {selectedFaculty?.weeklyHoursLimit || 20} hrs max
-                </span>
-              </div>
-            </div>
-
-            {/* Step 3: Target Institution (College or School Scope) */}
-            <div className="p-3.5 bg-blue-50/50 rounded-2xl border border-blue-200/80 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-[#0052CC] uppercase tracking-wider block">
-                  Step 3: Target Institution (College or School Scope) <span className="text-rose-500">*</span>
-                </span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-900">
-                  {institutionType} SCOPE
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInstitutionType('COLLEGE');
-                    setInstitutionId('521323cd-00da-49a6-98ed-6b7918d181b4');
-                    setInstitutionName('The American College');
-                  }}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    institutionType === 'COLLEGE'
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <GraduationCap className="w-3.5 h-3.5" />
-                  <span>College Campus</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInstitutionType('SCHOOL');
-                    setInstitutionId('c37b62d5-6ca4-47cb-bed7-899ad75a3144');
-                    setInstitutionName('Sivakasi Lions Matriculation Higher Secondary School');
-                  }}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                    institutionType === 'SCHOOL'
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>K-12 School</span>
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Select Specific Campus <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={institutionId}
-                  onChange={(e) => {
-                    const inst = institutionOptions.find((i) => i.id === e.target.value);
-                    if (inst) {
-                      setInstitutionId(inst.id);
-                      setInstitutionName(inst.name);
-                      setInstitutionType(inst.type);
-                    }
-                  }}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
-                >
-                  {institutionOptions
-                    .filter((i) => i.type === institutionType)
-                    .map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.name} ({opt.code})
-                      </option>
-                    ))}
-                </select>
+                <div className="mt-2 p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-600">
+                    Allocated to Campus: <strong>{institutionName}</strong>
+                  </span>
+                  <span className="text-slate-500">
+                    Workload: <strong className="text-blue-700">{selectedFaculty?.allocatedHours || 0} hrs</strong> / {selectedFaculty?.weeklyHoursLimit || 24} hrs max
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -489,18 +559,22 @@ export default function AssignTutorDrawer({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Assigned Course Track <span className="text-rose-500">*</span>
+                  Assigned Course Track ({availableCourses.length}) <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={selectedCourseId}
                   onChange={(e) => setSelectedCourseId(e.target.value)}
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
                 >
-                  {mockCourses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  {availableCourses.length === 0 ? (
+                    <option value="">No courses available</option>
+                  ) : (
+                    availableCourses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} — {c.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -513,11 +587,17 @@ export default function AssignTutorDrawer({
                   onChange={(e) => setSelectedBatchId(e.target.value)}
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800"
                 >
-                  {mockBatches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
+                  {availableBatches.length === 0 ? (
+                    <option value="batch-default-01">
+                      {institutionType === 'COLLEGE' ? 'MRNG BATCH (The American College)' : 'Sivakasi Lions French Cohort A'}
                     </option>
-                  ))}
+                  ) : (
+                    availableBatches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             </div>
