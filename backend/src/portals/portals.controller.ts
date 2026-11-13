@@ -2865,6 +2865,18 @@ export class PortalsDataController {
     }
   }
 
+  @Get('curriculum-matrices/colleges')
+  async getCollegeCurriculumMatrix() {
+    try {
+      const rows = await this.prisma.collegePacingMatrix.findMany({
+        orderBy: { levelCode: 'asc' },
+      });
+      return { status: 'success', data: rows };
+    } catch (e: any) {
+      return { status: 'error', message: e.message };
+    }
+  }
+
   // 13. Dynamic Courses Engine (Academic Manager, Super Admin, Tutors, Students)
 
   // ==========================================================================

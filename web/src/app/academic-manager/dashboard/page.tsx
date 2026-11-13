@@ -69,15 +69,30 @@ export default function AcademicManagerDashboardPage() {
   const [dbLiveClasses, setDbLiveClasses] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    fastFetch('https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/schools', (data) => {
-      if (data?.status === 'success' && Array.isArray(data.data)) {
+    // 1. Fetch School Matrices (Next.js internal API with cloud Railway fallback)
+    fastFetch('/api/portals/curriculum-matrices/schools', (data) => {
+      if (data?.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
         setSchoolMatrices(data.data);
       }
     });
 
-    fastFetch('https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/colleges', (data) => {
-      if (data?.status === 'success' && Array.isArray(data.data)) {
+    // 2. Fetch College Pacing Matrices (Next.js internal API with cloud Railway fallback)
+    fastFetch('/api/portals/curriculum-matrices/colleges', (data) => {
+      if (data?.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
         setCollegeMatrices(data.data);
+      }
+    });
+
+    // Also background sync with Railway directly if online
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/colleges', (data) => {
+      if (data?.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
+        setCollegeMatrices(data.data);
+      }
+    });
+
+    fastFetch('https://ismllms-production.up.railway.app/api/portals/curriculum-matrices/schools', (data) => {
+      if (data?.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
+        setSchoolMatrices(data.data);
       }
     });
 
