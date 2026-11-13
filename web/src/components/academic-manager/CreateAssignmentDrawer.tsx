@@ -55,14 +55,14 @@ export default function CreateAssignmentDrawer({
   const { showSuccess } = useToast();
   const { selectedCollegeId, isOverall } = useCollege();
 
-  // Real Batches fetched from backend API (strictly 0 mock data)
+  // Real Batches fetched from local API
   const [realBatches, setRealBatches] = useState<any[]>([]);
   const [loadingBatches, setLoadingBatches] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
     setLoadingBatches(true);
-    fetch('https://ismllms-production.up.railway.app/api/portals/batches')
+    fetch('/api/portals/batches')
       .then((res) => res.json())
       .then((json) => {
         if (json?.data && Array.isArray(json.data)) {
@@ -73,6 +73,7 @@ export default function CreateAssignmentDrawer({
             batchTiming: b.batchTiming || 'Flexible',
             institutionId: b.institutionId,
             courseNames: b.courseNames || [],
+            assignedFacultyName: b.assignedFacultyName || b.leadFacultyName || 'Joy JK',
           }));
           setRealBatches(mapped);
           if (mapped.length > 0) {
@@ -267,12 +268,13 @@ export default function CreateAssignmentDrawer({
       : `${selectedBatches[0].name} +${selectedBatches.length - 1} other batches`;
 
     const batchIdSummary = selectedBatches.map(b => b.id).join(',');
+    const assignedTutor = selectedBatches[0]?.assignedFacultyName || 'Joy JK';
 
     const newAssignment: HomeworkAssignment = {
       id: `asg-${Date.now().toString().slice(-4)}`,
       title: title || `${selectedSubject?.code || 'FR-101'} ${lsrwSkill} Assignment: ${selectedCourse?.name || 'Course Track'}`,
       courseId: selectedCourse?.id || 'crs-01',
-      courseName: selectedCourse?.name || 'Course Track',
+      courseName: selectedCourse?.name || 'Sample Course',
       batchId: batchIdSummary,
       batchName: batchNameSummary,
       subjectCode: selectedSubject?.code || 'FR-101',
@@ -282,14 +284,15 @@ export default function CreateAssignmentDrawer({
       moduleCode: `MOD-${selectedSubject?.code || 'FR-101'}-01`,
       moduleName: moduleName || 'Foundations & Practical Unit 1',
       dueDate: `${dueDate} at ${dueTime}`,
-      status: 'PENDING',
+      status: 'ACTIVE',
       instructions: instructions || `Complete the assigned ${lsrwSkill.toLowerCase()} exercises for ${languageFamily} cohort.`,
       attachedFile: attachedFile ? {
         name: attachedFile.name,
         size: attachedFile.size,
         downloadUrl: '#'
       } : undefined,
-      maxScore
+      maxScore,
+      assignedTutorName: assignedTutor
     };
 
     // 1. Notify parent / store

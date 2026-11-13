@@ -175,12 +175,19 @@ export const authApi = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, role }),
       });
+      if (!res.ok) {
+        return {
+          status: 'error',
+          message: 'Invalid email or password. Please try again.',
+          data: null,
+        };
+      }
       return await res.json();
     } catch (e: any) {
       console.warn('[AUTH API FETCH FAILED, USING FAST PORTAL REDIRECT]:', e?.message);
       return {
         status: 'error',
-        message: e?.message || 'Failed to fetch',
+        message: 'Failed to fetch',
         data: null,
       };
     }

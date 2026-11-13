@@ -11,13 +11,12 @@
     "experienceYears": 8,
     "nativeCountry": "India",
     "status": "ACTIVE",
-    "activeBatchesCount": 0,
+    "activeBatchesCount": 2,
     "assignedRoles": [
-      "LEAD_TRAINER",
-      "DOUBT_SOLVING_TUTOR"
+      "LEAD_TRAINER"
     ],
     "weeklyHoursLimit": 24,
-    "allocatedHours": 0,
+    "allocatedHours": 19.5,
     "assignedInstitutionType": "COLLEGE",
     "assignedInstitutionName": "The American College",
     "assignedInstitutions": [
@@ -41,12 +40,12 @@
     "experienceYears": 5,
     "nativeCountry": "India",
     "status": "ACTIVE",
-    "activeBatchesCount": 0,
+    "activeBatchesCount": 1,
     "assignedRoles": [
       "LEAD_TRAINER"
     ],
     "weeklyHoursLimit": 20,
-    "allocatedHours": 0,
+    "allocatedHours": 3,
     "assignedInstitutionType": "COLLEGE",
     "assignedInstitutionName": "The American College",
     "assignedInstitutions": [

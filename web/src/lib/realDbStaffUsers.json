@@ -1,0 +1,22 @@
+[
+  {
+    "id": "USR20267946",
+    "name": "Jay Kumar",
+    "firstName": "Jay",
+    "lastName": "Kumar",
+    "email": "jayakumarjunefirst@gmail.com",
+    "mobile": "9090909090",
+    "roleId": "role-acad-coord",
+    "roleName": "Academic Manager",
+    "roleCode": "ACADEMIC_MANAGER",
+    "portalRoute": "/academic-manager/dashboard",
+    "collegeId": "INST_ALL",
+    "collegeName": "All Institutions (Global Access)",
+    "plainPassword": "Acad@20262T#",
+    "status": "ACTIVE",
+    "emailVerified": true,
+    "credentialsDelivered": true,
+    "createdAt": "2026-11-12T19:14:20.077Z",
+    "lastLoginAt": "Never"
+  }
+]

@@ -20,6 +20,7 @@ import {
   Award,
   BookOpen,
   FileText,
+  Lock,
   ShieldCheck,
   UserCheck,
   Menu,
@@ -51,6 +52,7 @@ const iconMap: Record<string, React.ElementType> = {
   Award,
   BookOpen,
   FileText,
+  Lock,
 };
 
 export function TutorSidebar({ activeFacultyId }: { activeFacultyId?: string }) {
@@ -142,68 +144,50 @@ export function TutorSidebar({ activeFacultyId }: { activeFacultyId?: string }) 
         </span>
       </div>
 
-      {/* Categorized Dropdown / Accordion Navigation List */}
-      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-2">
-        {TUTOR_NAV_SECTIONS.map((section) => {
-          const isOpen = openSectionTitle === section.title;
-          return (
-            <div key={section.title} className="space-y-1">
-              <button
-                type="button"
-                onClick={() => toggleSection(section.title)}
-                className={`w-full flex items-center justify-between px-2.5 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
-                  isOpen
-                    ? 'text-cyan-300 bg-white/5 font-extrabold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <span>{section.title}</span>
-                {isOpen ? (
-                  <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
-                )}
-              </button>
-
-              {isOpen && (
-                <div className="space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {section.items.map((item) => {
-                    const isActive =
-                      pathname === item.route ||
-                      (item.route !== '/tutor/dashboard' && pathname.startsWith(item.route));
-                    const Icon = iconMap[item.iconName] || LayoutDashboard;
-
-                    return (
-                      <Link
-                        key={item.id}
-                        href={item.route}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                          isActive
-                            ? 'bg-[#0052CC] text-white font-bold shadow-md shadow-blue-950/50 border-l-4 border-cyan-400'
-                            : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 truncate">
-                          <Icon
-                            className={`w-4 h-4 shrink-0 ${
-                              isActive ? 'text-cyan-200' : 'text-slate-400'
-                            }`}
-                          />
-                          <span className="truncate">{item.label}</span>
-                        </div>
-                        {item.badge && (
-                          <span className="px-1.5 py-0.5 text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded-full tracking-wider">
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+      {/* All Navigation Sections Open Simultaneously (No Dropdowns) */}
+      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
+        {TUTOR_NAV_SECTIONS.map((section) => (
+          <div key={section.title} className="space-y-1">
+            <div className="px-2.5 pt-1.5 pb-1 text-[10px] font-black uppercase tracking-wider text-cyan-300/80 flex items-center justify-between">
+              <span>{section.title}</span>
             </div>
-          );
-        })}
+
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const isActive =
+                  pathname === item.route ||
+                  (item.route !== '/tutor/dashboard' && pathname.startsWith(item.route));
+                const Icon = iconMap[item.iconName] || LayoutDashboard;
+
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.route}
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-[#0052CC] text-white font-bold shadow-md shadow-blue-950/50 border-l-4 border-cyan-400'
+                        : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <Icon
+                        className={`w-4 h-4 shrink-0 ${
+                          isActive ? 'text-cyan-200' : 'text-slate-400'
+                        }`}
+                      />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded-full tracking-wider">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Bottom Profile Summary */}

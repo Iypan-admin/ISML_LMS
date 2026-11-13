@@ -230,39 +230,51 @@ export default function MasterTutorDashboardPage() {
       <FacultyRoleSwitcherBar />
 
       {/* ─── Page Header Title & Quick Actions ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
         <div>
-          <div className="flex items-center gap-2 mb-0.5">
+          <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#0052CC]">
-              {currentFaculty.primaryLanguage} Curriculum Track
+              {currentFaculty.primaryLanguage} Curriculum Lead
             </span>
-            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs text-slate-300">•</span>
             <span className="text-xs font-semibold text-slate-600">
-              Allocated: {myAllocations.length} Active Cohorts
+              {myAllocations.length} Assigned Cohorts
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Welcome, {currentFaculty.name}!
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Your official teaching workload and live webinar permissions assigned by the Academic Manager.
+            Your live teaching schedule, assigned student cohorts, and quick classroom actions.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {leadBatches.length > 0 && (() => {
-            const firstLead = leadBatches[0];
+            // Find batch that is currently live today
+            const liveNowBatch = leadBatches.find((b) => getSlotTimingStatus(b.scheduleSlots).isLive);
+            if (liveNowBatch) {
+              return (
+                <button
+                  onClick={() => {
+                    handleStartClass(liveNowBatch.batchName, liveNowBatch.subjectName);
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white cursor-pointer animate-pulse"
+                  title="Class is LIVE now! Click to enter Live Studio"
+                >
+                  <Radio className="w-4 h-4" />
+                  <span>Enter Live Studio: {liveNowBatch.batchName}</span>
+                </button>
+              );
+            }
             return (
-              <button
-                onClick={() => {
-                  handleStartClass(firstLead.batchName, firstLead.subjectName);
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white cursor-pointer animate-pulse"
-                title="Enter Live Studio Broadcast"
+              <Link
+                href="/tutor/live-classes"
+                className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-2"
               >
-                <Radio className="w-4 h-4 animate-pulse" />
-                <span>Enter Live: {firstLead.batchName}</span>
-              </button>
+                <Video className="w-4 h-4 text-blue-600" />
+                <span>Live Classes Studio</span>
+              </Link>
             );
           })()}
           <Link
@@ -275,237 +287,7 @@ export default function MasterTutorDashboardPage() {
         </div>
       </div>
 
-      {/* ─── 2. Real Assigned Courses & Batches Portfolio (Dynamic from Academic Manager) ─── */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#0052CC] border border-blue-200">
-                Official Workload Matrix
-              </span>
-              <h2 className="text-sm sm:text-base font-black text-slate-900">
-                My Assigned Curriculum & Cohort Batches
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Live breakdown of your active course tracks, assigned cohort batches, and timetable permissions allocated by the Academic Manager.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-            <span>Faculty Profile:</span>
-            <span className="text-[#0052CC] font-extrabold">{currentFaculty.name}</span>
-          </div>
-        </div>
-
-        {/* Dynamic Allocated Courses & Batches Cards */}
-        {myAllocations.length === 0 ? (
-          <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
-            <BookOpen className="w-8 h-8 text-slate-400 mx-auto" />
-            <h4 className="text-xs font-bold text-slate-700">No Course Allocations Assigned Yet</h4>
-            <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-              Your profile is active. Once the Academic Manager allocates a course track or cohort batch to you, your live classroom cards and duties will automatically appear here.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {myAllocations.map((alloc) => {
-              const isLead = alloc.tutorRole === 'LEAD_TRAINER';
-              const isSub = alloc.tutorRole === 'SUBSTITUTE_TUTOR';
-              const isDoubt = alloc.tutorRole === 'DOUBT_SOLVING_TUTOR';
-              const isTA = alloc.tutorRole === 'ASSISTANT_TUTOR';
-
-              const roleBadgeColor = isLead
-                ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
-                : isSub
-                ? 'bg-amber-500 text-slate-950 font-black border-amber-600 shadow-xs'
-                : isDoubt
-                ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                : 'bg-purple-600 text-white border-purple-700 shadow-xs';
-
-              const roleLabel =
-                alloc.tutorRole === 'LEAD_TRAINER'
-                  ? 'LEAD NATIVE TRAINER'
-                  : alloc.tutorRole === 'SUBSTITUTE_TUTOR'
-                  ? 'SUBSTITUTE TUTOR'
-                  : alloc.tutorRole === 'DOUBT_SOLVING_TUTOR'
-                  ? 'DOUBT SOLVING TUTOR'
-                  : alloc.tutorRole === 'ASSISTANT_TUTOR'
-                  ? 'ASSISTANT TUTOR (TA)'
-                  : alloc.tutorRole === 'ORAL_EXAMINER'
-                  ? 'HUMAN 1:1 TUTOR'
-                  : alloc.tutorRole.replace(/_/g, ' ');
-
-              const roleDescription =
-                isLead
-                  ? 'Primary syllabus teacher & live lecture conductor'
-                  : isSub
-                  ? 'Standby backup tutor for leave & emergency coverage'
-                  : isDoubt
-                  ? '1-on-1 Q&A desk, chat clearance & remedial clinics'
-                  : 'Worksheet grading, LSRW drill evaluation & records';
-
-              return (
-                <div
-                  key={alloc.id}
-                  className="p-4 sm:p-5 rounded-2xl border-2 border-slate-200/90 hover:border-blue-400 bg-gradient-to-b from-white to-slate-50/40 flex flex-col justify-between space-y-3.5 shadow-xs hover:shadow-md transition-all"
-                >
-                  <div className="space-y-3">
-                    {/* Role Header Banner */}
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-900 text-white font-mono tracking-wider">
-                        {alloc.courseCode || alloc.subjectCode || 'CRS'}
-                      </span>
-                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider border flex items-center gap-1.5 ${roleBadgeColor}`}>
-                        {isLead && <GraduationCap className="w-3.5 h-3.5" />}
-                        {isSub && <ShieldCheck className="w-3.5 h-3.5" />}
-                        {isDoubt && <MessageSquare className="w-3.5 h-3.5" />}
-                        {isTA && <ClipboardList className="w-3.5 h-3.5" />}
-                        <span>{roleLabel}</span>
-                      </span>
-                    </div>
-
-                    {/* Role Duty Subtitle */}
-                    <p className="text-[11px] font-semibold text-slate-500 italic">
-                      ✨ {roleDescription}
-                    </p>
-
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900 leading-snug">
-                        {alloc.courseName || alloc.subjectName}
-                      </h3>
-                      <p className="text-xs font-bold text-blue-700 mt-0.5">
-                        Batch: <span className="underline decoration-blue-300">{alloc.batchName}</span>
-                      </p>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-slate-100/90 border border-slate-200 text-xs space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Assigned Role:</span>
-                        <span className="font-extrabold text-slate-900">{roleLabel}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Target Campus:</span>
-                        <span className="text-slate-800 font-bold bg-white px-2 py-0.5 rounded border border-slate-200">
-                          {alloc.institutionName || 'The American College'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Allocated Batch:</span>
-                        <strong className="text-blue-800 font-bold">{alloc.batchName}</strong>
-                      </div>
-
-                      {/* 🗓️ User-Friendly Date & Live Timing Breakdown */}
-                      <div className="pt-2 border-t border-slate-200 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500 font-medium flex items-center gap-1">
-                            <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Schedule Days:</span>
-                          </span>
-                          <span className="font-bold text-slate-800">
-                            {alloc.scheduleSlots?.[0]?.split(/\d/)[0]?.replace(/,\s*$/, '').trim() || 'Mon & Wed'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500 font-medium flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Slot Timing:</span>
-                          </span>
-                          <span className="font-mono font-bold text-indigo-700 bg-indigo-50/80 px-1.5 py-0.5 rounded border border-indigo-200/60">
-                            {alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)\s*[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || '10:00 AM - 11:30 AM'}
-                          </span>
-                        </div>
-                        {alloc.effectiveFrom && (
-                          <div className="flex items-center justify-between text-[10px] text-slate-500">
-                            <span>Effective Since:</span>
-                            <span className="font-semibold text-slate-600">{alloc.effectiveFrom}</span>
-                          </div>
-                        )}
-                        <div className="pt-1 flex items-center justify-between">
-                          <span className="text-slate-500 font-medium">Status:</span>
-                          {(() => {
-                            const timing = getSlotTimingStatus(alloc.scheduleSlots);
-                            return (
-                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${timing.badge}`}>
-                                {timing.label}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                    {(() => {
-                      const timing = getSlotTimingStatus(alloc.scheduleSlots);
-
-                      // STRICT RULE: ONLY Lead Native Trainer has permission to start and broadcast live classes!
-                      if (isLead) {
-                        return (
-                          <button
-                            onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName)}
-                            className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer animate-pulse"
-                            title="Lead Native Trainer Exclusive: Enter Live Studio Broadcast"
-                          >
-                            <Radio className="w-3.5 h-3.5" />
-                            <span>🔴 Start Live Studio (Host)</span>
-                          </button>
-                        );
-                      }
-
-                      if (isSub) {
-                        return (
-                          <div
-                            className="flex-1 py-2 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
-                            title="Substitute standby duty - activated only if Lead Trainer is absent"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                            <span>Standby Emergency Cover</span>
-                          </div>
-                        );
-                      }
-
-                      if (isTA) {
-                        return (
-                          <Link
-                            href="/tutor/assessments"
-                            className="flex-1 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
-                          >
-                            <ClipboardList className="w-3.5 h-3.5" />
-                            <span>Evaluate Homework & Drill</span>
-                          </Link>
-                        );
-                      }
-
-                      return (
-                        <div className="flex-1 flex items-center gap-1.5">
-                          <button
-                            onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName, 'DOUBT_SOLVING_TUTOR')}
-                            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                            title="Join live session as Doubt Solving Moderator"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span>Join Doubt Desk Studio</span>
-                          </button>
-                          <Link
-                            href="/tutor/doubts"
-                            className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all"
-                            title="Offline Q&A Threads"
-                          >
-                            Desk
-                          </Link>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ─── 3. Multi-Role KPI Summary Cards ─── */}
+      {/* ─── 2. Multi-Role KPI Summary Cards ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="Lead Trainer Cohorts"
@@ -537,20 +319,24 @@ export default function MasterTutorDashboardPage() {
         />
       </div>
 
-      {/* ─── 3. Segmented Role Duty Switcher Tabs ─── */}
-      <div className="bg-white p-3 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
+      {/* ─── 3. Single Clean Assigned Cohorts Matrix (Unified & Intuitive) ─── */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-[#0052CC]" />
-              <span>Assigned Cohorts & Role-Based Permissions Matrix</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Live view of subjects assigned to you by Academic Manager and your operational access.
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-[#0052CC] border border-blue-200">
+                My Cohort Assignments
+              </span>
+              <h2 className="text-sm sm:text-base font-black text-slate-900">
+                Assigned Curriculum & Cohort Batches
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Filter by your role to view class schedules, slot timings, and authorized actions.
             </p>
           </div>
 
-          {/* Quick Segment Filter */}
+          {/* Clean Segment Filter */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl text-xs font-bold overflow-x-auto max-w-full">
             <button
               onClick={() => setActiveRoleFilter('ALL')}
@@ -560,7 +346,7 @@ export default function MasterTutorDashboardPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All Duties ({myAllocations.length})
+              All Batches ({myAllocations.length})
             </button>
             <button
               onClick={() => setActiveRoleFilter('LEAD_TRAINER')}
@@ -573,19 +359,6 @@ export default function MasterTutorDashboardPage() {
               <span>Lead Trainer</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full font-black bg-white/20">
                 {leadBatches.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveRoleFilter('SUBSTITUTE_TUTOR')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                activeRoleFilter === 'SUBSTITUTE_TUTOR'
-                  ? 'bg-amber-500 text-slate-950 shadow-xs font-black'
-                  : 'text-slate-600 hover:text-amber-700'
-              }`}
-            >
-              <span>Substitute</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full font-black bg-black/10">
-                {substituteBatches.length}
               </span>
             </button>
             <button
@@ -602,171 +375,181 @@ export default function MasterTutorDashboardPage() {
               </span>
             </button>
             <button
-              onClick={() => setActiveRoleFilter('ASSISTANT_TUTOR')}
+              onClick={() => setActiveRoleFilter('SUBSTITUTE_TUTOR')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                activeRoleFilter === 'ASSISTANT_TUTOR'
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-purple-700'
+                activeRoleFilter === 'SUBSTITUTE_TUTOR'
+                  ? 'bg-amber-500 text-slate-950 shadow-xs font-black'
+                  : 'text-slate-600 hover:text-amber-700'
               }`}
             >
-              <span>Assistant</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full font-black bg-white/20">
-                {assistantBatches.length}
+              <span>Substitute</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full font-black bg-black/10">
+                {substituteBatches.length}
               </span>
             </button>
           </div>
         </div>
 
-        {/* ─── Assigned Batches Cards Grid ─── */}
+        {/* Dynamic Allocated Courses & Batches Cards */}
         {filteredAllocations.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-500">
-            No batches assigned under this specific role. Check other duty tabs or contact Academic Manager.
+          <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
+            <BookOpen className="w-8 h-8 text-slate-400 mx-auto" />
+            <h4 className="text-xs font-bold text-slate-700">No Batches Found Under This Filter</h4>
+            <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+              Select &quot;All Batches&quot; above to view your complete teaching schedule.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredAllocations.map((alloc) => {
-              const canStartLive = canStartLiveClassForBatch(alloc.batchId);
-              const canMarkAtt = canMarkAttendanceForBatch(alloc.batchId);
-              const canGrade = canGradeAssignmentsForBatch(alloc.batchId);
-              const canDoubt = canAnswerDoubtsForBatch(alloc.batchId);
+              const isLead = alloc.tutorRole === 'LEAD_TRAINER';
+              const isSub = alloc.tutorRole === 'SUBSTITUTE_TUTOR';
+              const isDoubt = alloc.tutorRole === 'DOUBT_SOLVING_TUTOR';
+              const isTA = alloc.tutorRole === 'ASSISTANT_TUTOR';
 
-              // Role badge color styling
-              const roleStyles = {
-                LEAD_TRAINER: 'bg-blue-50 text-[#0052CC] border-blue-200',
-                SUBSTITUTE_TUTOR: 'bg-amber-50 text-amber-900 border-amber-200',
-                DOUBT_SOLVING_TUTOR: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                ASSISTANT_TUTOR: 'bg-purple-50 text-purple-900 border-purple-200',
-                ORAL_EXAMINER: 'bg-indigo-50 text-indigo-900 border-indigo-200',
-              }[alloc.tutorRole];
+              const roleBadgeColor = isLead
+                ? 'bg-blue-600 text-white'
+                : isSub
+                ? 'bg-amber-500 text-slate-950 font-black'
+                : isDoubt
+                ? 'bg-emerald-600 text-white'
+                : 'bg-purple-600 text-white';
+
+              const roleLabel =
+                alloc.tutorRole === 'LEAD_TRAINER'
+                  ? 'LEAD TRAINER'
+                  : alloc.tutorRole === 'SUBSTITUTE_TUTOR'
+                  ? 'SUBSTITUTE'
+                  : alloc.tutorRole === 'DOUBT_SOLVING_TUTOR'
+                  ? 'DOUBT SOLVER'
+                  : alloc.tutorRole === 'ASSISTANT_TUTOR'
+                  ? 'ASSISTANT (TA)'
+                  : alloc.tutorRole.replace(/_/g, ' ');
+
+              const timing = getSlotTimingStatus(alloc.scheduleSlots);
 
               return (
                 <div
                   key={alloc.id}
-                  className="p-4 rounded-2xl border border-slate-200/90 hover:border-blue-400 hover:shadow-md transition-all bg-white flex flex-col justify-between space-y-3"
+                  className="p-4 sm:p-5 rounded-2xl border border-slate-200 hover:border-blue-300 bg-white flex flex-col justify-between space-y-3 shadow-2xs hover:shadow-md transition-all"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider flex items-center gap-1 ${roleStyles}`}>
-                        <span>{alloc.tutorRole.replace(/_/g, ' ')}</span>
+                  <div className="space-y-2.5">
+                    {/* Top strip: Course Code + Assigned Role Badge */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-slate-900 text-white font-mono">
+                        {alloc.courseCode || alloc.subjectCode || 'CRS'}
                       </span>
-                      <span className="font-mono text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                        {alloc.subjectCode}
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 ${roleBadgeColor}`}>
+                        {isLead && <GraduationCap className="w-3 h-3" />}
+                        {isSub && <ShieldCheck className="w-3 h-3" />}
+                        {isDoubt && <MessageSquare className="w-3 h-3" />}
+                        {isTA && <ClipboardList className="w-3 h-3" />}
+                        <span>{roleLabel}</span>
                       </span>
                     </div>
 
+                    {/* Course & Cohort Info */}
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-bold text-slate-900 leading-snug">
-                          {alloc.subjectName}
-                        </h3>
-                        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-50 text-[#0052CC] border border-blue-200">
-                          Course: {alloc.courseName || alloc.subjectName}
-                        </span>
-                      </div>
-                      <p className="text-xs text-blue-700 font-bold mt-1">
-                        Cohort: {alloc.batchName} • <span className="text-slate-500 font-medium">{alloc.institutionName || 'Affiliated Campus'}</span>
+                      <h3 className="text-sm font-extrabold text-slate-900 leading-snug">
+                        {alloc.courseName || alloc.subjectName}
+                      </h3>
+                      <p className="text-xs font-bold text-blue-700 mt-0.5 flex items-center gap-1">
+                        <span>Cohort:</span>
+                        <span className="text-slate-800">{alloc.batchName}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {alloc.institutionName || 'The American College'}
                       </p>
                     </div>
 
-                    <div className="text-xs text-slate-500 flex items-center justify-between gap-1.5 pt-1">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate">{alloc.scheduleSlots.join(', ')}</span>
+                    {/* Schedule & Timing Pill */}
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium flex items-center gap-1 text-[11px]">
+                          <CalendarDays className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Days:</span>
+                        </span>
+                        <span className="font-bold text-slate-800 text-[11px]">
+                          {alloc.scheduleSlots?.[0]?.split(/\d/)[0]?.replace(/,\s*$/, '').trim() || 'Mon, Wed, Fri'}
+                        </span>
                       </div>
-                      {(() => {
-                        const timing = getSlotTimingStatus(alloc.scheduleSlots);
-                        return (
-                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${timing.badge}`}>
-                            {timing.label}
-                          </span>
-                        );
-                      })()}
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 font-medium flex items-center gap-1 text-[11px]">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Time:</span>
+                        </span>
+                        <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded text-[11px]">
+                          {alloc.scheduleSlots?.[0]?.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)\s*[-–]\s*\d{1,2}:\d{2}\s*(?:AM|PM))/i)?.[1] || '10:00 AM - 11:30 AM'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[10px]">
+                        <span className="text-slate-500">Session Status:</span>
+                        <span className={`font-black px-2 py-0.5 rounded-full border ${timing.badge}`}>
+                          {timing.label}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* 🔒 Dynamic Feature Permissions Checklist */}
-                  <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="flex items-center gap-1.5">
-                      {canStartLive ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      )}
-                      <span className={canStartLive ? 'font-bold text-slate-800' : 'text-slate-400'}>
-                        Live Studio Broadcast
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {canMarkAtt ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      )}
-                      <span className={canMarkAtt ? 'font-bold text-slate-800' : 'text-slate-400'}>
-                        Roll Call Attendance
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {canGrade ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      )}
-                      <span className={canGrade ? 'font-bold text-slate-800' : 'text-slate-400'}>
-                        Homework & Grading
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {canDoubt ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      )}
-                      <span className={canDoubt ? 'font-bold text-slate-800' : 'text-slate-400'}>
-                        1-on-1 Doubt Clearing
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Operational Action Buttons */}
-                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100">
+                  {/* Clean Contextual Action Button */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
                     {(() => {
-                      const timing = getSlotTimingStatus(alloc.scheduleSlots);
-
-                      if (!canStartLive) {
+                      if (isLead) {
+                        if (timing.isLive) {
+                          return (
+                            <button
+                              onClick={() => handleStartClass(alloc.batchName, alloc.courseName || alloc.subjectName)}
+                              className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer animate-pulse"
+                            >
+                              <Radio className="w-3.5 h-3.5" />
+                              <span>🔴 Start Live Studio</span>
+                            </button>
+                          );
+                        }
                         return (
-                          <button
-                            onClick={() => handleDeniedAccess(alloc.tutorRole.replace(/_/g, ' '))}
-                            className="px-3 py-1.5 bg-slate-100 text-slate-400 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-not-allowed border border-slate-200"
-                            title="Only Lead or Active Substitute can start live class"
+                          <div className="flex-1 py-1.5 text-center text-[11px] font-semibold text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                            Opens at Slot Time
+                          </div>
+                        );
+                      }
+
+                      if (isDoubt) {
+                        return (
+                          <Link
+                            href="/tutor/doubts"
+                            className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                           >
-                            <Lock className="w-3.5 h-3.5" />
-                            <span>No Live Broadcast</span>
-                          </button>
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Open Doubt Desk</span>
+                          </Link>
+                        );
+                      }
+
+                      if (isSub) {
+                        return (
+                          <div className="flex-1 py-1.5 text-center text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl">
+                            Emergency Standby
+                          </div>
                         );
                       }
 
                       return (
-                        <button
-                          onClick={() => handleStartClass(alloc.batchName, alloc.subjectName)}
-                          className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
-                          title="Click to enter Live Studio"
+                        <Link
+                          href="/tutor/assignments"
+                          className="flex-1 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5"
                         >
-                          <Radio className="w-3.5 h-3.5" />
-                          <span>Enter Live Studio</span>
-                        </button>
+                          <ClipboardList className="w-3.5 h-3.5" />
+                          <span>Evaluate Tasks</span>
+                        </Link>
                       );
                     })()}
 
                     <Link
                       href={`/tutor/batches`}
-                      className="px-3 py-1.5 text-xs font-bold text-[#0052CC] hover:bg-blue-50 rounded-xl transition-colors flex items-center gap-1"
+                      className="px-2.5 py-1.5 text-xs font-bold text-[#0052CC] hover:bg-blue-50 rounded-xl transition-colors flex items-center gap-1 shrink-0"
                     >
-                      <span>Cohort Roster</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>Roster</span>
+                      <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </div>

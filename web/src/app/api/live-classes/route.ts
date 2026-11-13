@@ -79,7 +79,17 @@ export async function GET(request: Request) {
         const slots = a.submittedPayload?.details?.slotsInstances || a.submittedPayload?.slotsInstances;
         if (Array.isArray(slots)) {
           slots.forEach((s: any) => {
-            if (!allSlots.some((existing) => existing.id === s.id)) {
+            // Deduplicate by slot id OR by same batch + day + matching time window
+            const isDuplicate = allSlots.some((existing) => {
+              if (existing.id === s.id) return true;
+              const sameBatch = String(existing.batchName || '').toLowerCase().trim() === String(s.batchName || '').toLowerCase().trim();
+              const sameDay = String(existing.day || '').toUpperCase().trim() === String(s.day || '').toUpperCase().trim();
+              const cleanTime1 = String(existing.timeSlot || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+              const cleanTime2 = String(s.timeSlot || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+              const sameTime = cleanTime1 === cleanTime2;
+              return sameBatch && sameDay && sameTime;
+            });
+            if (!isDuplicate) {
               allSlots.push(s);
             }
           });

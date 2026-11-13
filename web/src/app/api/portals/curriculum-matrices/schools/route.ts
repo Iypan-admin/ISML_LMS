@@ -155,3 +155,4 @@ export async function GET() {
 
   return NextResponse.json({ status: 'success', data: fallbackSchoolMatrices });
 }
+

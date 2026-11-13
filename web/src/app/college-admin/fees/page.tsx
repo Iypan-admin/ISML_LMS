@@ -5,7 +5,8 @@
 // 1. Direct Razorpay Online Gateway
 // 2. Bank CMS Challan (with Challan No, Bank Name, Branch, Deposit Slip & Student Assignment)
 // 3. RTGS / NEFT & Demand Draft
-// Syncs directly with Finance Manager portal & realDbTransactions in real time!
+// Syncs directly with Finance Manager portal & realDbStudentFees in real time!
+// Strict Scope: Only American College students (Morning & Evening Batches)
 // ============================================================================
 
 "use client";
@@ -49,6 +50,7 @@ interface StudentFeeRecord {
   paidAmount: number;
   dueAmount: number;
   accessStatus: 'LOCKED' | 'UNLOCKED';
+  paymentStatus: string;
 }
 
 export default function CollegeAdminBulkFeesPage() {
@@ -82,7 +84,7 @@ export default function CollegeAdminBulkFeesPage() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
+  const loadData = () => {
     // 1. Identify active logged in college
     try {
       if (typeof window !== 'undefined') {
@@ -102,41 +104,54 @@ export default function CollegeAdminBulkFeesPage() {
       }
     } catch {}
 
-    // 2. Fetch live students and batches
-    fetch('/api/portals/students?collegeId=521323cd-00da-49a6-98ed-6b7918d181b4')
+    // 2. Fetch live American College fee records from real DB
+    fetch('/api/portals/student-fees?collegeId=AMER-COL')
       .then((r) => r.json())
       .then((json) => {
-        if (json && json.data) {
-          const mapped: StudentFeeRecord[] = json.data.map((s: any, idx: number) => {
-            const isPending = idx % 2 === 0;
+        if (json && json.data && Array.isArray(json.data)) {
+          const mapped: StudentFeeRecord[] = json.data.map((s: any) => {
+            const tuition = s.netPayable || s.totalFees || 18500;
+            const paid = typeof s.paidAmount === 'number' ? s.paidAmount : 0;
+            const due = typeof s.outstandingBalance === 'number' ? s.outstandingBalance : Math.max(0, tuition - paid);
+            const isUnlocked = due === 0;
+
             return {
-              id: s.id || `fee-${idx + 1}`,
-              studentId: s.rollNo || s.studentCode || s.id || `AMER-2026-${String(idx + 1).padStart(3, '0')}`,
-              name: s.name || `${s.firstName || 'Student'} ${s.lastName || ''}`.trim(),
-              courseName: s.courseName || s.program || 'French Language Certification',
-              batchName: s.batchName || 'Morning Batch (BAT-SAMPLE-MRNG)',
-              tuitionFee: 18500,
-              paidAmount: isPending ? 7500 : 18500,
-              dueAmount: isPending ? 11000 : 0,
-              accessStatus: isPending ? 'LOCKED' : 'UNLOCKED',
+              id: s.id || s.rollNo,
+              studentId: s.rollNo || s.studentId || s.id,
+              name: s.name,
+              courseName: s.program || 'Sample Course',
+              batchName: s.batch || 'Morning Batch',
+              tuitionFee: tuition,
+              paidAmount: paid,
+              dueAmount: due,
+              accessStatus: isUnlocked ? 'UNLOCKED' : 'LOCKED',
+              paymentStatus: s.paymentStatus || (due === 0 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'PENDING'),
             };
           });
           setFeeRecords(mapped);
-          // Auto select first 3 locked students for convenience
-          const locked = mapped.filter((r) => r.accessStatus === 'LOCKED').map((r) => r.id);
-          if (locked.length > 0) {
-            setSelectedStudentIds(locked.slice(0, 3));
-          }
         }
       })
       .catch(() => {});
 
+    // 3. Batches strictly for American College
     fetch('/api/portals/batches')
       .then((r) => r.json())
       .then((json) => {
-        if (json && json.data) setCollegeBatches(json.data);
+        if (json && json.data) {
+          const amerBatches = json.data.filter(
+            (b: any) =>
+              b.institutionId === '521323cd-00da-49a6-98ed-6b7918d181b4' ||
+              b.institutionName?.toLowerCase().includes('american') ||
+              b.code?.startsWith('BAT-SAMPLE')
+          );
+          setCollegeBatches(amerBatches);
+        }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   // Toggle student selection
@@ -156,7 +171,7 @@ export default function CollegeAdminBulkFeesPage() {
   // Filtered records
   const filteredRecords = useMemo(() => {
     return feeRecords.filter((r) => {
-      if (filterBatch !== 'ALL' && !r.batchName.includes(filterBatch)) return false;
+      if (filterBatch !== 'ALL' && !r.batchName.toLowerCase().includes(filterBatch.toLowerCase())) return false;
       if (filterStatus !== 'ALL' && r.accessStatus !== filterStatus) return false;
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
@@ -174,7 +189,13 @@ export default function CollegeAdminBulkFeesPage() {
   const selectedRecords = feeRecords.filter((r) => selectedStudentIds.includes(r.id));
   const totalPayableAmount = selectedRecords.reduce((acc, r) => acc + r.dueAmount, 0);
 
-  // Submit and Sync to Finance Manager
+  // Overall statistics for American College
+  const totalCollectible = feeRecords.reduce((acc, r) => acc + r.tuitionFee, 0);
+  const totalCollected = feeRecords.reduce((acc, r) => acc + r.paidAmount, 0);
+  const totalOutstanding = feeRecords.reduce((acc, r) => acc + r.dueAmount, 0);
+  const fullyPaidCount = feeRecords.filter((r) => r.accessStatus === 'UNLOCKED').length;
+
+  // Submit and Sync to Finance Manager & realDbStudentFees
   const handleProcessBulkPayment = async () => {
     if (selectedStudentIds.length === 0) {
       showError('Please select at least one student to assign fees.');
@@ -196,7 +217,7 @@ export default function CollegeAdminBulkFeesPage() {
         paymentFor: `Institutional Bulk Tuition for ${selectedRecords.length} Students`,
         onSuccess: async (receipt) => {
           setIsProcessing(false);
-          // Sync transaction to Finance Manager
+          // Sync transaction to Finance Manager & student fees
           await fetch('/api/portals/transactions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -217,7 +238,7 @@ export default function CollegeAdminBulkFeesPage() {
           setFeeRecords((prev) =>
             prev.map((r) =>
               selectedStudentIds.includes(r.id)
-                ? { ...r, paidAmount: r.tuitionFee, dueAmount: 0, accessStatus: 'UNLOCKED' }
+                ? { ...r, paidAmount: r.tuitionFee, dueAmount: 0, accessStatus: 'UNLOCKED', paymentStatus: 'PAID' }
                 : r
             )
           );
@@ -262,7 +283,7 @@ export default function CollegeAdminBulkFeesPage() {
         setFeeRecords((prev) =>
           prev.map((r) =>
             selectedStudentIds.includes(r.id)
-              ? { ...r, paidAmount: r.tuitionFee, dueAmount: 0, accessStatus: 'UNLOCKED' }
+              ? { ...r, paidAmount: r.tuitionFee, dueAmount: 0, accessStatus: 'UNLOCKED', paymentStatus: 'PAID' }
               : r
           )
         );
@@ -291,23 +312,15 @@ export default function CollegeAdminBulkFeesPage() {
               <span>Bulk Student Fees & Bank Challan Desk</span>
             </h1>
             <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-              FINANCE SYNC ACTIVE
+              AMER-COL REAL DB
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Deposit bulk student tuition fees using Official Bank Challans or Online Payment. Automatically updates the Finance Manager CMS and unlocks LMS access.
+            The American College tuition ledger: record bank challans or online clearances to unlock students LMS access in real-time.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/finance-manager/transactions"
-            target="_blank"
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-300"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-            <span>Open Finance Manager</span>
-          </Link>
           <button
             onClick={handleSelectAllLocked}
             className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
@@ -318,12 +331,36 @@ export default function CollegeAdminBulkFeesPage() {
         </div>
       </div>
 
+      {/* ─── Real Stats Overview Cards ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Enrolled</span>
+          <div className="text-xl font-black text-slate-900 mt-1">{feeRecords.length} Students</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">American College Roster</div>
+        </div>
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Collectible</span>
+          <div className="text-xl font-black text-slate-900 mt-1">₹{totalCollectible.toLocaleString()}</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Program Tuition Benchmark</div>
+        </div>
+        <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs bg-emerald-50/20">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Fees Collected</span>
+          <div className="text-xl font-black text-emerald-800 mt-1">₹{totalCollected.toLocaleString()}</div>
+          <div className="text-[11px] text-emerald-600 mt-0.5">{fullyPaidCount} Students Fully Cleared</div>
+        </div>
+        <div className="p-4 bg-white rounded-2xl border border-amber-100 shadow-2xs bg-amber-50/20">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Pending Dues</span>
+          <div className="text-xl font-black text-amber-800 mt-1">₹{totalOutstanding.toLocaleString()}</div>
+          <div className="text-[11px] text-amber-600 mt-0.5">{feeRecords.length - fullyPaidCount} Pending Remittance</div>
+        </div>
+      </div>
+
       {/* ─── Top Bulk Checkout & Bank Challan Form ─── */}
       <div className="p-5 sm:p-6 bg-gradient-to-r from-[#0B2447] via-slate-900 to-teal-950 text-white rounded-3xl shadow-xl flex flex-col lg:flex-row lg:items-start justify-between gap-6 border border-slate-800">
         <div className="space-y-3 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-teal-500/30 text-teal-300 border border-teal-400/30">
-              COHORT FEE SETTLEMENT
+              CAMPUS FEE REMITTANCE
             </span>
             <span className="text-xs text-slate-300">
               {selectedRecords.length} Students Selected for Clearance
@@ -336,7 +373,7 @@ export default function CollegeAdminBulkFeesPage() {
             <span className="text-xs text-slate-400">Total Payable Amount</span>
           </div>
           <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
-            Record institutional bank counter deposits or CMS challans. Each assigned student’s portal will instantly unlock with an official clearance receipt generated.
+            Record institutional bank counter deposits or CMS challans. Each assigned student’s portal will instantly unlock with an official clearance receipt generated and synchronized with the central finance ledger.
           </p>
 
           {/* Assigned Students Preview Chips */}
@@ -507,7 +544,7 @@ export default function CollegeAdminBulkFeesPage() {
               <>
                 <Unlock className="w-4 h-4" />
                 <span>
-                  Submit Challan & Assign to {selectedRecords.length} Student{selectedRecords.length > 1 ? 's' : ''} (₹{totalPayableAmount.toLocaleString()})
+                  Submit Challan & Clear {selectedRecords.length} Student{selectedRecords.length > 1 ? 's' : ''} (₹{totalPayableAmount.toLocaleString()})
                 </span>
               </>
             )}
@@ -548,7 +585,7 @@ export default function CollegeAdminBulkFeesPage() {
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none"
           >
             <option value="ALL">All Access Status</option>
-            <option value="LOCKED">Locked (Pending Due)</option>
+            <option value="LOCKED">Locked (Pending Dues)</option>
             <option value="UNLOCKED">Unlocked (Fee Cleared)</option>
           </select>
         </div>
@@ -559,7 +596,7 @@ export default function CollegeAdminBulkFeesPage() {
         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black uppercase text-slate-700 tracking-wider">
-              Enrolled Campus Students ({filteredRecords.length})
+              American College Students ({filteredRecords.length})
             </span>
             <span className="text-[10px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded-full">
               {selectedStudentIds.length} Checked
@@ -587,10 +624,10 @@ export default function CollegeAdminBulkFeesPage() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold">
-                <th className="py-3 px-4 w-12 text-center">Assign</th>
+                <th className="py-3 px-4 w-12 text-center">Select</th>
                 <th className="py-3 px-4">Student Name & Roll No</th>
                 <th className="py-3 px-4">Enrolled Batch</th>
-                <th className="py-3 px-4">Language Program</th>
+                <th className="py-3 px-4">Course Program</th>
                 <th className="py-3 px-4">Tuition Fee</th>
                 <th className="py-3 px-4">Paid Amount</th>
                 <th className="py-3 px-4">Due Balance</th>
@@ -660,7 +697,7 @@ export default function CollegeAdminBulkFeesPage() {
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                            <span>CLEARED</span>
+                            <span>UNLOCKED</span>
                           </span>
                         )}
                       </td>

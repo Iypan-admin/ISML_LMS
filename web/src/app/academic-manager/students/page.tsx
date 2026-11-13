@@ -236,7 +236,6 @@ export default function AcademicManagerStudentsPage() {
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
                 <th className="py-3.5 px-4">Student Info</th>
                 <th className="py-3.5 px-4">Enrolled Course & Batch</th>
-                <th className="py-3.5 px-4">Attendance & Academic</th>
                 <th className="py-3.5 px-4">Parent / Guardian</th>
                 <th className="py-3.5 px-4 text-center">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
@@ -275,34 +274,6 @@ export default function AcademicManagerStudentsPage() {
                           <span>{s.batchName}</span>
                         </p>
                         <span className="text-[10px] text-slate-400">Semester {s.semesterNumber}</span>
-                      </div>
-                    </td>
-
-                    {/* Attendance & CGPA */}
-                    <td className="py-3.5 px-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold text-xs ${
-                            s.attendancePercentage >= 85 ? 'text-emerald-700' :
-                            s.attendancePercentage >= 75 ? 'text-amber-700' : 'text-rose-600'
-                          }`}>
-                            {s.attendancePercentage}% Attendance
-                          </span>
-                        </div>
-                        <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${
-                              s.attendancePercentage >= 85 ? 'bg-emerald-600' :
-                              s.attendancePercentage >= 75 ? 'bg-amber-500' : 'bg-rose-500'
-                            }`}
-                            style={{ width: `${s.attendancePercentage}%` }}
-                          />
-                        </div>
-                        {s.cgpa && (
-                          <p className="text-[10px] text-slate-500">
-                            CGPA: <strong className="text-slate-800 font-bold">{s.cgpa}</strong>
-                          </p>
-                        )}
                       </div>
                     </td>
 
@@ -354,7 +325,7 @@ export default function AcademicManagerStudentsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs italic">
+                  <td colSpan={5} className="py-12 text-center text-slate-400 text-xs italic">
                     No student records found matching the active filter criteria.
                   </td>
                 </tr>

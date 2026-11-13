@@ -790,12 +790,12 @@ export default function AcademicManagerTimetablePage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-50 text-[#0052CC] border border-blue-200 uppercase tracking-wider">
-              Academic Operations Matrix
+              Class Timetable Overview
             </span>
             {detectedConflicts.length > 0 ? (
               <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 text-rose-600" />
-                {detectedConflicts.length} Conflict{detectedConflicts.length > 1 ? 's' : ''} Detected
+                {detectedConflicts.length} Time Clash{detectedConflicts.length > 1 ? 'es' : ''} Detected
               </span>
             ) : (
               <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
@@ -806,10 +806,10 @@ export default function AcademicManagerTimetablePage() {
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-[#0B2447] tracking-tight flex items-center gap-2">
             <CalendarRange className="w-6 h-6 text-[#0052CC]" />
-            <span>Interactive Timetable & Webinar Scheduler</span>
+            <span>Class Timetable & Session Scheduler</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-            Manage weekly class matrices, recurring online webinars, single-day workshops, and cyclic rotation rosters with automated clash validation.
+            Manage weekly class schedules, recurring live classes, workshops, and faculty rosters with automatic time clash prevention.
           </p>
         </div>
 
@@ -838,7 +838,7 @@ export default function AcademicManagerTimetablePage() {
               </div>
               <div>
                 <h3 className="text-xs font-bold text-rose-950 uppercase tracking-wider">
-                  Automated Conflict Engine Alert ({detectedConflicts.length})
+                  Schedule Clash Alert ({detectedConflicts.length})
                 </h3>
                 <p className="text-[11px] text-rose-700">
                   Multiple slots have trainer time clashes or overlapping batch meetings.
@@ -883,7 +883,7 @@ export default function AcademicManagerTimetablePage() {
               }`}
           >
             <CalendarDays className="w-3.5 h-3.5" />
-            <span>Weekly Matrix</span>
+            <span>Weekly Timetable</span>
           </button>
           <button
             onClick={() => setActiveTab('DAY_VIEW')}

@@ -85,4 +85,16 @@ export const PARENT_NAV_SECTIONS: ParentMenuSection[] = [
       },
     ],
   },
+  {
+    title: 'Security & Profile',
+    items: [
+      {
+        id: 'PARENT_CHANGE_PASSWORD',
+        label: 'Change Password',
+        route: '/parent/change-password',
+        iconName: 'Lock',
+        description: 'Update your parent portal access password',
+      },
+    ],
+  },
 ];

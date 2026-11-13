@@ -28,13 +28,6 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         iconName: 'LayoutDashboard',
         description: 'Academic metrics, live class schedules & operational alerts',
       },
-      {
-        id: 'AM_CALENDAR',
-        label: 'Academic Calendar',
-        route: '/academic-manager/academic-calendar',
-        iconName: 'CalendarDays',
-        description: 'Campus terms, key dates, exams & schedule milestones',
-      },
     ],
   },
   {
@@ -123,13 +116,6 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         iconName: 'Award',
         description: 'Verifiable CEFR language credentials & QR certificates',
       },
-      {
-        id: 'AM_CAREER',
-        label: 'Career Portal',
-        route: '/academic-manager/career',
-        iconName: 'Briefcase',
-        description: 'Foreign language corporate recruitment & placement drives',
-      },
     ],
   },
   {
@@ -140,7 +126,7 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         label: 'Timetable Grid',
         route: '/academic-manager/timetable',
         iconName: 'CalendarRange',
-        description: 'Weekly multi-cohort timetable matrix & conflict checks',
+        description: 'Weekly class schedule timetable and time clash checker',
       },
       {
         id: 'AM_ATTENDANCE_SESSIONS',
@@ -148,6 +134,18 @@ export const ACADEMIC_MANAGER_NAV_SECTIONS: AcademicMenuSection[] = [
         route: '/academic-manager/attendance/sessions',
         iconName: 'CheckSquare',
         description: 'Today’s class attendance marking & student presence',
+      },
+    ],
+  },
+  {
+    title: 'Security & Profile',
+    items: [
+      {
+        id: 'AM_CHANGE_PASSWORD',
+        label: 'Change Password',
+        route: '/academic-manager/change-password',
+        iconName: 'Lock',
+        description: 'Update your access password and account security credentials',
       },
     ],
   },

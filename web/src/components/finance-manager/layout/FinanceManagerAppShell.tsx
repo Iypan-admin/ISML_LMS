@@ -19,6 +19,7 @@ import {
   FileCheck,
   BarChart3,
   Building2,
+  Lock,
   ShieldCheck,
   Bell,
   Search,
@@ -48,6 +49,7 @@ const iconMap: Record<string, React.ElementType> = {
   FileCheck,
   BarChart3,
   Building2,
+  Lock,
 };
 
 export function FinanceManagerSidebar() {

@@ -38,6 +38,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('studentId');
+    const batchName = searchParams.get('batchName');
+    const sessionId = searchParams.get('sessionId');
+
     let items = loadAttendance();
 
     if (studentId) {
@@ -46,6 +49,19 @@ export async function GET(request: Request) {
           it.studentId?.toLowerCase() === studentId.toLowerCase() ||
           it.studentRollNo?.toLowerCase() === studentId.toLowerCase()
       );
+    }
+
+    if (batchName && batchName !== 'ALL') {
+      const bLower = batchName.toLowerCase();
+      items = items.filter(
+        (it: any) =>
+          it.batchName?.toLowerCase().includes(bLower) ||
+          it.batchCode?.toLowerCase().includes(bLower)
+      );
+    }
+
+    if (sessionId && sessionId !== 'ALL') {
+      items = items.filter((it: any) => it.sessionId === sessionId);
     }
 
     return NextResponse.json({
@@ -88,4 +104,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: 'error', message: err.message }, { status: 500 });
   }
 }
-

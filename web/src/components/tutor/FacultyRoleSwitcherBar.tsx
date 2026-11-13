@@ -40,28 +40,6 @@ export default function FacultyRoleSwitcherBar() {
           </p>
         </div>
       </div>
-
-      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-        <span className="text-xs font-bold text-slate-500 whitespace-nowrap hidden md:inline">
-          Switch Faculty:
-        </span>
-        <select
-          value={activeFacultyId}
-          onChange={(e) => setActiveFacultyId(e.target.value)}
-          className="w-full sm:w-auto px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none cursor-pointer focus:ring-2 focus:ring-[#0052CC]"
-          title="Switch Tutor Profile"
-        >
-          {allFacultyList.length === 0 ? (
-            <option value={currentFaculty.id || "fac-default"}>🧑‍🏫 {currentFaculty.name || "Joy JK"} ({currentFaculty.primaryLanguage || "FRENCH"})</option>
-          ) : (
-            allFacultyList.map((f) => (
-              <option key={f.id} value={f.id}>
-                🧑‍🏫 {f.name} ({f.primaryLanguage})
-              </option>
-            ))
-          )}
-        </select>
-      </div>
     </div>
   );
 }

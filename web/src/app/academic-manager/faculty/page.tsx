@@ -468,7 +468,7 @@ export default function AcademicManagerFacultyUnifiedPage({
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {activeTab === 'ALLOCATIONS' && (
         <div className="space-y-5 animate-in fade-in duration-200">
-          {/* Timetable Conflict Guard Health Bar */}
+          {/* Timetable Clash Checker Health Bar */}
           <div className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-emerald-50 rounded-2xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0 shadow-xs">
@@ -476,20 +476,20 @@ export default function AcademicManagerFacultyUnifiedPage({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[#0B2447]">Automated Timetable Conflict Guard</span>
+                  <span className="text-xs font-bold text-[#0B2447]">Timetable Clash Checker</span>
                   <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white px-1.5 py-0.2 rounded">
-                    LIVE SCANNER ACTIVE
+                    LIVE CHECK ACTIVE
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-600 mt-0.5">
-                  Live scheduler checks trainer timings, emergency standby overlaps, and cohort virtual studio slots across all {allocations.length} active assignments.
+                  Schedule checker verifies faculty class timings and batch room slots across all {allocations.length} active assignments.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-[11px] font-bold text-slate-700 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                Current Overlaps: <strong className="text-emerald-700 font-extrabold">0 Conflicts</strong>
+                Current Overlaps: <strong className="text-emerald-700 font-extrabold">0 Time Clashes</strong>
               </span>
             </div>
           </div>

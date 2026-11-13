@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   Compass,
+  Lock,
 } from 'lucide-react';
 import { currentStudent } from '@/mock/students';
 
@@ -51,9 +52,14 @@ const studentNavGroups = [
   {
     groupTitle: 'Records & Credentials',
     items: [
-      { name: 'Results & Reports', href: '/results', icon: BarChart3 },
       { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
       { name: 'Certificate', href: '/certificate', icon: Award },
+    ],
+  },
+  {
+    groupTitle: 'Security & Profile',
+    items: [
+      { name: 'Change Password', href: '/student/change-password', icon: Lock },
     ],
   },
 ];

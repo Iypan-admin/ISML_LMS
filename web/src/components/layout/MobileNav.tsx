@@ -40,7 +40,6 @@ const secondaryMobileItems = [
   { name: 'Class Recordings', href: '/recordings', icon: Film },
   { name: 'Assignments & Homework', href: '/assignments', icon: FileCheck2 },
   { name: 'Exams & Tests', href: '/exams', icon: GraduationCap },
-  { name: 'Results & Reports', href: '/results', icon: BarChart3 },
   { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
   { name: 'Doubt Support', href: '/doubts', icon: MessageSquare },
   { name: 'Digital Certificate', href: '/certificate', icon: Award },

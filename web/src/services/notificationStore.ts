@@ -114,7 +114,7 @@ const DEFAULT_ALERTS: LiveNotification[] = [
     },
     institutionName: 'The American College',
     timestamp: new Date().toISOString(),
-    actionUrl: '/tutor/schedule',
+    actionUrl: '/tutor/live-classes',
     isRead: false,
   },
 ];

@@ -41,12 +41,12 @@ export default function StudentAssignmentsPage() {
 
   // Load student info from session/storage if available
   const [studentInfo, setStudentInfo] = useState({
-    id: 'AMER-COL-STD-23',
+    id: 'std-amer-2026-001',
     name: 'Muthu Pandian',
-    rollNo: 'AMER-COL-STD-23',
+    rollNo: 'AMER-2026-001',
     college: 'The American College',
-    courseName: 'testtt',
-    batchName: 'MRNG BATCH',
+    courseName: 'Sample Course',
+    batchName: 'Morning Batch',
   });
 
   useEffect(() => {
@@ -55,12 +55,12 @@ export default function StudentAssignmentsPage() {
       if (stored) {
         const parsed = JSON.parse(stored);
         setStudentInfo({
-          id: parsed.id || parsed.studentId || 'AMER-COL-STD-23',
+          id: parsed.id || parsed.studentId || 'std-amer-2026-001',
           name: parsed.name || 'Muthu Pandian',
-          rollNo: parsed.rollNo || parsed.studentId || 'AMER-COL-STD-23',
+          rollNo: parsed.rollNo || parsed.studentId || 'AMER-2026-001',
           college: parsed.collegeName || parsed.campusName || parsed.institutionName || 'The American College',
-          courseName: parsed.courseName || parsed.enrolledCourse || 'testtt',
-          batchName: parsed.batchName || 'MRNG BATCH',
+          courseName: parsed.courseName || parsed.enrolledCourse || 'Sample Course',
+          batchName: parsed.batchName || 'Morning Batch',
         });
       }
     } catch {}

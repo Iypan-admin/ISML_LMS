@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   School,
   Users,
+  Lock,
 } from 'lucide-react';
 import { SCHOOL_ADMIN_NAV_SECTIONS } from '@/config/schoolAdminMenu';
 import { useToast } from '@/context/ToastContext';
@@ -37,6 +38,7 @@ const iconMap: Record<string, React.ElementType> = {
   Building2,
   School,
   Users,
+  Lock,
 };
 
 export default function SchoolAdminAppShell({ children }: { children: React.ReactNode }) {

@@ -195,6 +195,21 @@ export const SUPER_ADMIN_MENU_GROUPS: MenuGroup[] = [
       },
     ],
   },
+  {
+    id: 'GROUP_SECURITY',
+    title: 'Security & Profile',
+    order: 4,
+    items: [
+      {
+        id: 'SUPER_ADMIN_PASSWORD',
+        label: 'Change Password',
+        route: '/super-admin/change-password',
+        iconName: 'Lock',
+        order: 1,
+        requiredPermissions: [],
+      },
+    ],
+  },
 ];
 
 // Flat list of all items for quick lookups

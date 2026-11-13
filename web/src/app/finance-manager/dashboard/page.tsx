@@ -95,11 +95,11 @@ export default function FinanceManagerDashboardPage() {
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
           <Link
-            href="/finance-manager/transactions"
+            href="/finance-manager/student-fees"
             className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-2 border border-white/20"
           >
-            <CreditCard className="w-4 h-4 text-cyan-300" />
-            <span>Payments Ledger</span>
+            <Users className="w-4 h-4 text-cyan-300" />
+            <span>Student Fee Ledgers</span>
           </Link>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function FinanceManagerDashboardPage() {
               </div>
             </div>
             <Link
-              href="/finance-manager/transactions"
+              href="/finance-manager/student-fees"
               className="text-xs font-bold text-[#0052CC] hover:underline flex items-center gap-1"
             >
               <span>View All</span>

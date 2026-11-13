@@ -61,22 +61,27 @@ export default function CollegeAdminStudentsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   React.useEffect(() => {
-    let collegeIdParam = '';
-    let collegeNameParam = '';
+    let collegeIdParam = 'AMER-COL';
     try {
       if (typeof window !== 'undefined') {
-        const storedUser = localStorage.getItem('isml_user');
+        const storedUser = localStorage.getItem('isml_admin_user') || localStorage.getItem('isml_user');
         if (storedUser) {
           const u = JSON.parse(storedUser);
-          if (u.campusId) collegeIdParam = u.campusId;
-          if (u.campusName) collegeNameParam = u.campusName;
+          const isAmer =
+            (u.email && u.email.includes('americancollege')) ||
+            u.institutionCode === 'AMER-COL' ||
+            (u.campusName && u.campusName.includes('American'));
+
+          if (isAmer || !u.campusName) {
+            collegeIdParam = 'AMER-COL';
+          } else if (u.campusName) {
+            collegeIdParam = u.tenantId || u.institutionCode || u.campusId || 'AMER-COL';
+          }
         }
       }
     } catch { }
 
-    const queryUrl = collegeIdParam
-      ? `/api/portals/students?collegeId=${encodeURIComponent(collegeIdParam)}`
-      : '/api/portals/students';
+    const queryUrl = `/api/portals/students?collegeId=${encodeURIComponent(collegeIdParam)}`;
 
     // 1. Fetch live students from backend API scoped to this college
     fastFetch(queryUrl, (json) => {
@@ -86,14 +91,22 @@ export default function CollegeAdminStudentsPage() {
       setIsLoading(false);
     });
 
-    // 2. Fetch live courses
-    fastFetch('https://ismllms-production.up.railway.app/api/portals/courses', (json) => {
-      if (json && json.data) setCollegeCourses(json.data);
+    // 2. Fetch live courses scoped
+    fastFetch('/api/portals/courses', (json) => {
+      if (json && json.data) {
+        setCollegeCourses(json.data);
+      }
     });
 
-    // 3. Fetch live batches
-    fastFetch('https://ismllms-production.up.railway.app/api/portals/batches', (json) => {
-      if (json && json.data) setCollegeBatches(json.data);
+    // 3. Fetch live batches scoped
+    fastFetch('/api/portals/batches', (json) => {
+      if (json && json.data) {
+        // Only college batches (exclude school cohorts)
+        const collegeOnlyBatches = json.data.filter((b: any) =>
+          !b.name?.toLowerCase().includes('school') && !b.institutionName?.toLowerCase().includes('school')
+        );
+        setCollegeBatches(collegeOnlyBatches);
+      }
     });
   }, []);
 

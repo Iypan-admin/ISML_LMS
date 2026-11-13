@@ -15,9 +15,10 @@
     "subjectName": "Sample Course",
     "batchId": "7d94450c-cf1c-4ebe-bd27-9ac0afb45915",
     "batchName": "Morning Batch",
+    "batchCode": "BAT-SAMPLE-MRNG",
     "languageFamily": "FRENCH",
     "scheduleSlots": [
-      "Mon, Wed, Fri 12:00 AM - 1:00:AM"
+      "Mon, Wed, Fri 09:00 AM - 10:30 AM"
     ],
     "status": "ACTIVE",
     "effectiveFrom": "2026-11-12",
@@ -39,108 +40,38 @@
     "subjectName": "Sample Course",
     "batchId": "9c4ab99e-3fd9-4212-ba60-0e3dfab3efc5",
     "batchName": "Evening Batch",
+    "batchCode": "BAT-SAMPLE-EVNG",
     "languageFamily": "FRENCH",
     "scheduleSlots": [
-      "Thu, Tue, Sat, Mon, Wed, Fri 09:30 PM - 11:59 PM"
+      "Mon, Tue, Wed, Thu, Fri, Sat 06:30 PM - 09:00 PM"
     ],
     "status": "ACTIVE",
     "effectiveFrom": "2026-11-12",
     "notes": "Lead Faculty Trainer for Sample Course Evening Batch"
   },
   {
-    "id": "alloc-joy-amer-01",
-    "facultyId": "fac-201834",
-    "facultyName": "Joy JK",
-    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    "tutorRole": "LEAD_TRAINER",
-    "institutionType": "COLLEGE",
-    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
-    "institutionName": "The American College",
-    "courseId": "8df60952-2448-4bdf-aa35-ae28351968a1",
-    "courseCode": "COL-FR-A1L1",
-    "courseName": "French A1 / L1 Higher Education Program",
-    "subjectCode": "COL-FR-A1L1",
-    "subjectName": "French A1 / L1 Higher Education Program",
-    "batchId": "batch-amer-01",
-    "batchName": "MRNG BATCH (The American College)",
-    "languageFamily": "FRENCH",
-    "scheduleSlots": [
-      "Mon, Wed, Fri 06:30 PM - 09:00 PM"
-    ],
-    "status": "ACTIVE",
-    "effectiveFrom": "2026-10-15",
-    "notes": "Lead Native Trainer responsible for conducting live lecture broadcasts, syllabus progression, and curriculum delivery."
-  },
-  {
-    "id": "alloc-joy-amer-02",
-    "facultyId": "fac-201834",
-    "facultyName": "Joy JK",
-    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    "tutorRole": "DOUBT_SOLVING_TUTOR",
-    "institutionType": "COLLEGE",
-    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
-    "institutionName": "The American College",
-    "courseId": "8df60952-2448-4bdf-aa35-ae28351968a1",
-    "courseCode": "COL-FR-A1L1",
-    "courseName": "French A1 / L1 Higher Education Program",
-    "subjectCode": "COL-FR-A1L1",
-    "subjectName": "French A1 / L1 Higher Education Program",
-    "batchId": "batch-amer-01",
-    "batchName": "MRNG BATCH (The American College)",
-    "languageFamily": "FRENCH",
-    "scheduleSlots": [
-      "Tue & Thu 02:00 PM - 03:30 PM"
-    ],
-    "status": "ACTIVE",
-    "effectiveFrom": "2026-10-15",
-    "notes": "1-on-1 Q&A desk, chat clearance & remedial clinics for students."
-  },
-  {
-    "id": "alloc-jk-amer-01",
+    "id": "alloc-jk-siva-fr",
     "facultyId": "fac-373222",
     "facultyName": "JK Faculty",
     "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
     "tutorRole": "LEAD_TRAINER",
-    "institutionType": "COLLEGE",
-    "institutionId": "521323cd-00da-49a6-98ed-6b7918d181b4",
-    "institutionName": "The American College",
-    "courseId": "crs-col-de-a1",
-    "courseCode": "COL-DE-A1L1",
-    "courseName": "German A1 / L1 Higher Education Program",
-    "subjectCode": "COL-DE-A1L1",
-    "subjectName": "German A1 / L1 Higher Education Program",
-    "batchId": "batch-amer-01",
-    "batchName": "MRNG BATCH (The American College)",
-    "languageFamily": "GERMAN",
-    "scheduleSlots": [
-      "Tue & Thu 10:00 AM - 11:30 AM"
-    ],
-    "status": "ACTIVE",
-    "effectiveFrom": "2026-10-15",
-    "notes": "Lead Native Trainer for German Language Higher Education Track."
-  },
-  {
-    "id": "alloc-joy-siva-01",
-    "facultyId": "fac-201834",
-    "facultyName": "Joy JK",
-    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    "tutorRole": "LEAD_TRAINER",
     "institutionType": "SCHOOL",
     "institutionId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
     "institutionName": "Sivakasi Lions Matriculation Higher Secondary School",
-    "courseId": "crs-sch-fr-a11",
-    "courseCode": "SCH-FR-A11",
-    "courseName": "French A1.1 School Foundation Course",
-    "subjectCode": "SCH-FR-A11",
-    "subjectName": "French A1.1 School Foundation Course",
+    "courseId": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "courseCode": "SAMPLE-CRS-101",
+    "courseName": "Sample Course",
+    "subjectCode": "SAMPLE-CRS-101",
+    "subjectName": "Sample Course",
     "batchId": "batch-siva-01",
     "batchName": "Sivakasi Lions French Cohort A",
+    "batchCode": "BAT-SIVA-FR",
     "languageFamily": "FRENCH",
     "scheduleSlots": [
-      "Mon & Wed 02:00 PM - 03:30 PM"
+      "Tue & Thu 03:30 PM - 05:00 PM"
     ],
     "status": "ACTIVE",
-    "effectiveFrom": "2026-10-15",
-    "notes": "School Period Category Cat 1 to Cat 6 aligned foundation teacher."
+    "effectiveFrom": "2026-11-12",
+    "notes": "Lead Faculty Trainer for Sivakasi Lions French Cohort A"
   }
 ]

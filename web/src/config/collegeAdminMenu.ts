@@ -61,4 +61,14 @@ export const COLLEGE_ADMIN_NAV_SECTIONS: CollegeAdminNavSection[] = [
       },
     ],
   },
+  {
+    title: 'Security & Profile',
+    items: [
+      {
+        label: 'Change Password',
+        route: '/college-admin/change-password',
+        iconName: 'Lock',
+      },
+    ],
+  },
 ];

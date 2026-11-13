@@ -1,52 +1,231 @@
 // ============================================================================
-// ISML SCHOOL LMS — ATTENDANCE & PERFORMANCE MONITOR (/school-admin/attendance)
-// Live check-in metrics scoped strictly to school campus
+// ISML SCHOOL LMS — SCHOOL ADMIN: ATTENDANCE & PERFORMANCE MONITOR
+// (/school-admin/attendance)
+// Batch-Wise & Class-Wise Live Attendance Tracking with Modal Roll Call Drawer
+// Scoped strictly to: Sivakasi Lions Matriculation Higher Secondary School
 // ============================================================================
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import {
   UserCheck,
+  TrendingUp,
+  AlertTriangle,
+  Users,
   Search,
-  School,
+  Filter,
   Download,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  ArrowRight,
+  Clock,
+  Award,
+  Layers,
+  Video,
+  XCircle,
+  X,
+  School,
+  ChevronRight,
 } from 'lucide-react';
-import { fastFetch } from '@/lib/fastCache';
+import { useToast } from '@/context/ToastContext';
+
+interface AttendanceRecord {
+  id: string;
+  sessionId: string;
+  studentId: string;
+  studentName: string;
+  sessionTopic: string;
+  courseName: string;
+  batchName: string;
+  batchCode: string;
+  facultyName: string;
+  date: string;
+  timeSlot: string;
+  durationMins: number;
+  stayMins: number;
+  stayPercentage: number;
+  status: 'PRESENT' | 'ABSENT' | 'PENDING';
+  connectionStatus: string;
+  approvedBy: string;
+}
 
 export default function SchoolAdminAttendancePage() {
+  const { showSuccess } = useToast();
+
+  const [activeSchool, setActiveSchool] = useState({
+    id: 'SIVA-LIONS',
+    name: 'Sivakasi Lions Matriculation Higher Secondary School',
+    code: 'SIVA-LIONS',
+    email: 'admin@sivakasilions.edu.in',
+  });
+
+  const [activeTab, setActiveTab] = useState<'CLASS_WISE' | 'BATCH_SUMMARY'>('CLASS_WISE');
   const [students, setStudents] = useState<any[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [thresholdFilter, setThresholdFilter] = useState('ALL');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Modal / Drawer state for viewing specific class roll call
+  const [activeModalSession, setActiveModalSession] = useState<any | null>(null);
 
   useEffect(() => {
-    let schId = 'SIVA-LIONS';
-    try {
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('isml_admin_user') || localStorage.getItem('isml_user');
-        if (stored) {
-          const u = JSON.parse(stored);
-          const isCollege = u.role === 'COLLEGE_ADMIN' || (u.email && u.email.includes('americancollege'));
-          if (!isCollege && (u.tenantId || u.institutionCode || u.campusId)) {
-            schId = u.tenantId || u.institutionCode || u.campusId;
-          }
-        }
-      }
-    } catch {}
+    // 1. Fetch Students for Sivakasi Lions
+    fetch('/api/portals/students?collegeId=SIVA-LIONS')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json && json.data) setStudents(json.data);
+      })
+      .catch(() => {});
 
-    fastFetch(`https://ismllms-production.up.railway.app/api/portals/students?collegeId=${encodeURIComponent(schId)}`, (json) => {
-      if (json && json.data) setStudents(json.data);
-    });
+    // 2. Fetch Class-wise Attendance Records for Sivakasi Lions
+    fetch('/api/portals/attendance?batchName=Sivakasi')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json && json.data) {
+          const sivaRecords = json.data.filter(
+            (r: any) =>
+              r.batchName?.includes('Sivakasi') ||
+              r.batchCode?.includes('SIVA') ||
+              r.studentId?.startsWith('SLS-')
+          );
+          setAttendanceRecords(sivaRecords);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const avgAttendance = students.length > 0
-    ? (students.reduce((acc, s) => acc + (Number(s.attendancePercentage) || 0), 0) / students.length).toFixed(1)
-    : '95.0';
+  // Distinct Classes / Live Sessions with Pending / Marked Status
+  const distinctSessions = useMemo(() => {
+    const map = new Map<string, any>();
+    attendanceRecords.forEach((r) => {
+      if (!map.has(r.sessionId)) {
+        map.set(r.sessionId, {
+          sessionId: r.sessionId,
+          sessionTopic: r.sessionTopic,
+          batchName: r.batchName,
+          batchCode: r.batchCode,
+          courseName: r.courseName,
+          date: r.date,
+          timeSlot: r.timeSlot,
+          facultyName: r.facultyName,
+          totalStudents: 0,
+          presentCount: 0,
+          absentCount: 0,
+          pendingCount: 0,
+          records: [],
+        });
+      }
+      const s = map.get(r.sessionId);
+      s.totalStudents += 1;
+      s.records.push(r);
+      if (r.status === 'PRESENT') s.presentCount += 1;
+      else if (r.status === 'ABSENT') s.absentCount += 1;
+      else s.pendingCount += 1;
+    });
 
-  const criticalCount = students.filter((s) => (Number(s.attendancePercentage) || 0) < 75).length;
-  const goodCount = students.filter((s) => (Number(s.attendancePercentage) || 0) >= 85).length;
+    return Array.from(map.values()).map((s) => {
+      const isPending = s.pendingCount > 0 && s.presentCount === 0 && s.absentCount === 0;
+      const evaluatedTotal = s.presentCount + s.absentCount;
+      const attendancePercentage = evaluatedTotal > 0 ? Math.round((s.presentCount / evaluatedTotal) * 100) : null;
+      return {
+        ...s,
+        isAttendancePending: isPending,
+        attendancePercentage,
+      };
+    });
+  }, [attendanceRecords]);
+
+  // Batch-wise Aggregations
+  const batchStats = useMemo(() => {
+    const list = [
+      { name: 'Sivakasi Lions French Cohort A', code: 'BAT-SIVA-FR' },
+    ];
+
+    return list.map((b) => {
+      const bStudents = students;
+      const bAttendance = attendanceRecords;
+      const bSessions = distinctSessions;
+
+      const totalPresent = bAttendance.filter((r) => r.status === 'PRESENT').length;
+      const evaluatedRecords = bAttendance.filter((r) => r.status !== 'PENDING').length;
+      const rate = evaluatedRecords > 0 ? Math.round((totalPresent / evaluatedRecords) * 100) : 100;
+
+      const pendingClassesCount = bSessions.filter((s) => s.isAttendancePending).length;
+
+      return {
+        batchName: b.name,
+        batchCode: b.code,
+        studentsCount: bStudents.length,
+        classesConducted: bSessions.length,
+        pendingClassesCount,
+        attendanceRate: rate,
+        leadFaculty: 'Joy JK',
+        scheduleTiming: 'Mon–Fri 02:30 PM – 03:45 PM',
+        students: bStudents,
+      };
+    });
+  }, [students, attendanceRecords, distinctSessions]);
+
+  // Filtered Class-wise Sessions
+  const filteredSessions = useMemo(() => {
+    return distinctSessions.filter((s) => {
+      if (thresholdFilter === 'MARKED' && s.isAttendancePending) return false;
+      if (thresholdFilter === 'PENDING' && !s.isAttendancePending) return false;
+
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        return (
+          s.sessionTopic.toLowerCase().includes(q) ||
+          s.batchName.toLowerCase().includes(q) ||
+          s.date.includes(q)
+        );
+      }
+      return true;
+    });
+  }, [distinctSessions, thresholdFilter, searchQuery]);
+
+  const avgAttendance = useMemo(() => {
+    const evaluated = attendanceRecords.filter((r) => r.status !== 'PENDING');
+    if (evaluated.length === 0) return '100.0';
+    const present = evaluated.filter((r) => r.status === 'PRESENT').length;
+    return ((present / evaluated.length) * 100).toFixed(1);
+  }, [attendanceRecords]);
+
+  const totalPendingSessions = distinctSessions.filter((s) => s.isAttendancePending).length;
+  const totalMarkedSessions = distinctSessions.length - totalPendingSessions;
+
+  const handleExport = () => {
+    const headers = ['Session Date', 'Topic', 'Batch', 'Pupil ID', 'Pupil Name', 'Status', 'Duration Mins', 'Stay Mins', 'Faculty'];
+    const rows = attendanceRecords.map((r) => [
+      r.date,
+      `"${r.sessionTopic}"`,
+      `"${r.batchName}"`,
+      r.studentId,
+      `"${r.studentName}"`,
+      r.status,
+      r.durationMins,
+      r.stayMins,
+      `"${r.facultyName}"`,
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `SIVA_LIONS_Attendance_Log_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showSuccess('Attendance log exported successfully!');
+  };
 
   return (
     <div className="space-y-6 pb-12 font-sans text-slate-900">
+      {/* ─── Header ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -54,69 +233,437 @@ export default function SchoolAdminAttendancePage() {
               <UserCheck className="w-6 h-6 text-blue-600" />
               <span>School Attendance & Performance Desk</span>
             </h1>
-            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-blue-50 text-[#0052CC] border border-blue-200">
-              {avgAttendance}% Average
+            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+              SIVA-LIONS • {avgAttendance}% Verified Average
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Real-time attendance benchmark analytics for junior language tracks.
+          <p className="text-xs text-slate-500 mt-1">
+            Real-time batch tracking and class-by-class live attendance status for {activeSchool.name}.
           </p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-xs font-bold text-slate-500">School Attendance Average</span>
-          <p className="text-2xl font-black text-blue-600 mt-1">{avgAttendance}%</p>
-          <span className="text-[10px] text-emerald-600 font-bold mt-0.5 block">CBSE Criteria Met</span>
-        </div>
-        <div className="p-4 bg-white rounded-2xl border border-rose-200 bg-rose-50/20 shadow-2xs">
-          <span className="text-xs font-bold text-rose-800">Critical Shortfall (&lt;75%)</span>
-          <p className="text-2xl font-black text-rose-950 mt-1">{criticalCount} Pupils</p>
-          <span className="text-[10px] text-rose-700 font-bold mt-0.5 block">Automated Parent Alerts</span>
-        </div>
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-xs font-bold text-slate-500">High Attendance (&gt;85%)</span>
-          <p className="text-2xl font-black text-emerald-600 mt-1">{goodCount} Pupils</p>
-          <span className="text-[10px] text-slate-400 mt-0.5 block">Certificate Ready</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            <span>Export Attendance Log</span>
+          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold">
-              <th className="py-3 px-4">Pupil Name</th>
-              <th className="py-3 px-4">Section</th>
-              <th className="py-3 px-4">Attendance Rate</th>
-              <th className="py-3 px-4">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {students.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-8 text-center text-xs text-slate-400 font-medium">
-                  No attendance records yet for this school.
-                </td>
-              </tr>
-            ) : (
-              students.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50/60 transition">
-                  <td className="py-3 px-4 font-bold text-slate-900">{s.name} ({s.studentId})</td>
-                  <td className="py-3 px-4 text-slate-700">{s.batchName || 'Grade Section'}</td>
-                  <td className="py-3 px-4 font-bold text-emerald-700">{s.attendancePercentage || 92}%</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      ACTIVE
+      {/* ─── Top KPI Cards ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Pupils</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">{students.length} Pupils</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Sivakasi Lions Cohort</div>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Classes Conducted</span>
+          <div className="text-2xl font-black text-blue-900 mt-1">{distinctSessions.length} Live Classes</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Faculty: Joy JK</div>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-emerald-100 bg-emerald-50/20 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Attendance Submitted</span>
+          <div className="text-2xl font-black text-emerald-800 mt-1">{totalMarkedSessions} Classes</div>
+          <div className="text-[11px] text-emerald-600 mt-0.5">Roll call verified & signed off</div>
+        </div>
+
+        <div className="p-4 bg-white rounded-2xl border border-amber-100 bg-amber-50/20 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Attendance Pending</span>
+          <div className="text-2xl font-black text-amber-900 mt-1">{totalPendingSessions} Classes</div>
+          <div className="text-[11px] text-amber-600 mt-0.5">Awaiting tutor roll call submission</div>
+        </div>
+      </div>
+
+      {/* ─── Navigation Tabs ─── */}
+      <div className="flex items-center gap-2 border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('CLASS_WISE')}
+          className={`pb-3 px-3 text-xs font-bold transition flex items-center gap-1.5 border-b-2 cursor-pointer ${
+            activeTab === 'CLASS_WISE'
+              ? 'border-blue-600 text-blue-800'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Video className="w-4 h-4" />
+          <span>Class-Wise Sessions ({distinctSessions.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('BATCH_SUMMARY')}
+          className={`pb-3 px-3 text-xs font-bold transition flex items-center gap-1.5 border-b-2 cursor-pointer ${
+            activeTab === 'BATCH_SUMMARY'
+              ? 'border-blue-600 text-blue-800'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Batch-Wise Attendance</span>
+        </button>
+      </div>
+
+      {/* ─── TAB 1: CLASS-WISE SESSIONS ─── */}
+      {activeTab === 'CLASS_WISE' && (
+        <div className="space-y-4">
+          {/* Filter Bar */}
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search class lecture topic or date..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={thresholdFilter}
+                onChange={(e) => setThresholdFilter(e.target.value)}
+                className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none cursor-pointer text-slate-700"
+              >
+                <option value="ALL">All Submission Status</option>
+                <option value="MARKED">✓ Attendance Marked Only</option>
+                <option value="PENDING">⏳ Attendance Pending Only</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Classes Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                  Live Immersion Class Roll Call Registry ({filteredSessions.length})
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                  {totalMarkedSessions} Marked • {totalPendingSessions} Pending
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-slate-500">
+                Assigned Tutor: Joy JK
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">Class Date & Time</th>
+                    <th className="py-3 px-4">Cohort Batch</th>
+                    <th className="py-3 px-4">Class Lecture Topic</th>
+                    <th className="py-3 px-4">Tutor</th>
+                    <th className="py-3 px-4 text-center">Enrolled</th>
+                    <th className="py-3 px-4 text-center">Present</th>
+                    <th className="py-3 px-4 text-center">Absent</th>
+                    <th className="py-3 px-4 text-center">Class Attendance</th>
+                    <th className="py-3 px-4 text-center">Roll Call Status</th>
+                    <th className="py-3 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {filteredSessions.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="py-8 text-center text-xs text-slate-400 font-medium">
+                        No classes found matching the filter criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSessions.map((sess) => {
+                      const isPending = sess.isAttendancePending;
+
+                      return (
+                        <tr key={sess.sessionId} className="hover:bg-slate-50/70 transition">
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900">{sess.date}</div>
+                            <div className="text-[10px] text-slate-500">{sess.timeSlot}</div>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-slate-800">{sess.batchName}</span>
+                            <div className="text-[10px] font-mono text-slate-400">{sess.batchCode}</div>
+                          </td>
+
+                          <td className="py-3 px-4 max-w-xs">
+                            <div className="font-bold text-slate-900 truncate">{sess.sessionTopic}</div>
+                            <div className="text-[10px] text-slate-500">{sess.courseName}</div>
+                          </td>
+
+                          <td className="py-3 px-4 font-semibold text-slate-700">
+                            {sess.facultyName}
+                          </td>
+
+                          <td className="py-3 px-4 text-center font-bold text-slate-700">
+                            {sess.totalStudents}
+                          </td>
+
+                          <td className="py-3 px-4 text-center font-black">
+                            {isPending ? (
+                              <span className="text-slate-400 font-mono">—</span>
+                            ) : (
+                              <span className="text-emerald-700 font-mono">{sess.presentCount}</span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-center font-black">
+                            {isPending ? (
+                              <span className="text-slate-400 font-mono">—</span>
+                            ) : (
+                              <span className="text-rose-600 font-mono">{sess.absentCount}</span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            {isPending ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">
+                                Not Evaluated
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                {sess.attendancePercentage}%
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-center">
+                            {isPending ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black">
+                                <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                                <span>PENDING ROLL CALL</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>SUBMITTED & VERIFIED</span>
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => setActiveModalSession(sess)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                                isPending
+                                  ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+                                  : 'bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700'
+                              }`}
+                            >
+                              {isPending ? 'Inspect Roster' : 'View Roll Call'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 2: BATCH-WISE SUMMARY ─── */}
+      {activeTab === 'BATCH_SUMMARY' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {batchStats.map((b) => (
+              <div
+                key={b.batchCode}
+                className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 hover:border-blue-300 transition"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                      {b.batchCode}
                     </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                    <h3 className="text-base font-black text-slate-900 mt-0.5">{b.batchName}</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Sample Course • {b.scheduleTiming}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-blue-700">{b.attendanceRate}%</span>
+                    <span className="block text-[10px] font-bold text-slate-400">Verified Rate</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 bg-slate-50 rounded-xl">
+                    <span className="text-[10px] font-bold text-slate-400 block">PUPILS</span>
+                    <span className="text-xs font-black text-slate-900">{b.studentsCount} Pupils</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded-xl">
+                    <span className="text-[10px] font-bold text-slate-400 block">CLASSES</span>
+                    <span className="text-xs font-black text-slate-900">{b.classesConducted} Total</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded-xl">
+                    <span className="text-[10px] font-bold text-slate-400 block">PENDING</span>
+                    <span className="text-xs font-black text-amber-700">{b.pendingClassesCount} Classes</span>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
+                    <span className="text-slate-600">Cohort Attendance Benchmark</span>
+                    <span className="text-blue-700">{b.attendanceRate}% / 100%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${b.attendanceRate}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <button
+                    onClick={() => {
+                      setActiveTab('CLASS_WISE');
+                    }}
+                    className="text-xs font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>View Conducted Classes</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Pop-up Modal / Drawer for Viewing Specific Class Roll Call ─── */}
+      {activeModalSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                    {activeModalSession.batchName}
+                  </span>
+                  <span className="text-xs text-slate-500">{activeModalSession.date} • {activeModalSession.timeSlot}</span>
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 mt-1">
+                  {activeModalSession.sessionTopic}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Faculty In-Charge: {activeModalSession.facultyName}</p>
+              </div>
+
+              <button
+                onClick={() => setActiveModalSession(null)}
+                className="p-1.5 rounded-xl hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Subheader summary */}
+            <div className="px-5 py-3 bg-blue-50/40 border-b border-slate-100 flex items-center justify-between text-xs font-bold">
+              <div className="flex items-center gap-3">
+                <span className="text-slate-600">
+                  Enrolled: <strong className="text-slate-900">{activeModalSession.totalStudents}</strong>
+                </span>
+                <span className="text-emerald-700">
+                  Present: <strong>{activeModalSession.isAttendancePending ? '—' : activeModalSession.presentCount}</strong>
+                </span>
+                <span className="text-rose-600">
+                  Absent: <strong>{activeModalSession.isAttendancePending ? '—' : activeModalSession.absentCount}</strong>
+                </span>
+              </div>
+
+              {activeModalSession.isAttendancePending ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black">
+                  <Clock className="w-3 h-3 text-amber-600 animate-pulse" />
+                  ROLL CALL PENDING
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-black">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  SUBMITTED & VERIFIED
+                </span>
+              )}
+            </div>
+
+            {/* Modal Roll Call Table */}
+            <div className="p-4 overflow-y-auto flex-1">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="py-2.5 px-3">Pupil Name</th>
+                    <th className="py-2.5 px-3">Roll Number</th>
+                    <th className="py-2.5 px-3">Duration / Stay</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {activeModalSession.records.map((r: AttendanceRecord) => {
+                    const isPending = r.status === 'PENDING';
+                    const isPresent = r.status === 'PRESENT';
+
+                    return (
+                      <tr key={r.id} className="hover:bg-slate-50/70">
+                        <td className="py-2.5 px-3 font-bold text-slate-900">
+                          {r.studentName}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">
+                          {r.studentId}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600 font-mono text-[11px]">
+                          {isPending ? (
+                            <span className="text-slate-400">Awaiting class</span>
+                          ) : (
+                            `${r.stayMins} / ${r.durationMins} mins (${r.stayPercentage}%)`
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {isPending ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                              PENDING
+                            </span>
+                          ) : isPresent ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold">
+                              PRESENT
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-bold">
+                              ABSENT
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500 font-medium">
+                {activeModalSession.isAttendancePending
+                  ? 'Attendance roll call will update when tutor marks submission.'
+                  : `Signed off by ${activeModalSession.facultyName} (Tutor Roll Call)`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setActiveModalSession(null)}
+                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

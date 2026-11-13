@@ -97,5 +97,48 @@
       "AMER-2026-009",
       "AMER-2026-010"
     ]
+  },
+  {
+    "id": "batch-siva-01",
+    "name": "Sivakasi Lions French Cohort A",
+    "code": "BAT-SIVA-FR",
+    "institutionId": "c37b62d5-6ca4-47cb-bed7-899ad75a3144",
+    "institutionName": "Sivakasi Lions Matriculation Higher Secondary School",
+    "programId": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "programName": "Sample Course",
+    "departmentName": "Secondary School Foreign Languages",
+    "academicYear": "2026–2027",
+    "admissionYear": 2026,
+    "graduationYear": 2027,
+    "currentSemesterNumber": 1,
+    "sectionsCount": 1,
+    "studentsCount": 6,
+    "courseIds": [
+      "905803ab-58d8-447b-8e07-94226eaab99a"
+    ],
+    "courseNames": [
+      "Sample Course"
+    ],
+    "batchTiming": "03:30 PM – 05:00 PM",
+    "scheduleDays": [
+      "TUE",
+      "THU"
+    ],
+    "assignedFacultyName": "JK Faculty",
+    "assignedStaffNames": [
+      "JK Faculty"
+    ],
+    "leadFacultyId": "fac-373222",
+    "leadFacultyName": "JK Faculty",
+    "status": "ACTIVE",
+    "createdAt": "2026-11-12T07:20:30.000Z",
+    "studentIds": [
+      "SLS-2026-001",
+      "SLS-2026-002",
+      "SLS-2026-003",
+      "SLS-2026-004",
+      "SLS-2026-005",
+      "SLS-2026-006"
+    ]
   }
 ]

@@ -299,15 +299,138 @@ function LoginPageContent() {
     setSuccessMessage(null);
 
     try {
-      // 1. Call real NestJS Backend API for Authentication
+      // 1. First priority: Check credentials against database / registered roles
+      const verifyRes = await fetch(
+        `/api/portals/change-password?email=${encodeURIComponent(studentId.trim())}&verifyPassword=${encodeURIComponent(password)}`
+      );
+      if (verifyRes.ok) {
+        const verifyJson = await verifyRes.json();
+        if (verifyJson.user) {
+          // If the account exists in database, password MUST be strictly valid!
+          if (!verifyJson.isValid) {
+            throw new Error('Invalid email or password. Please try again.');
+          }
+
+          // Password matched! Proceed to login.
+          const matchedRole = platformRoles.find(
+            (r) => r.email.toLowerCase() === studentId.trim().toLowerCase()
+          );
+
+          if (verifyJson.user?.role === 'STUDENT' || studentId.toLowerCase().includes('student') || verifyJson.user?.studentId) {
+            // Check realDbStudents for precise student details
+            let studentName = verifyJson.user?.name || 'Muthu Pandian';
+            let studentRollNo = verifyJson.user?.studentId || 'AMER-COL-STD-23';
+            let studentCourse = 'French A1 Intensive Certification Program';
+            let studentBatch = 'Morning Batch';
+            let studentBatchCode = 'BAT-SAMPLE-MRNG';
+            let collegeName = 'The American College';
+
+            try {
+              const stRes = await fetch(`/api/portals/students?collegeId=ALL`);
+              if (stRes.ok) {
+                const stData = await stRes.json();
+                if (stData.data && Array.isArray(stData.data)) {
+                  const match = stData.data.find(
+                    (s: any) =>
+                      s.email?.toLowerCase() === studentId.trim().toLowerCase() ||
+                      s.studentId?.toLowerCase() === studentRollNo.toLowerCase()
+                  );
+                  if (match) {
+                    studentName = match.name || studentName;
+                    studentRollNo = match.studentId || match.rollNo || studentRollNo;
+                    studentCourse = match.enrolledCourseName || match.courseName || studentCourse;
+                    studentBatch = match.batchName || studentBatch;
+                    studentBatchCode = match.batchCode || studentBatchCode;
+                    collegeName = match.collegeName || match.tenantName || collegeName;
+                  }
+                }
+              }
+            } catch {}
+
+            const amerStudent = {
+              id: `std-${studentRollNo}`,
+              studentId: studentRollNo,
+              rollNo: studentRollNo,
+              name: studentName,
+              email: studentId.trim().toLowerCase(),
+              role: 'STUDENT',
+              campusId: '521323cd-00da-49a6-98ed-6b7918d181b4',
+              tenantId: '521323cd-00da-49a6-98ed-6b7918d181b4',
+              campusName: collegeName,
+              tenantName: collegeName,
+              tenantCode: 'AMER-COL',
+              courseName: studentCourse,
+              enrolledCourse: studentCourse,
+              batchName: studentBatch,
+              batchCode: studentBatchCode,
+              portalRoute: '/dashboard',
+            };
+            localStorage.setItem('isml_token', `local_token_${studentRollNo}`);
+            localStorage.setItem('isml_user', JSON.stringify(amerStudent));
+            setSuccessMessage(`Verified! Welcome ${studentName}. Redirecting to Student Portal...`);
+            setTimeout(() => router.push('/dashboard'), 400);
+            return;
+          }
+
+          if (verifyJson.user?.role === 'PARENT' || studentId.toLowerCase().includes('parent')) {
+            const parentUser = {
+              id: 'amer-p-1',
+              name: 'Dr. S. Sundararajan (Parent of Muthu Pandian)',
+              email: studentId.trim().toLowerCase(),
+              role: 'PARENT',
+              studentId: 'AMER-COL-STD-23',
+              studentName: 'Muthu Pandian',
+              institutionName: 'The American College',
+              portalRoute: '/parent/dashboard',
+            };
+            localStorage.setItem('isml_token', 'local_parent_token_2026');
+            localStorage.setItem('isml_user', JSON.stringify(parentUser));
+            setSuccessMessage('Verified! Welcome Dr. S. Sundararajan. Redirecting to Parent Portal...');
+            setTimeout(() => router.push('/parent/dashboard'), 400);
+            return;
+          }
+
+          if (verifyJson.user?.role === 'TUTOR' || studentId.toLowerCase() === 'joyjk348@gmail.com') {
+            const tutorUser = {
+              id: 'fac-201834',
+              name: 'Joy JK',
+              email: studentId.trim().toLowerCase(),
+              role: 'TUTOR',
+              designation: 'Foreign Language Faculty & Master Trainer',
+              portalRoute: '/tutor/dashboard',
+            };
+            localStorage.setItem('isml_token', 'local_joy_tutor_token_2026');
+            localStorage.setItem('isml_user', JSON.stringify(tutorUser));
+            setSuccessMessage('Verified! Welcome Master Trainer Joy JK. Redirecting to Tutor Portal...');
+            setTimeout(() => router.push('/tutor/dashboard'), 400);
+            return;
+          }
+
+          const targetPortal = matchedRole?.portal || '/super-admin/dashboard';
+          const adminUser = {
+            id: `usr-${verifyJson.user?.role?.toLowerCase() || 'admin'}`,
+            name: verifyJson.user?.name || matchedRole?.name || 'Administrator',
+            email: studentId.trim().toLowerCase(),
+            role: verifyJson.user?.role || matchedRole?.id || 'SUPER_ADMIN',
+            portalRoute: targetPortal,
+          };
+          localStorage.setItem('isml_token', `token_${Date.now()}`);
+          localStorage.setItem('isml_user', JSON.stringify(adminUser));
+          localStorage.setItem('isml_admin_user', JSON.stringify(adminUser));
+          setSuccessMessage(`Verified! Redirecting to ${adminUser.name} Portal...`);
+          setTimeout(() => router.push(targetPortal), 400);
+          return;
+        }
+      }
+
+      // 2. Call real NestJS Backend API for Authentication (if custom user exists there)
       let result: any = null;
       try {
         result = await authApi.login(studentId, password, selectedRole);
       } catch (fetchErr) {
-        console.warn('Backend login fetch error, proceeding to client authentication fallback');
+        // Backend API unreachable or not found
       }
 
-      // Support direct AuthResponse ({ accessToken, user }) and wrapped ApiResponse ({ status, data })
       const authUser = result?.user || result?.data?.user;
       const accessToken = result?.accessToken || result?.data?.accessToken;
 
@@ -328,159 +451,20 @@ function LoginPageContent() {
         return;
       }
 
-      // 2. Client-side verified credentials fallback (Ensures zero-lockout login)
-      // Parent Login (American College Parent & School Parent)
-      if (
-        studentId.toLowerCase().includes('parent') ||
-        selectedRole === 'PARENT'
-      ) {
-        const parentUser = {
-          id: 'amer-p-1',
-          name: 'Dr. S. Sundararajan (Parent of Muthu Pandian)',
-          email: studentId.toLowerCase(),
-          role: 'PARENT',
-          studentId: 'AMER-COL-STD-23',
-          studentName: 'Muthu Pandian',
-          institutionName: 'The American College',
-          portalRoute: '/parent/dashboard',
-        };
-        localStorage.setItem('isml_token', 'local_parent_token_2026');
-        localStorage.setItem('isml_user', JSON.stringify(parentUser));
-        setSuccessMessage('Verified! Welcome Dr. S. Sundararajan. Redirecting to Parent Portal...');
-        router.push('/parent/dashboard');
-        return;
-      }
-
-      const matched = platformRoles.find(
-        (r) => r.email.toLowerCase() === studentId.trim().toLowerCase()
-      );
-
-      // Support American College and Sivakasi Lions custom credentials
-      if (studentId.toLowerCase() === 'admin@americancollege.edu.in' && (password === 'Amer@2026!' || password === 'College@2026!')) {
-        const collegeUser = {
-          id: 'AMER-ADMIN-01',
-          name: 'The American College Admin',
-          email: 'admin@americancollege.edu.in',
-          role: 'COLLEGE_ADMIN',
-          tenantId: '521323cd-00da-49a6-98ed-6b7918d181b4',
-          institutionCode: 'AMER-COL',
-          portalRoute: '/college-admin/dashboard',
-        };
-        localStorage.setItem('isml_token', 'local_amer_token_2026');
-        localStorage.setItem('isml_user', JSON.stringify(collegeUser));
-        localStorage.setItem('isml_admin_user', JSON.stringify(collegeUser));
-        setSuccessMessage('Verified! Redirecting to American College Admin Portal...');
-        setTimeout(() => router.push('/college-admin/dashboard'), 500);
-        return;
-      }
-
-      if (studentId.toLowerCase() === 'principal@sivakasilions.edu.in' && (password === 'Lions@2026!' || password === 'School@2026!')) {
-        const schoolUser = {
-          id: 'SIVA-ADMIN-01',
-          name: 'Rev. Sister Mary Vasanthi (Principal)',
-          email: 'principal@sivakasilions.edu.in',
-          role: 'SCHOOL_ADMIN',
-          tenantId: 'c37b62d5-6ca4-47cb-bed7-899ad75a3144',
-          institutionCode: 'SIVA-LIONS',
-          portalRoute: '/school-admin/dashboard',
-        };
-        localStorage.setItem('isml_token', 'local_siva_token_2026');
-        localStorage.setItem('isml_user', JSON.stringify(schoolUser));
-        localStorage.setItem('isml_admin_user', JSON.stringify(schoolUser));
-        setSuccessMessage('Verified! Redirecting to Sivakasi Lions School Admin Portal...');
-        setTimeout(() => router.push('/school-admin/dashboard'), 500);
-        return;
-      }
-
-      if (studentId.toLowerCase() === 'joyjk348@gmail.com' && (password === 'Tutor@2026!' || password === 'Joy@2026!' || password === 'password' || password === '123456')) {
-        const tutorUser = {
-          id: 'fac-201834',
-          name: 'Joy JK',
-          email: 'joyjk348@gmail.com',
-          role: 'TUTOR',
-          designation: 'Foreign Language Faculty & Master Trainer',
-          portalRoute: '/tutor/dashboard',
-        };
-        localStorage.setItem('isml_token', 'local_joy_tutor_token_2026');
-        localStorage.setItem('isml_user', JSON.stringify(tutorUser));
-        setSuccessMessage('Verified! Welcome Master Trainer Joy JK. Redirecting to Tutor Portal...');
-        setTimeout(() => router.push('/tutor/dashboard'), 500);
-        return;
-      }
-
-      // American College Enrolled Student Login (Muthu Pandian & All American College Students)
-      if (
-        (studentId.toLowerCase() === 'student1@americancollege.edu.in' || 
-         studentId.toLowerCase() === 'muthu@americancollege.edu.in' ||
-         studentId.toLowerCase().includes('student') ||
-         studentId.toLowerCase().includes('americancollege.edu.in')) &&
-        (selectedRole === 'STUDENT' || studentId.toLowerCase().includes('student'))
-      ) {
-        const amerStudent = {
-          id: 'AMER-COL-STD-23',
-          studentId: 'AMER-COL-STD-23',
-          rollNo: 'AMER-COL-STD-23',
-          name: 'Muthu Pandian',
-          email: studentId.toLowerCase(),
-          role: 'STUDENT',
-          campusId: '521323cd-00da-49a6-98ed-6b7918d181b4',
-          tenantId: '521323cd-00da-49a6-98ed-6b7918d181b4',
-          campusName: 'The American College',
-          tenantName: 'The American College',
-          tenantCode: 'AMER-COL',
-          courseName: 'testtt',
-          enrolledCourse: 'testtt',
-          batchName: 'MRNG BATCH',
-          batchCode: 'BAT-ET-168',
-          portalRoute: '/dashboard',
-        };
-        localStorage.setItem('isml_token', 'local_amer_student_token_2026');
-        localStorage.setItem('isml_user', JSON.stringify(amerStudent));
-        setSuccessMessage('Verified! Welcome Muthu Pandian (The American College). Redirecting...');
-        setTimeout(() => router.push('/dashboard'), 400);
-        return;
-      }
-
-
-      if (matched) {
-        if (password === matched.defaultPwd || password === 'SuperAdmin@2026!' || password === 'College@2026!' || password === 'School@2026!') {
-          const fallbackUser = {
-            id: `usr-${matched.id.toLowerCase()}`,
-            name: matched.name,
-            email: matched.email,
-            role: matched.id,
-            portalRoute: matched.portal,
-          };
-          localStorage.setItem('isml_token', `local_token_${matched.id}`);
-          localStorage.setItem('isml_user', JSON.stringify(fallbackUser));
-          localStorage.setItem('isml_admin_user', JSON.stringify(fallbackUser));
-          setSuccessMessage(`Verified! Redirecting to ${matched.name} Portal...`);
-          setTimeout(() => {
-            router.push(matched.portal);
-          }, 500);
-          return;
-        }
-      }
-
-      if (result?.message && result.message !== 'Failed to fetch') {
-        throw new Error(result.message);
-      }
-
-      if (!matched) {
-        throw new Error('User account not found. Please select a valid role or enter registered email.');
-      }
-
-      if (password !== matched.defaultPwd) {
-        throw new Error(`Invalid password for ${matched.email}. Check credentials.`);
-      }
-
-      setSuccessMessage(`Verified! Redirecting to ${matched.name} Portal...`);
-      setTimeout(() => {
-        router.push(matched.portal);
-      }, 600);
+      // If user did not match database verification and backend login was not successful, throw error:
+      throw new Error('Invalid email or password. Please try again.');
 
     } catch (err: any) {
-      setErrorMessage(err.message || 'Authentication failed. Please verify your login credentials.');
+      let friendlyMsg = err.message || 'Invalid email or password. Please try again.';
+      if (
+        friendlyMsg.includes('Cannot POST') ||
+        friendlyMsg.includes('Failed to fetch') ||
+        friendlyMsg.includes('NetworkError') ||
+        friendlyMsg.includes('HttpException')
+      ) {
+        friendlyMsg = 'Invalid email or password. Please try again.';
+      }
+      setErrorMessage(friendlyMsg);
       setLoading(false);
     }
   };

@@ -39,11 +39,29 @@ export default function AcademicManagerResultsPage() {
   const [assignments, setAssignments] = useState<SharedAssignment[]>([]);
 
   useEffect(() => {
-    setAssignments(assignmentStore.getAll());
-    const unsubscribe = assignmentStore.subscribe(() => {
-      setAssignments(assignmentStore.getAll());
-    });
-    return unsubscribe;
+    const loadAssignments = async () => {
+      try {
+        const res = await fetch('/api/portals/assignments', { cache: 'no-store' });
+        const json = await res.json();
+        if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+          setAssignments(json.data);
+          return;
+        }
+      } catch (e) {}
+
+      // Fallback only if database API is unreachable
+      const storeItems = assignmentStore.getAll();
+      setAssignments(storeItems);
+    };
+
+    loadAssignments();
+    const unsubscribe = assignmentStore.subscribe(loadAssignments);
+    const handleSync = () => loadAssignments();
+    window.addEventListener('isml-realtime-event', handleSync);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('isml-realtime-event', handleSync);
+    };
   }, []);
 
   // Compute live StudentMarkEntry list from real assignmentStore submissions
@@ -53,16 +71,20 @@ export default function AcademicManagerResultsPage() {
     assignments.forEach((asg) => {
       if (asg.submissions && asg.submissions.length > 0) {
         asg.submissions.forEach((sub) => {
+          // If status is PENDING_REVIEW and score not evaluated yet, display pending status without penalizing as RA
+          const isEvaluated = sub.status === 'EVALUATED';
           const score = sub.scoreAwarded ?? 0;
           const maxScore = sub.maxScore || asg.maxScore || 100;
-          const percentage = Math.round((score / maxScore) * 100);
+          const percentage = isEvaluated ? Math.round((score / maxScore) * 100) : 0;
           
           let grade: 'A+' | 'A' | 'B+' | 'B' | 'C' | 'RA' = 'RA';
-          if (percentage >= 90) grade = 'A+';
-          else if (percentage >= 80) grade = 'A';
-          else if (percentage >= 70) grade = 'B+';
-          else if (percentage >= 60) grade = 'B';
-          else if (percentage >= 50) grade = 'C';
+          if (isEvaluated) {
+            if (percentage >= 90) grade = 'A+';
+            else if (percentage >= 80) grade = 'A';
+            else if (percentage >= 70) grade = 'B+';
+            else if (percentage >= 60) grade = 'B';
+            else if (percentage >= 50) grade = 'C';
+          }
 
           const d = new Date(sub.submittedAt);
           const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -71,7 +93,7 @@ export default function AcademicManagerResultsPage() {
             id: sub.id,
             studentId: sub.studentRollNo || sub.studentId,
             studentName: sub.studentName,
-            studentEmail: `${sub.studentRollNo.toLowerCase().replace(/[^a-z0-9]/g, '')}@student.isml.edu`,
+            studentEmail: `${(sub.studentRollNo || 'std').toLowerCase().replace(/[^a-z0-9]/g, '')}@student.isml.edu`,
             batchId: asg.batchId,
             batchName: asg.batchName,
             languageFamily: asg.languageFamily || 'FRENCH',
@@ -86,9 +108,9 @@ export default function AcademicManagerResultsPage() {
             maxScore,
             percentage,
             grade,
-            status: sub.status === 'EVALUATED' ? 'EVALUATED' : 'PENDING_REVIEW',
-            evaluatedByTutor: asg.assignedTutorName || 'Course Faculty',
-            tutorFeedback: sub.tutorFeedback || 'Submitted deliverable pending tutor evaluation',
+            status: isEvaluated ? 'EVALUATED' : 'PENDING_REVIEW',
+            evaluatedByTutor: isEvaluated ? (asg.assignedTutorName || 'Joy JK') : 'Awaiting Faculty Evaluation',
+            tutorFeedback: sub.tutorFeedback || (isEvaluated ? 'Evaluated' : 'Submitted deliverable pending tutor evaluation'),
           });
         });
       }
@@ -485,15 +507,23 @@ export default function AcademicManagerResultsPage() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="inline-flex flex-col items-center">
-                        <span className="font-black text-slate-900 text-sm">
-                          {entry.score} / {entry.maxScore}
-                        </span>
-                        <span className={`px-2 py-0.2 rounded text-[10px] font-black ${
-                          entry.percentage >= 80 ? 'bg-emerald-100 text-emerald-800' :
-                          entry.percentage >= 50 ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'
-                        }`}>
-                          Grade {entry.grade} ({entry.percentage}%)
-                        </span>
+                        {entry.status === 'EVALUATED' ? (
+                          <>
+                            <span className="font-black text-slate-900 text-sm">
+                              {entry.score} / {entry.maxScore}
+                            </span>
+                            <span className={`px-2 py-0.2 rounded text-[10px] font-black ${
+                              entry.percentage >= 80 ? 'bg-emerald-100 text-emerald-800' :
+                              entry.percentage >= 50 ? 'bg-blue-100 text-blue-800' : 'bg-rose-100 text-rose-800'
+                            }`}>
+                              Grade {entry.grade} ({entry.percentage}%)
+                            </span>
+                          </>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                            Pending Review
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3">

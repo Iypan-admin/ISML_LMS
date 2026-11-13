@@ -47,14 +47,6 @@ export const FINANCE_MANAGER_NAV_SECTIONS: FinanceMenuSection[] = [
         iconName: 'Users',
         description: 'Student-wise billing profiles, term installments & balance dues',
       },
-      {
-        id: 'FM_PAYMENTS_TRANSACTIONS',
-        label: 'Payments & Transactions',
-        route: '/finance-manager/transactions',
-        iconName: 'CreditCard',
-        badge: 'Live',
-        description: 'Payment history, counter approvals & gateway reconciliation',
-      },
     ],
   },
   {
@@ -66,6 +58,18 @@ export const FINANCE_MANAGER_NAV_SECTIONS: FinanceMenuSection[] = [
         route: '/finance-manager/reports',
         iconName: 'BarChart3',
         description: 'Collection reports, outstanding dues & ledger exports',
+      },
+    ],
+  },
+  {
+    title: 'Security & Profile',
+    items: [
+      {
+        id: 'FM_CHANGE_PASSWORD',
+        label: 'Change Password',
+        route: '/finance-manager/change-password',
+        iconName: 'Lock',
+        description: 'Update your access password and account security credentials',
       },
     ],
   },

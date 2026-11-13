@@ -18,6 +18,7 @@ import {
   Video,
   MessageSquare,
   Receipt,
+  Lock,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -48,6 +49,7 @@ const iconMap: Record<string, React.ElementType> = {
   Video,
   MessageSquare,
   Receipt,
+  Lock,
 };
 
 export function ParentSidebar({ onCloseMobile }: { onCloseMobile?: () => void }) {

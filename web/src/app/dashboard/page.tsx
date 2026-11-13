@@ -44,9 +44,9 @@ export default function DashboardPage() {
   const [showTrialBanner, setShowTrialBanner] = useState<boolean>(true);
 
   // Dynamic Free Trial Quota (10.0 Hours = 600 Mins)
-  const [consumedMinutes, setConsumedMinutes] = useState<number>(315); // e.g. real attended live session mins
-  const [remainingFreeMins, setRemainingFreeMins] = useState<number>(285); // 600 - 315 = 285 mins (4h 45m)
-  const [consumedPercentage, setConsumedPercentage] = useState<number>(52);
+  const [consumedMinutes, setConsumedMinutes] = useState<number>(0);
+  const [remainingFreeMins, setRemainingFreeMins] = useState<number>(600); // Default 10.0 Hours pristine for new learners
+  const [consumedPercentage, setConsumedPercentage] = useState<number>(0);
   const [isFullyEnrolled, setIsFullyEnrolled] = useState<boolean>(false);
 
   useEffect(() => {
@@ -112,17 +112,17 @@ export default function DashboardPage() {
       if (studentAtt.length > 0) {
         totalAttendedMins = studentAtt.reduce((sum: number, rec: any) => sum + (rec.stayMins || rec.durationMins || 60), 0);
       } else {
-        // Fallback to active session stay time if in localStorage
+        // For new students who haven't attended any live sessions yet, consumed is 0 mins (10.0 Hours full free pass)
         try {
-          const sessionSecs = localStorage.getItem('isml_student_stay_time_start');
+          const sessionSecs = localStorage.getItem(`isml_student_stay_${studentIdentifier}`);
           if (sessionSecs) {
             const diffM = Math.floor((Date.now() - parseInt(sessionSecs, 10)) / 60000);
-            totalAttendedMins = Math.max(diffM, 45);
+            totalAttendedMins = Math.max(diffM, 0);
           } else {
-            totalAttendedMins = 115; // default verified American College attendance entry
+            totalAttendedMins = 0;
           }
         } catch {
-          totalAttendedMins = 115;
+          totalAttendedMins = 0;
         }
       }
 

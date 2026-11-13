@@ -37,7 +37,26 @@ export default function AcademicManagerAssignmentsPage() {
   const [viewingAssignment, setViewingAssignment] = useState<SharedAssignment | null>(null);
 
   useEffect(() => {
-    setAssignments(assignmentStore.getAll());
+    // 1. Load from store
+    const storeItems = assignmentStore.getAll();
+    setAssignments(storeItems);
+
+    // 2. Fetch from backend database
+    fetch('/api/portals/assignments')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.data && Array.isArray(json.data)) {
+          const combined = [...storeItems];
+          json.data.forEach((dbItem: any) => {
+            if (!combined.some((c) => c.id === dbItem.id)) {
+              combined.unshift(dbItem);
+            }
+          });
+          setAssignments(combined);
+        }
+      })
+      .catch(() => {});
+
     const unsubscribe = assignmentStore.subscribe(() => {
       setAssignments(assignmentStore.getAll());
     });
@@ -83,13 +102,6 @@ export default function AcademicManagerAssignmentsPage() {
           },
         })
       );
-    }
-  };
-
-  const handleDelete = (id: string, title: string) => {
-    if (confirm(`Are you sure you want to delete assignment "${title}"?`)) {
-      assignmentStore.delete(id);
-      showSuccess(`Assignment "${title}" removed.`);
     }
   };
 
@@ -198,13 +210,6 @@ export default function AcademicManagerAssignmentsPage() {
           >
             <Eye className="w-3.5 h-3.5" />
             <span>Brief</span>
-          </button>
-          <button
-            onClick={() => handleDelete(row.id, row.title)}
-            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Delete Assignment"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       ),

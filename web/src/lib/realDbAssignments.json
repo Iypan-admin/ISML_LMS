@@ -1,0 +1,54 @@
+[
+  {
+    "id": "asg-sample-001",
+    "title": "Module 1: Everyday French Greetings & Bistro Dialogue",
+    "courseId": "905803ab-58d8-447b-8e07-94226eaab99a",
+    "courseName": "Sample Course",
+    "batchId": "7d94450c-cf1c-4ebe-bd27-9ac0afb45915",
+    "batchName": "Morning Batch",
+    "subjectCode": "FR-101",
+    "subjectName": "French Language & Phonetics",
+    "languageFamily": "FRENCH",
+    "lsrwSkill": "WRITING",
+    "moduleCode": "MOD-FR101-01",
+    "moduleName": "Conversational Foundations",
+    "dueDate": "2026-11-20 at 23:59",
+    "status": "ACTIVE",
+    "instructions": "Write a 50-word conversation roleplay between a customer and a waiter at a Parisian bistro ordering breakfast. Practice using polite forms 'Bonjour Monsieur', 'Je voudrais', and 's'il vous plaît'.",
+    "maxScore": 50,
+    "assignedTutorName": "Joy JK",
+    "submissions": [
+      {
+        "id": "sub-sample-001",
+        "studentId": "std-amer-2026-001",
+        "studentName": "Muthu Pandian",
+        "studentRollNo": "AMER-2026-001",
+        "submittedAt": "2026-11-13T16:43:26.531Z",
+        "status": "EVALUATED",
+        "submissionType": "TEXT",
+        "fileName": "dialogue_bistro_muthu.pdf",
+        "studentNotes": "Bonjour Monsieur! Je voudrais un cafe creme et un croissant chaud, s'il vous plait.",
+        "scoreAwarded": 46,
+        "maxScore": 50,
+        "tutorFeedback": "Excellent French syntax and polite conditional forms. Accent on café is accurate.",
+        "evaluatedAt": "2026-11-13T16:43:26.540Z"
+      },
+      {
+        "id": "sub-sample-002",
+        "studentId": "std-amer-2026-002",
+        "studentName": "Jeyashree Rajan",
+        "studentRollNo": "AMER-2026-002",
+        "submittedAt": "2026-11-13T16:43:26.540Z",
+        "status": "PENDING_REVIEW",
+        "submissionType": "PDF",
+        "fileName": "french_greetings_jeyashree.pdf",
+        "studentNotes": "Submitted conversational script unit 1.",
+        "scoreAwarded": 0,
+        "maxScore": 50,
+        "tutorFeedback": "Under review by Joy JK",
+        "evaluatedAt": null
+      }
+    ],
+    "createdAt": "2026-11-13T10:00:00.000Z"
+  }
+]

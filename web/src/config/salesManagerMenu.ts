@@ -69,4 +69,14 @@ export const SALES_MANAGER_NAV_SECTIONS: SalesNavSection[] = [
       },
     ],
   },
+  {
+    title: 'Security & Profile',
+    items: [
+      {
+        title: 'Change Password',
+        path: '/sales-manager/change-password',
+        iconName: 'Lock',
+      },
+    ],
+  },
 ];

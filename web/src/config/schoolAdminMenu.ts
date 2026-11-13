@@ -61,5 +61,15 @@ export const SCHOOL_ADMIN_NAV_SECTIONS: SchoolAdminNavSection[] = [
       },
     ],
   },
+  {
+    title: 'Security & Profile',
+    items: [
+      {
+        label: 'Change Password',
+        route: '/school-admin/change-password',
+        iconName: 'Lock',
+      },
+    ],
+  },
 ];
 

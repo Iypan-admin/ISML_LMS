@@ -44,13 +44,6 @@ export const TUTOR_NAV_SECTIONS: TutorMenuSection[] = [
         badge: 'Auto Cloud',
         description: 'Auto-recorded live webinars, pre-recorded lessons & student playback archive',
       },
-      {
-        id: 'TUTOR_TIMETABLE',
-        label: 'My Schedule & Calendar',
-        route: '/tutor/schedule',
-        iconName: 'CalendarDays',
-        description: 'Assigned batch timetable slots, doubt clinics & oral viva schedules',
-      },
     ],
   },
   {
@@ -86,13 +79,6 @@ export const TUTOR_NAV_SECTIONS: TutorMenuSection[] = [
         iconName: 'ClipboardList',
         description: 'Review student submissions, evaluate tasks & assign homework scores',
       },
-      {
-        id: 'TUTOR_ASSESSMENTS',
-        label: 'Exams & Gradebook',
-        route: '/tutor/assessments',
-        iconName: 'Award',
-        description: 'DELF/JLPT CBT exams, oral viva scoring, marks evaluation & results',
-      },
     ],
   },
   {
@@ -111,6 +97,18 @@ export const TUTOR_NAV_SECTIONS: TutorMenuSection[] = [
         route: '/tutor/resources',
         iconName: 'FileText',
         description: 'Lecture slide decks, handouts, audio drills & grammar references',
+      },
+    ],
+  },
+  {
+    title: 'Security & Profile',
+    items: [
+      {
+        id: 'TUTOR_CHANGE_PASSWORD',
+        label: 'Change Password',
+        route: '/tutor/change-password',
+        iconName: 'Lock',
+        description: 'Update faculty portal password and security credentials',
       },
     ],
   },

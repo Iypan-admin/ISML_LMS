@@ -21,7 +21,7 @@
     "createdAt": "2026-11-12T08:20:32.370Z",
     "updatedAt": "2026-11-12T08:20:32.370Z",
     "code": "FEESTR-COL-FR-A1",
-    "institutionName": "Sri Krishna College of Technology",
+    "institutionName": "The American College",
     "courseName": "French A1 / L1 Higher Education Program",
     "courseCode": "COL-FR-A1L1",
     "components": [
@@ -90,7 +90,7 @@
     "createdAt": "2026-11-12T08:20:37.882Z",
     "updatedAt": "2026-11-12T08:20:37.882Z",
     "code": "FEESTR-COL-DE-A1",
-    "institutionName": "Sri Krishna College of Technology",
+    "institutionName": "The American College",
     "courseName": "German A1 / L1 Higher Education Program",
     "courseCode": "COL-DE-A1L1",
     "components": [
@@ -159,7 +159,7 @@
     "createdAt": "2026-11-12T08:20:43.086Z",
     "updatedAt": "2026-11-12T08:20:43.086Z",
     "code": "FEESTR-COL-ES-A1",
-    "institutionName": "Sri Krishna College of Technology",
+    "institutionName": "The American College",
     "courseName": "Spanish A1 / L1 Higher Education Program",
     "courseCode": "COL-ES-A1L1",
     "components": [
@@ -228,7 +228,7 @@
     "createdAt": "2026-11-12T08:20:48.239Z",
     "updatedAt": "2026-11-12T08:20:48.239Z",
     "code": "FEESTR-COL-JA-N5",
-    "institutionName": "Sri Krishna College of Technology",
+    "institutionName": "The American College",
     "courseName": "Japanese N5 Higher Education Program",
     "courseCode": "COL-JA-N5",
     "components": [
@@ -297,7 +297,7 @@
     "createdAt": "2026-11-12T08:20:55.225Z",
     "updatedAt": "2026-11-12T08:20:55.225Z",
     "code": "FEESTR-COL-KO-A1",
-    "institutionName": "Sri Krishna College of Technology",
+    "institutionName": "The American College",
     "courseName": "Korean A1 / L1 Higher Education Program",
     "courseCode": "COL-KO-A1L1",
     "components": [
@@ -366,7 +366,7 @@
     "createdAt": "2026-11-12T08:20:59.591Z",
     "updatedAt": "2026-11-12T08:20:59.591Z",
     "code": "FEESTR-SCH-FR-A11",
-    "institutionName": "Delhi Public School Coimbatore",
+    "institutionName": "Sivakasi Lions Matriculation Higher Secondary School",
     "courseName": "French A1.1 School Foundation Course",
     "courseCode": "SCH-FR-A11",
     "components": [
@@ -435,7 +435,7 @@
     "createdAt": "2026-11-12T08:21:04.077Z",
     "updatedAt": "2026-11-12T08:21:04.077Z",
     "code": "FEESTR-SCH-DE-A11",
-    "institutionName": "Delhi Public School Coimbatore",
+    "institutionName": "Sivakasi Lions Matriculation Higher Secondary School",
     "courseName": "German A1.1 School Foundation Course",
     "courseCode": "SCH-DE-A11",
     "components": [

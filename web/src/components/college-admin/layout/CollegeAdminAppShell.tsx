@@ -21,6 +21,7 @@ import {
   UserCheck,
   Award,
   Building2,
+  Lock,
   Bell,
   Menu,
   X,
@@ -46,6 +47,7 @@ const iconMap: Record<string, React.ElementType> = {
   UserCheck,
   Award,
   Building2,
+  Lock,
 };
 
 export default function CollegeAdminAppShell({ children }: { children: React.ReactNode }) {

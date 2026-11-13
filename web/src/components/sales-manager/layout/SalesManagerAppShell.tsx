@@ -22,6 +22,7 @@ import {
   CreditCard,
   BarChart3,
   Building2,
+  Lock,
   PhoneCall,
   Search,
   Sparkles,
@@ -51,6 +52,7 @@ const iconMap: Record<string, React.ElementType> = {
   CreditCard,
   BarChart3,
   Building2,
+  Lock,
 };
 
 export function SalesManagerSidebar({ onClose, isMobile = false }: { onClose?: () => void; isMobile?: boolean }) {
@@ -283,34 +285,15 @@ export function SalesManagerHeader({ onOpenMobile }: { onOpenMobile: () => void 
         </select>
       </div>
 
-      {/* Right Actions: Public Registration Links Dropdown & Counselor Hotline */}
+      {/* Right Actions: Clean Admissions Lead Badge */}
       <div className="flex items-center gap-2 sm:gap-3">
-        <Link
-          href="/register/college"
-          target="_blank"
-          className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-[#0052CC] border border-blue-200 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all"
-        >
-          <span>College Form</span>
-          <ArrowUpRight className="w-3.5 h-3.5" />
-        </Link>
-        <Link
-          href="/register/school"
-          target="_blank"
-          className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-all"
-        >
-          <span>School Form</span>
-          <ArrowUpRight className="w-3.5 h-3.5" />
-        </Link>
-
-        <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-
         <div className="flex items-center gap-2 pl-1">
           <div className="w-8 h-8 rounded-full bg-blue-100 text-[#0052CC] font-bold text-xs flex items-center justify-center">
             CRM
           </div>
-          <div className="hidden xl:block text-left">
-            <p className="text-xs font-bold text-slate-800 leading-tight">Sales Helpdesk</p>
-            <p className="text-[10px] text-slate-400 leading-tight">+91 98401 22334</p>
+          <div className="text-left">
+            <p className="text-xs font-bold text-slate-800 leading-tight">Admissions Helpdesk</p>
+            <p className="text-[10px] text-slate-500 leading-tight">+91 98401 22334</p>
           </div>
         </div>
       </div>
