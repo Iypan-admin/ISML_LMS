@@ -6,9 +6,9 @@ let submittedAdmissions: any[] = [];
 
 // Transform real database students into admissions registry format
 const studentAdmissions = realDbStudents.map((s: any) => {
-  const isSchool = 
-    s.studentId?.startsWith('SLS') || 
-    s.tenantCode === 'SIVA-LIONS' || 
+  const isSchool =
+    s.studentId?.startsWith('SLS') ||
+    s.tenantCode === 'SIVA-LIONS' ||
     s.collegeName?.toLowerCase().includes('school') ||
     s.collegeId === 'c37b62d5-6ca4-47cb-bed7-899ad75a3144';
 

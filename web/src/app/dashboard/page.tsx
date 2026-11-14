@@ -19,7 +19,8 @@ import {
   GraduationCap,
   Zap,
   Gift,
-  X
+  X,
+  CreditCard
 } from 'lucide-react';
 import { currentStudent } from '@/mock/students';
 import { fastFetch } from '@/lib/fastCache';

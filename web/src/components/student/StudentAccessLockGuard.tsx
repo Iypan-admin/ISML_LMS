@@ -223,3 +223,4 @@ export default function StudentAccessLockGuard({ children }: { children: React.R
 
   return <>{children}</>;
 }
+
