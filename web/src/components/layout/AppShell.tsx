@@ -10,6 +10,7 @@ import SuperAdminAppShell from "@/components/super-admin/layout/SuperAdminAppShe
 import FinanceManagerAppShell from "@/components/finance-manager/layout/FinanceManagerAppShell";
 import { ToastProvider } from "@/context/ToastContext";
 import { CollegeProvider } from "@/context/CollegeContext";
+import StudentAccessLockGuard from "@/components/student/StudentAccessLockGuard";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -62,7 +63,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1 flex flex-col min-w-0 w-full max-w-full min-h-screen pb-24 lg:pb-0 lg:pl-72 overflow-x-hidden pt-[53px] lg:pt-0">
             <Header />
             <main className="flex-1 p-3 sm:p-5 md:p-6 lg:p-8 max-w-7xl mx-auto w-full min-w-0">
-              {children}
+              <StudentAccessLockGuard>{children}</StudentAccessLockGuard>
             </main>
           </div>
 

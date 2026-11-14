@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Compass,
   Lock,
+  CreditCard,
 } from 'lucide-react';
 import { currentStudent } from '@/mock/students';
 
@@ -52,6 +53,7 @@ const studentNavGroups = [
   {
     groupTitle: 'Records & Credentials',
     items: [
+      { name: 'Fee Ledger & Pay', href: '/student/fees', icon: CreditCard, badge: 'PAY' },
       { name: 'Attendance', href: '/attendance', icon: CalendarCheck },
       { name: 'Certificate', href: '/certificate', icon: Award },
     ],

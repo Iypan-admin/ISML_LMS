@@ -149,6 +149,9 @@ export default function SalesRegisterCollegePage() {
             studentPhone,
             parentName,
             parentPhone,
+            amountPaid: 0,
+            courseFee: 18500,
+            paymentStatus: 'UNPAID',
             submittedAt: new Date().toISOString(),
           },
         }),
@@ -172,7 +175,26 @@ export default function SalesRegisterCollegePage() {
           department,
           parentFatherName: parentName,
           parentPhone,
+          amountPaid: 0,
+          paymentStatus: 'UNPAID',
           status: 'PENDING_APPROVAL',
+        }),
+      }).catch(() => {});
+
+      // 3. Register fee ledger as UNPAID
+      await fetch('/api/portals/student-fees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rollNo: generatedRollNo,
+          name: fullName,
+          email: studentEmail,
+          collegeId: currentCol.id,
+          collegeName: currentCol.name,
+          program: `${language} Higher Education Track`,
+          department,
+          courseFee: 18500,
+          amountPaid: 0,
         }),
       }).catch(() => {});
 

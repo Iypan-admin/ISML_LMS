@@ -205,6 +205,56 @@ export async function POST(
               }
             }
 
+            // Also register in realDbStudentFees.json with UNPAID status
+            const feePaths = [
+              path.join(process.cwd(), 'src', 'lib', 'realDbStudentFees.json'),
+              path.join(process.cwd(), 'web', 'src', 'lib', 'realDbStudentFees.json'),
+            ];
+            const courseTotalFee = Number(sp.courseFee || sp.totalFees) || 18500;
+            const amtPaid = Number(sp.amountPaid) || 0;
+            const feeLedgerItem = {
+              id: `fee-${newStudent.rollNo}`,
+              studentId: newStudent.id,
+              rollNo: newStudent.rollNo,
+              name: newStudent.name,
+              email: newStudent.email,
+              avatar: '/avatars/default.png',
+              collegeId: newStudent.institutionId,
+              collegeName: newStudent.institutionName,
+              program: newStudent.courseName,
+              department: sp.department || 'Department of Foreign Languages',
+              batch: sp.batch || sp.batchName || 'Morning Batch',
+              currentSemester: 1,
+              totalFees: courseTotalFee,
+              concessionAmount: 0,
+              netPayable: courseTotalFee,
+              paidAmount: amtPaid,
+              outstandingBalance: Math.max(0, courseTotalFee - amtPaid),
+              paymentStatus: amtPaid >= courseTotalFee ? 'PAID' : amtPaid > 0 ? 'PARTIAL' : 'UNPAID',
+              lastPaymentDate: amtPaid > 0 ? new Date().toISOString().split('T')[0] : null,
+              installments: [
+                {
+                  number: 1,
+                  title: 'Prescribed Tuition Fee',
+                  amount: courseTotalFee,
+                  dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+                  status: amtPaid >= courseTotalFee ? 'PAID' : 'UNPAID',
+                },
+              ],
+            };
+
+            for (const fp of feePaths) {
+              if (fs.existsSync(fp)) {
+                try {
+                  const feeList = JSON.parse(fs.readFileSync(fp, 'utf8'));
+                  if (Array.isArray(feeList)) {
+                    feeList.unshift(feeLedgerItem);
+                    fs.writeFileSync(fp, JSON.stringify(feeList, null, 2), 'utf8');
+                  }
+                } catch {}
+              }
+            }
+
             // Also trigger automated welcome & credentials email!
             sendAdmissionApprovalEmail({
               ...newStudent,

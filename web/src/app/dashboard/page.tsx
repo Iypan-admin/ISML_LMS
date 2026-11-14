@@ -136,16 +136,20 @@ export default function DashboardPage() {
     });
 
     // 4. Check if student has paid fees or is in free trial mode
-    fastFetch('/api/portals/transactions', (json) => {
-      const txs = json?.data || [];
-      const hasPaid = txs.some(
-        (t: any) =>
-          (t.studentId === studentIdentifier || t.studentName?.toLowerCase().includes(studentName.toLowerCase())) &&
-          t.status === 'SUCCESS' &&
-          t.amount > 0
+    fastFetch('/api/portals/student-fees', (json) => {
+      const fees = json?.data || [];
+      const myFee = fees.find(
+        (f: any) =>
+          (f.rollNo && f.rollNo.toLowerCase() === studentIdentifier.toLowerCase()) ||
+          (f.studentId && f.studentId.toLowerCase() === studentIdentifier.toLowerCase()) ||
+          (f.name && f.name.toLowerCase().trim() === studentName.toLowerCase().trim())
       );
-      if (hasPaid) {
-        setIsFullyEnrolled(true);
+      if (myFee) {
+        if (myFee.paymentStatus === 'PAID' || (myFee.outstandingBalance === 0 && myFee.paidAmount > 0)) {
+          setIsFullyEnrolled(true);
+        } else {
+          setIsFullyEnrolled(false);
+        }
       }
     });
 
@@ -230,10 +234,11 @@ export default function DashboardPage() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/parent/fees"
-            className="hidden sm:flex px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold rounded-xl shadow-2xs items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+            href="/student/fees"
+            className="flex px-3.5 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:bg-blue-100 text-[#0052CC] border border-blue-200 text-xs font-bold rounded-xl shadow-2xs items-center gap-1.5 shrink-0 transition-all cursor-pointer"
           >
-            <span>💳 Fee Ledger</span>
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>{isFullyEnrolled ? 'Fee Ledger' : 'Pay Course Fee'}</span>
           </Link>
           <Link
             href="/courses"
