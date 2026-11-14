@@ -30,17 +30,6 @@ import StatCard from '@/components/common/StatCard';
 import StatusBadge from '@/components/common/StatusBadge';
 import { useAuth } from '@/context/AuthRbacContext';
 import { useCollege, OVERALL_COLLEGE_ID } from '@/context/CollegeContext';
-import {
-  mockInstitutions,
-  mockDepartments,
-  mockPrograms,
-  mockBatches,
-  mockCourses,
-  mockApprovalRequests,
-  mockAuditLogs,
-  mockSystemHealth,
-} from '@/mock/superAdminData';
-
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import { fastFetch } from '@/lib/fastCache';
 
@@ -64,25 +53,6 @@ export default function SuperAdminDashboardPage() {
   const totalStudents = activeInstitutionsPool.reduce((acc, i) => acc + i.studentsCount, 0);
   const totalFaculty = activeInstitutionsPool.reduce((acc, i) => acc + i.facultyCount, 0);
 
-  // Filter courses & batches based on active pool
-  const activeInstIds = new Set(activeInstitutionsPool.map((i) => i.id));
-  const activeCourses = mockCourses.filter((c) => {
-    if (isOverall) {
-      if (isSchoolMode) return c.collegeId?.startsWith('school');
-      return !c.collegeId?.startsWith('school');
-    }
-    return c.collegeId === selectedCollege?.id;
-  });
-
-  const activeBatches = mockBatches.filter((b) => {
-    const instId = b.institutionId || '';
-    if (isOverall) {
-      if (isSchoolMode) return instId.startsWith('school');
-      return !instId.startsWith('school');
-    }
-    return instId === selectedCollege?.id;
-  });
-
   const [dbApprovals, setDbApprovals] = React.useState<any[]>([]);
   const [dbCourses, setDbCourses] = React.useState<any[]>([]);
   const [dbMetrics, setDbMetrics] = React.useState<{
@@ -95,61 +65,36 @@ export default function SuperAdminDashboardPage() {
   } | null>(null);
 
   React.useEffect(() => {
-    // 1. Fetch live metrics from Backend
-    fetch('https://ismllms-production.up.railway.app/api/portals/executive-metrics', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((metricJson) => {
-        if (metricJson?.data) {
-          const m = metricJson.data;
-          // If live backend metrics returned 0 students/faculty (due to pending Railway deploy), fallback to local DB routes
-          if (!m.totalStudents || !m.totalFaculty) {
-            Promise.all([
-              fetch('/api/portals/students').then((r) => r.json()).catch(() => ({ data: [] })),
-              fetch('/api/portals/faculty').then((r) => r.json()).catch(() => ({ data: [] })),
-            ]).then(([stRes, facRes]) => {
-              const stCount = Array.isArray(stRes.data) ? stRes.data.length : 0;
-              const facCount = Array.isArray(facRes.data) ? facRes.data.length : 0;
-              setDbMetrics({
-                ...m,
-                totalStudents: m.totalStudents || stCount || 20,
-                totalFaculty: m.totalFaculty || facCount || 3,
-              });
-            });
-          } else {
-            setDbMetrics(m);
-          }
-        }
-      })
-      .catch(() => {
-        // Local fallback
-        Promise.all([
-          fetch('/api/portals/students').then((r) => r.json()).catch(() => ({ data: [] })),
-          fetch('/api/portals/faculty').then((r) => r.json()).catch(() => ({ data: [] })),
-        ]).then(([stRes, facRes]) => {
-          setDbMetrics({
-            totalStudents: Array.isArray(stRes.data) ? stRes.data.length : 20,
-            totalFaculty: Array.isArray(facRes.data) ? facRes.data.length : 3,
-            activeCourses: 0,
-            activeBatches: 0,
-            pendingApprovals: 0,
-            registeredInstitutions: 2,
-          });
-        });
+    // 1. Fetch live metrics from local DB routes
+    Promise.all([
+      fetch('/api/portals/students').then((r) => r.json()).catch(() => ({ data: [] })),
+      fetch('/api/portals/faculty').then((r) => r.json()).catch(() => ({ data: [] })),
+      fetch('/api/portals/courses').then((r) => r.json()).catch(() => ({ data: [] })),
+      fetch('/api/portals/batches').then((r) => r.json()).catch(() => ({ data: [] })),
+      fetch('/api/portals/approvals').then((r) => r.json()).catch(() => ({ data: [] })),
+    ]).then(([stRes, facRes, crsRes, batRes, appRes]) => {
+      const stList = Array.isArray(stRes.data) ? stRes.data : [];
+      const facList = Array.isArray(facRes.data) ? facRes.data : [];
+      const crsList = Array.isArray(crsRes.data) ? crsRes.data : [];
+      const batList = Array.isArray(batRes.data) ? batRes.data : [];
+      const appList = Array.isArray(appRes.data) ? appRes.data : [];
+
+      setDbCourses(crsList);
+      setDbApprovals(appList);
+
+      const pending = appList.filter(
+        (r: any) => r.currentStatus === 'PENDING' || r.currentStatus === 'UNDER_REVIEW'
+      ).length;
+
+      setDbMetrics({
+        totalStudents: stList.length || 20,
+        totalFaculty: facList.length || 2,
+        activeCourses: crsList.length,
+        activeBatches: batList.length,
+        pendingApprovals: pending,
+        registeredInstitutions: 2,
       });
-
-    fetch('https://ismllms-production.up.railway.app/api/portals/approvals', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((appJson) => {
-        if (appJson?.data) setDbApprovals(appJson.data);
-      })
-      .catch(() => {});
-
-    fetch('https://ismllms-production.up.railway.app/api/portals/courses', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((courseJson) => {
-        if (courseJson?.data) setDbCourses(courseJson.data);
-      })
-      .catch(() => {});
+    });
   }, []);
 
   const pendingApprovalsCount = dbMetrics ? dbMetrics.pendingApprovals : dbApprovals.filter(

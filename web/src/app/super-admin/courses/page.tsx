@@ -12,8 +12,7 @@ import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
 import StatusToggleSwitch from '@/components/common/StatusToggleSwitch';
 import { Can } from '@/context/AuthRbacContext';
-import { CourseSummary } from '@/types/rbac';
-import { mockCourses, mockDepartments, mockStudents } from '@/mock/superAdminData';
+import { CourseSummary, StudentUser } from '@/types/rbac';
 import { useToast } from '@/context/ToastContext';
 import CollegeFilterBar from '@/components/common/CollegeFilterBar';
 import ViewEnrolledStudentsDrawer from '@/components/super-admin/academic/ViewEnrolledStudentsDrawer';
@@ -26,35 +25,69 @@ export default function CoursesPage() {
   const { showSuccess } = useToast();
   const { selectedCollegeId, isOverall } = useCollege();
   const [courses, setCourses] = useState<CourseSummary[]>([]);
+  const [dbStudents, setDbStudents] = useState<any[]>([]);
   const [studentsDrawerCourse, setStudentsDrawerCourse] = useState<CourseSummary | null>(null);
   const [deleteCourse, setDeleteCourse] = useState<CourseSummary | null>(null);
   const [viewCourseDetail, setViewCourseDetail] = useState<CourseSummary | null>(null);
 
-  // Fetch live courses from backend with 0ms fast cache
+  // Fetch live courses, batches and students directly from DB API
   const fetchLiveCourses = React.useCallback(() => {
-    fastFetch('https://ismllms-production.up.railway.app/api/portals/courses', (res) => {
-      if (res?.status === 'success' && Array.isArray(res.data)) {
-        const live: CourseSummary[] = res.data.map((c: any) => ({
-          id: c.id,
-          code: c.code,
-          name: c.name,
-          collegeId: c.collegeId || c.tenantId || 'inst-01',
-          collegeName: c.collegeName || 'Loyola College of Arts & Science',
-          department: c.department || 'Languages & Linguistics',
-          program: c.program || `${c.durationDays || 90} Days Track`,
-          semester: 1,
-          academicYear: c.academicYear || '2026–2027',
-          duration: c.duration || `${c.durationDays || 90} Days`,
-          durationDays: Number(c.durationDays) || 90,
-          durationType: c.durationType || '3_MONTHS',
-          facultyName: c.facultyName || 'Lead Academic Faculty',
-          substituteTutors: c.substituteTutors || [],
-          doubtSupportTutor: c.doubtSupportTutor,
-          enrolledStudents: c.enrolledStudents || 0,
-          completionRate: c.completionRate || 0,
-          courseFee: c.courseFee || 12000,
-          status: c.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
-        }));
+    Promise.all([
+      fetch('/api/portals/courses').then((r) => r.json()).catch(() => ({ data: [] })),
+      fetch('/api/portals/batches').then((r) => r.json()).catch(() => ({ data: [] })),
+      fetch('/api/portals/students').then((r) => r.json()).catch(() => ({ data: [] })),
+    ]).then(([resCourses, resBatches, resStudents]) => {
+      const batchList: any[] = Array.isArray(resBatches?.data) ? resBatches.data : [];
+      const studentList: any[] = Array.isArray(resStudents?.data) ? resStudents.data : [];
+      setDbStudents(studentList);
+
+      if (resCourses?.status === 'success' && Array.isArray(resCourses.data)) {
+        const live: CourseSummary[] = resCourses.data.map((c: any) => {
+          // 1. Find matching batches allocated to this course (by courseIds, programId, or courseNames)
+          const matchedBatches = batchList.filter((b: any) => {
+            const hasId = b.courseIds && Array.isArray(b.courseIds) && b.courseIds.includes(c.id);
+            const hasProgram = b.programId && b.programId === c.id;
+            const hasName = b.courseNames && Array.isArray(b.courseNames) && b.courseNames.some((cn: string) => cn.toLowerCase() === c.name.toLowerCase());
+            const hasProgName = b.programName && b.programName.toLowerCase() === c.name.toLowerCase();
+            return hasId || hasProgram || hasName || hasProgName;
+          });
+
+          const batchNames = matchedBatches.map((b: any) => b.name);
+          const batchIds = matchedBatches.map((b: any) => b.id);
+
+          // 2. Exact dynamic count of students enrolled in this course from DB
+          const enrolledInCourse = studentList.filter((s: any) => {
+            const matchId = s.enrolledCourseId === c.id || s.programId === c.id;
+            const matchCode = s.enrolledCourseCode?.toLowerCase() === c.code?.toLowerCase();
+            const matchName = s.enrolledCourseName?.toLowerCase() === c.name?.toLowerCase() || s.programName?.toLowerCase() === c.name?.toLowerCase();
+            const matchBatch = s.batchId && batchIds.includes(s.batchId);
+            return matchId || matchCode || matchName || matchBatch;
+          });
+
+          return {
+            id: c.id,
+            code: c.code,
+            name: c.name,
+            collegeId: c.collegeId || c.tenantId || '521323cd-00da-49a6-98ed-6b7918d181b4',
+            collegeName: c.collegeName || 'The American College',
+            department: c.department || 'Department of Foreign Languages',
+            program: c.program || `${c.durationDays || 120} Days Track`,
+            semester: c.semester || 1,
+            academicYear: c.academicYear || '2026–2027',
+            duration: c.duration || `${c.durationDays || 120} Days`,
+            durationDays: Number(c.durationDays) || 120,
+            durationType: c.durationType || '4_MONTHS',
+            facultyName: c.facultyName || (matchedBatches[0]?.assignedFacultyName || 'Joy JK'),
+            substituteTutors: c.substituteTutors || [],
+            doubtSupportTutor: c.doubtSupportTutor,
+            enrolledStudents: enrolledInCourse.length || 0,
+            completionRate: c.completionRate || 0,
+            courseFee: c.courseFee || 18500,
+            batchNames: batchNames.length > 0 ? batchNames : (c.batchNames || []),
+            batchIds: batchIds.length > 0 ? batchIds : (c.batchIds || []),
+            status: c.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
+          };
+        });
         setCourses(live);
       }
     });
@@ -69,8 +102,10 @@ export default function CoursesPage() {
   const handleDeleteCourse = async () => {
     if (!deleteCourse) return;
     try {
-      await fetch(`https://ismllms-production.up.railway.app/api/portals/courses/${deleteCourse.id}/delete`, {
+      await fetch('/api/portals/courses', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'DELETE', id: deleteCourse.id }),
       });
       setCourses((prev) => prev.filter((c) => c.id !== deleteCourse.id));
       showSuccess(`Course "${deleteCourse.name}" (${deleteCourse.code}) deleted permanently by Super Admin.`);
@@ -271,20 +306,19 @@ export default function CoursesPage() {
     },
   ];
 
-  // Enrolled learners for currently selected course in drawer
+  // Enrolled learners for currently selected course in drawer (Dynamic from DB)
   const enrolledLearnersForDrawer = studentsDrawerCourse
-    ? mockStudents.filter((s) => {
-        if (s.enrolledCourseId === studentsDrawerCourse.id || s.enrolledCourseCode === studentsDrawerCourse.code) {
+    ? dbStudents.filter((s) => {
+        if (s.enrolledCourseId === studentsDrawerCourse.id || s.enrolledCourseCode?.toLowerCase() === studentsDrawerCourse.code.toLowerCase()) {
           return true;
         }
         if (s.enrolledCourseName && s.enrolledCourseName.toLowerCase() === studentsDrawerCourse.name.toLowerCase()) {
           return true;
         }
-        if (
-          studentsDrawerCourse.collegeId &&
-          s.collegeId === studentsDrawerCourse.collegeId &&
-          s.departmentName?.toLowerCase().includes(studentsDrawerCourse.department.toLowerCase().slice(0, 4))
-        ) {
+        if (s.programId === studentsDrawerCourse.id || (s.programName && s.programName.toLowerCase() === studentsDrawerCourse.name.toLowerCase())) {
+          return true;
+        }
+        if (studentsDrawerCourse.batchIds && s.batchId && studentsDrawerCourse.batchIds.includes(s.batchId)) {
           return true;
         }
         return false;
